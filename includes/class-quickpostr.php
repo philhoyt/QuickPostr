@@ -20,16 +20,35 @@ class QuickPostr {
 	 * Initialise all subsystems.
 	 */
 	public function init(): void {
-		( new QuickPostr_Rewrite() )->init();
 		( new QuickPostr_Settings() )->init();
 		( new QuickPostr_Rest() )->init();
 
 		add_action( 'init', array( $this, 'register_taxonomy' ) );
 		add_action( 'init', array( $this, 'register_post_meta' ) );
 		add_action( 'init', array( $this, 'seed_terms' ) );
+		add_action( 'init', array( $this, 'register_block' ) );
+		add_action( 'init', array( $this, 'register_block_patterns' ) );
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
+		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
+	}
+
+	/**
+	 * Register the Composer block.
+	 */
+	public function register_block(): void {
+		register_block_type( QUICKPOSTR_PATH . 'blocks/composer/' );
+	}
+
+	/**
+	 * Register block patterns and the QuickPostr pattern category.
+	 */
+	public function register_block_patterns(): void {
+		register_block_pattern_category(
+			'quickpostr',
+			array( 'label' => __( 'QuickPostr', 'quickpostr' ) )
+		);
 	}
 
 	/**
@@ -62,17 +81,17 @@ class QuickPostr {
 			'quickpostr_source',
 			'post',
 			array(
-				'label'             => __( 'QuickPostr Source', 'quickpostr' ),
-				'public'            => false,
+				'label'              => __( 'QuickPostr Source', 'quickpostr' ),
+				'public'             => false,
 				'publicly_queryable' => false,
-				'show_ui'           => false,
-				'show_in_menu'      => false,
-				'show_in_nav_menus' => false,
-				'show_in_rest'      => false,
-				'show_tagcloud'     => false,
-				'show_admin_column' => false,
-				'hierarchical'      => false,
-				'rewrite'           => false,
+				'show_ui'            => false,
+				'show_in_menu'       => false,
+				'show_in_nav_menus'  => false,
+				'show_in_rest'       => false,
+				'show_tagcloud'      => false,
+				'show_admin_column'  => false,
+				'hierarchical'       => false,
+				'rewrite'            => false,
 			)
 		);
 	}
@@ -102,8 +121,7 @@ class QuickPostr {
 			return;
 		}
 
-		$format = get_post_format( $post->ID ) ?: 'status';
-		// Map WP format slugs to our taxonomy terms.
+		$format      = get_post_format( $post->ID ) ?: 'status';
 		$format_term = ( 'image' === $format ) ? 'photo' : 'status';
 
 		wp_set_object_terms( $post->ID, array( 'app', $format_term ), 'quickpostr_source' );
@@ -126,6 +144,27 @@ class QuickPostr {
 			return '';
 		}
 		return $title;
+	}
+
+	/**
+	 * Suppress the WordPress admin bar for non-administrator roles when
+	 * the hide_admin_bar setting is enabled.
+	 *
+	 * @param bool $show Whether to show the admin bar.
+	 * @return bool
+	 */
+	public function maybe_suppress_admin_bar( bool $show ): bool {
+		if ( ! $show ) {
+			return $show;
+		}
+		if ( current_user_can( 'administrator' ) ) {
+			return $show;
+		}
+		$settings = QuickPostr_Settings::get();
+		if ( ! empty( $settings['hide_admin_bar'] ) ) {
+			return false;
+		}
+		return $show;
 	}
 
 	/**

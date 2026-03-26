@@ -40,7 +40,8 @@ class QuickPostr_Settings {
 			'default_status'    => 'publish',
 			'default_category'  => 0,
 			'show_slug_preview' => true,
-			'app_url_slug'      => 'quickpostr',
+			'hide_admin_bar'    => true,
+			'front_end_edit'    => true,
 		);
 	}
 
@@ -119,9 +120,17 @@ class QuickPostr_Settings {
 		);
 
 		add_settings_field(
-			'app_url_slug',
-			esc_html__( 'App URL Slug', 'quickpostr' ),
-			array( $this, 'field_app_url_slug' ),
+			'hide_admin_bar',
+			esc_html__( 'Hide Admin Bar', 'quickpostr' ),
+			array( $this, 'field_hide_admin_bar' ),
+			'quickpostr',
+			'quickpostr_general'
+		);
+
+		add_settings_field(
+			'front_end_edit',
+			esc_html__( 'Front-End Post Management', 'quickpostr' ),
+			array( $this, 'field_front_end_edit' ),
 			'quickpostr',
 			'quickpostr_general'
 		);
@@ -150,30 +159,16 @@ class QuickPostr_Settings {
 			}
 		}
 
-		$old_slug = $defaults['app_url_slug'];
-		$saved    = get_option( self::OPTION_KEY, array() );
-		if ( isset( $saved['app_url_slug'] ) ) {
-			$old_slug = sanitize_title( $saved['app_url_slug'] );
-		}
-
-		$new_slug = sanitize_title( $input['app_url_slug'] ?? 'quickpostr' ) ?: 'quickpostr';
-
-		$sanitized = array(
+		return array(
 			'allowed_roles'     => $allowed_roles ?: $defaults['allowed_roles'],
 			'default_status'    => in_array( $input['default_status'] ?? '', array( 'publish', 'draft' ), true )
 								   ? $input['default_status']
 								   : $defaults['default_status'],
 			'default_category'  => absint( $input['default_category'] ?? 0 ),
 			'show_slug_preview' => ! empty( $input['show_slug_preview'] ),
-			'app_url_slug'      => $new_slug,
+			'hide_admin_bar'    => ! empty( $input['hide_admin_bar'] ),
+			'front_end_edit'    => ! empty( $input['front_end_edit'] ),
 		);
-
-		// Flush rewrite rules if the slug changed.
-		if ( $old_slug !== $new_slug ) {
-			add_action( 'shutdown', 'flush_rewrite_rules' );
-		}
-
-		return $sanitized;
 	}
 
 	// -------------------------------------------------------------------------
@@ -184,9 +179,9 @@ class QuickPostr_Settings {
 	 * Render the allowed_roles multicheck field.
 	 */
 	public function field_allowed_roles(): void {
-		$settings      = self::get();
-		$selected      = (array) $settings['allowed_roles'];
-		$all_roles     = wp_roles()->roles;
+		$settings  = self::get();
+		$selected  = (array) $settings['allowed_roles'];
+		$all_roles = wp_roles()->roles;
 
 		foreach ( $all_roles as $role_key => $role_data ) {
 			$checked = in_array( $role_key, $selected, true ) ? ' checked' : '';
@@ -230,11 +225,11 @@ class QuickPostr_Settings {
 		$settings = self::get();
 		wp_dropdown_categories(
 			array(
-				'name'             => self::OPTION_KEY . '[default_category]',
-				'selected'         => (int) $settings['default_category'],
-				'show_option_none' => esc_html__( '— Uncategorized —', 'quickpostr' ),
+				'name'              => self::OPTION_KEY . '[default_category]',
+				'selected'          => (int) $settings['default_category'],
+				'show_option_none'  => esc_html__( '— Uncategorized —', 'quickpostr' ),
 				'option_none_value' => 0,
-				'hide_empty'       => false,
+				'hide_empty'        => false,
 			)
 		);
 	}
@@ -253,17 +248,28 @@ class QuickPostr_Settings {
 	}
 
 	/**
-	 * Render the app_url_slug text field.
+	 * Render the hide_admin_bar checkbox field.
 	 */
-	public function field_app_url_slug(): void {
+	public function field_hide_admin_bar(): void {
 		$settings = self::get();
 		printf(
-			'<input type="text" name="%1$s[app_url_slug]" value="%2$s" class="regular-text">
-			<p class="description">%3$s <code>%4$s/%2$s</code></p>',
+			'<input type="checkbox" name="%1$s[hide_admin_bar]" value="1"%2$s> <span class="description">%3$s</span>',
 			esc_attr( self::OPTION_KEY ),
-			esc_attr( $settings['app_url_slug'] ),
-			esc_html__( 'The app will be available at', 'quickpostr' ),
-			esc_url( home_url() )
+			checked( $settings['hide_admin_bar'], true, false ),
+			esc_html__( 'Hide the WordPress admin bar for non-administrator roles.', 'quickpostr' )
+		);
+	}
+
+	/**
+	 * Render the front_end_edit checkbox field.
+	 */
+	public function field_front_end_edit(): void {
+		$settings = self::get();
+		printf(
+			'<input type="checkbox" name="%1$s[front_end_edit]" value="1"%2$s> <span class="description">%3$s</span>',
+			esc_attr( self::OPTION_KEY ),
+			checked( $settings['front_end_edit'], true, false ),
+			esc_html__( 'Allow post deletion from the front-end feed (Phase 9).', 'quickpostr' )
 		);
 	}
 
