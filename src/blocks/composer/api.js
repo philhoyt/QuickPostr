@@ -95,13 +95,45 @@ export function searchTags( search ) {
 }
 
 /**
- * Fetch all categories.
+ * Create a new tag.
  *
+ * @param {string} name
+ * @returns {Promise<{id: number, name: string}>}
+ */
+export function createTag( name ) {
+	return request( 'POST', '/wp/v2/tags', { name } );
+}
+
+/**
+ * Search categories by name.
+ *
+ *
+ * @param {string} search
  * @returns {Promise<Array>}
  */
-export function getCategories() {
-	const qs = new URLSearchParams( { per_page: '100', _fields: 'id,name,parent' } );
+export function searchCategories( search ) {
+	const qs = new URLSearchParams( { search, per_page: '10', _fields: 'id,name' } );
 	return request( 'GET', `/wp/v2/categories?${ qs }` );
+}
+
+/**
+ * Create a new category.
+ *
+ * @param {string} name
+ * @returns {Promise<{id: number, name: string}>}
+ */
+export function createCategory( name ) {
+	return request( 'POST', '/wp/v2/categories', { name } );
+}
+
+/**
+ * Fetch a single category by ID.
+ *
+ * @param {number} id
+ * @returns {Promise<{id: number, name: string}>}
+ */
+export function getCategory( id ) {
+	return request( 'GET', `/wp/v2/categories/${ id }?_fields=id,name` );
 }
 
 /**

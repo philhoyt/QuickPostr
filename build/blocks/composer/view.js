@@ -535,7 +535,7 @@ __webpack_require__.r(__webpack_exports__);
 const config = window.quickpostrConfig ?? {};
 
 /**
- * Tag + category input with typeahead.
+ * Tag + category input with typeahead and inline creation.
  *
  * Props:
  *   selectedTags       {number[]}  — array of tag IDs
@@ -549,45 +549,63 @@ function TagInput({
   onTagsChange,
   onCategoriesChange
 }) {
+  // Tags state
   const [tagInput, setTagInput] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
   const [tagSuggestions, setTagSuggestions] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
   const [tagNames, setTagNames] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({}); // id → name
-  const [categories, setCategories] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
-  const [open, setOpen] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
-  const searchTimer = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const [tagOpen, setTagOpen] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [creatingTag, setCreatingTag] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+
+  // Categories state
+  const [catInput, setCatInput] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
+  const [catSuggestions, setCatSuggestions] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+  const [catNames, setCatNames] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({}); // id → name
+  const [catOpen, setCatOpen] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [creatingCat, setCreatingCat] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const tagTimer = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const catTimer = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const wrapperRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
 
-  // Load all categories once.
+  // Resolve names for any pre-selected categories (e.g. default category).
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.getCategories)().then(setCategories).catch(() => {});
-  }, []);
+    selectedCategories.forEach(id => {
+      if (!catNames[id]) {
+        (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.getCategory)(id).then(cat => setCatNames(prev => ({
+          ...prev,
+          [cat.id]: cat.name
+        }))).catch(() => {});
+      }
+    });
+  }, [selectedCategories]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Close suggestions on outside click.
+  // Close dropdowns on outside click.
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     function handleClick(e) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setOpen(false);
+        setTagOpen(false);
+        setCatOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Debounced tag search.
+  // ── Tags ──────────────────────────────────────────────────────────────────
+
   const handleTagInput = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(e => {
     const value = e.target.value;
     setTagInput(value);
-    clearTimeout(searchTimer.current);
+    clearTimeout(tagTimer.current);
     if (value.trim().length < 2) {
       setTagSuggestions([]);
-      setOpen(false);
+      setTagOpen(false);
       return;
     }
-    searchTimer.current = setTimeout(async () => {
+    setTagOpen(true);
+    tagTimer.current = setTimeout(async () => {
       try {
         const results = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.searchTags)(value.trim());
         setTagSuggestions(results);
-        setOpen(results.length > 0);
       } catch (_) {}
     }, 250);
   }, []);
@@ -601,14 +619,93 @@ function TagInput({
     }
     setTagInput('');
     setTagSuggestions([]);
-    setOpen(false);
+    setTagOpen(false);
+  }
+  async function handleCreateTag(name) {
+    if (creatingTag) return;
+    setCreatingTag(true);
+    try {
+      const tag = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createTag)(name);
+      addTag(tag);
+    } catch (_) {} finally {
+      setCreatingTag(false);
+    }
+  }
+  function handleTagKeyDown(e) {
+    if (e.key !== 'Enter') return;
+    const trimmed = tagInput.trim();
+    if (!trimmed) return;
+    e.preventDefault();
+    const exact = tagSuggestions.find(t => t.name.toLowerCase() === trimmed.toLowerCase());
+    if (exact) {
+      addTag(exact);
+    } else if (trimmed.length >= 2) {
+      handleCreateTag(trimmed);
+    }
   }
   function removeTag(id) {
     onTagsChange(selectedTags.filter(t => t !== id));
   }
-  function toggleCategory(id) {
-    onCategoriesChange(selectedCategories.includes(id) ? selectedCategories.filter(c => c !== id) : [...selectedCategories, id]);
+
+  // ── Categories ────────────────────────────────────────────────────────────
+
+  const handleCatInput = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(e => {
+    const value = e.target.value;
+    setCatInput(value);
+    clearTimeout(catTimer.current);
+    if (value.trim().length < 2) {
+      setCatSuggestions([]);
+      setCatOpen(false);
+      return;
+    }
+    setCatOpen(true);
+    catTimer.current = setTimeout(async () => {
+      try {
+        const results = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.searchCategories)(value.trim());
+        setCatSuggestions(results);
+      } catch (_) {}
+    }, 250);
+  }, []);
+  function addCategory(cat) {
+    if (!selectedCategories.includes(cat.id)) {
+      setCatNames(prev => ({
+        ...prev,
+        [cat.id]: cat.name
+      }));
+      onCategoriesChange([...selectedCategories, cat.id]);
+    }
+    setCatInput('');
+    setCatSuggestions([]);
+    setCatOpen(false);
   }
+  async function handleCreateCategory(name) {
+    if (creatingCat) return;
+    setCreatingCat(true);
+    try {
+      const cat = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createCategory)(name);
+      addCategory(cat);
+    } catch (_) {} finally {
+      setCreatingCat(false);
+    }
+  }
+  function handleCatKeyDown(e) {
+    if (e.key !== 'Enter') return;
+    const trimmed = catInput.trim();
+    if (!trimmed) return;
+    e.preventDefault();
+    const exact = catSuggestions.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (exact) {
+      addCategory(exact);
+    } else if (trimmed.length >= 2) {
+      handleCreateCategory(trimmed);
+    }
+  }
+  function removeCategory(id) {
+    onCategoriesChange(selectedCategories.filter(c => c !== id));
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
     className: "qp-tag-input",
     ref: wrapperRef,
@@ -630,37 +727,71 @@ function TagInput({
           className: "qp-tag-input__search",
           value: tagInput,
           onChange: handleTagInput,
+          onKeyDown: handleTagKeyDown,
           placeholder: "Add tags\u2026",
           "aria-label": "Search tags",
           "aria-autocomplete": "list",
-          "aria-expanded": open
-        }), open && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("ul", {
+          "aria-expanded": tagOpen,
+          disabled: creatingTag
+        }), tagOpen && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("ul", {
           className: "qp-tag-input__suggestions",
           role: "listbox",
-          children: tagSuggestions.map(tag => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
+          children: [tagSuggestions.filter(tag => !selectedTags.includes(tag.id)).map(tag => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
             role: "option",
-            "aria-selected": selectedTags.includes(tag.id),
+            "aria-selected": false,
             className: "qp-tag-input__suggestion",
             onMouseDown: () => addTag(tag),
             children: tag.name
-          }, tag.id))
+          }, tag.id)), !tagSuggestions.some(t => t.name.toLowerCase() === tagInput.trim().toLowerCase()) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
+            role: "option",
+            "aria-selected": false,
+            className: "qp-tag-input__suggestion qp-tag-input__suggestion--create",
+            onMouseDown: () => handleCreateTag(tagInput.trim()),
+            children: creatingTag ? 'Creating…' : `Create "${tagInput.trim()}"`
+          })]
         })]
       })]
-    }), categories.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
-      className: "qp-tag-input__categories",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("span", {
-        className: "qp-tag-input__cat-label",
-        children: "Categories"
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
-        className: "qp-tag-input__cat-list",
-        children: categories.map(cat => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("label", {
-          className: "qp-tag-input__cat-item",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
-            type: "checkbox",
-            checked: selectedCategories.includes(cat.id),
-            onChange: () => toggleCategory(cat.id)
-          }), cat.name]
-        }, cat.id))
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
+      className: "qp-tag-input__tags",
+      children: [selectedCategories.map(id => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("span", {
+        className: "qp-tag-input__tag qp-tag-input__tag--cat",
+        children: [catNames[id] ?? `#${id}`, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("button", {
+          type: "button",
+          className: "qp-tag-input__tag-remove",
+          "aria-label": `Remove category ${catNames[id] ?? id}`,
+          onClick: () => removeCategory(id),
+          children: "\xD7"
+        })]
+      }, id)), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
+        className: "qp-tag-input__search-wrap",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
+          type: "text",
+          className: "qp-tag-input__search",
+          value: catInput,
+          onChange: handleCatInput,
+          onKeyDown: handleCatKeyDown,
+          placeholder: "Add categories\u2026",
+          "aria-label": "Search categories",
+          "aria-autocomplete": "list",
+          "aria-expanded": catOpen,
+          disabled: creatingCat
+        }), catOpen && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("ul", {
+          className: "qp-tag-input__suggestions",
+          role: "listbox",
+          children: [catSuggestions.filter(cat => !selectedCategories.includes(cat.id)).map(cat => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
+            role: "option",
+            "aria-selected": false,
+            className: "qp-tag-input__suggestion",
+            onMouseDown: () => addCategory(cat),
+            children: cat.name
+          }, cat.id)), !catSuggestions.some(c => c.name.toLowerCase() === catInput.trim().toLowerCase()) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
+            role: "option",
+            "aria-selected": false,
+            className: "qp-tag-input__suggestion qp-tag-input__suggestion--create",
+            onMouseDown: () => handleCreateCategory(catInput.trim()),
+            children: creatingCat ? 'Creating…' : `Create "${catInput.trim()}"`
+          })]
+        })]
       })]
     })]
   });
@@ -1081,12 +1212,15 @@ function TextComposer({
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createCategory: () => (/* binding */ createCategory),
 /* harmony export */   createPost: () => (/* binding */ createPost),
+/* harmony export */   createTag: () => (/* binding */ createTag),
 /* harmony export */   discardDraft: () => (/* binding */ discardDraft),
-/* harmony export */   getCategories: () => (/* binding */ getCategories),
+/* harmony export */   getCategory: () => (/* binding */ getCategory),
 /* harmony export */   getDraft: () => (/* binding */ getDraft),
 /* harmony export */   getMediaUrl: () => (/* binding */ getMediaUrl),
 /* harmony export */   getPost: () => (/* binding */ getPost),
+/* harmony export */   searchCategories: () => (/* binding */ searchCategories),
 /* harmony export */   searchTags: () => (/* binding */ searchTags),
 /* harmony export */   updatePost: () => (/* binding */ updatePost),
 /* harmony export */   uploadMedia: () => (/* binding */ uploadMedia)
@@ -1187,16 +1321,53 @@ function searchTags(search) {
 }
 
 /**
- * Fetch all categories.
+ * Create a new tag.
  *
+ * @param {string} name
+ * @returns {Promise<{id: number, name: string}>}
+ */
+function createTag(name) {
+  return request('POST', '/wp/v2/tags', {
+    name
+  });
+}
+
+/**
+ * Search categories by name.
+ *
+ *
+ * @param {string} search
  * @returns {Promise<Array>}
  */
-function getCategories() {
+function searchCategories(search) {
   const qs = new URLSearchParams({
-    per_page: '100',
-    _fields: 'id,name,parent'
+    search,
+    per_page: '10',
+    _fields: 'id,name'
   });
   return request('GET', `/wp/v2/categories?${qs}`);
+}
+
+/**
+ * Create a new category.
+ *
+ * @param {string} name
+ * @returns {Promise<{id: number, name: string}>}
+ */
+function createCategory(name) {
+  return request('POST', '/wp/v2/categories', {
+    name
+  });
+}
+
+/**
+ * Fetch a single category by ID.
+ *
+ * @param {number} id
+ * @returns {Promise<{id: number, name: string}>}
+ */
+function getCategory(id) {
+  return request('GET', `/wp/v2/categories/${id}?_fields=id,name`);
 }
 
 /**
