@@ -27,3 +27,4 @@ wp-content/
 
 # Project docs (internal planning only)
 /docs
+*.zip
