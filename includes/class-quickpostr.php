@@ -111,6 +111,7 @@ class QuickPostr {
 
 	/**
 	 * Assign quickpostr_source terms after a post is created via the REST API.
+	 * Also generates and sets the authoritative post title server-side.
 	 * Triggered only when the _quickpostr_post meta flag is present.
 	 *
 	 * @param \WP_Post         $post    The inserted post.
@@ -125,6 +126,54 @@ class QuickPostr {
 		$format_term = ( 'image' === $format ) ? 'photo' : 'status';
 
 		wp_set_object_terms( $post->ID, array( 'app', $format_term ), 'quickpostr_source' );
+
+		// Generate and set the authoritative title. The JS composer sends an
+		// empty title — PHP owns the canonical value.
+		$date  = wp_date( 'M j, Y', strtotime( $post->post_date ) );
+		$title = $this->generate_title( $post->post_content, $format_term, $date );
+
+		if ( $title ) {
+			wp_update_post(
+				array(
+					'ID'         => $post->ID,
+					'post_title' => $title,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Generate a title from post content.
+	 *
+	 * Mirrors the JS generateTitle() function in useAutoTitle.js — this is the
+	 * authoritative server-side version. The JS copy is preview-only.
+	 *
+	 * @param string $content Raw post content (may contain HTML).
+	 * @param string $format  'status' or 'photo'.
+	 * @param string $date    Human-readable date string used as a fallback label.
+	 * @return string
+	 */
+	public function generate_title( string $content, string $format, string $date = '' ): string {
+		$source = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $content ) ) );
+
+		if ( empty( $source ) ) {
+			$label = ( 'photo' === $format )
+				? __( 'Photo', 'quickpostr' )
+				: __( 'Status', 'quickpostr' );
+			return $label . ' — ' . ( $date ?: wp_date( 'M j, Y' ) );
+		}
+
+		if ( mb_strlen( $source ) <= 55 ) {
+			return $source;
+		}
+
+		$truncated  = mb_substr( $source, 0, 55 );
+		$last_space = mb_strrpos( $truncated, ' ' );
+
+		return ( $last_space > 30
+			? mb_substr( $truncated, 0, $last_space )
+			: $truncated
+		) . '…';
 	}
 
 	/**

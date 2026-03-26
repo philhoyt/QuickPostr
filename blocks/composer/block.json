@@ -1,0 +1,42 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "quickpostr/composer",
+	"version": "2.0.0",
+	"title": "QuickPostr Composer",
+	"category": "quickpostr",
+	"description": "Social-style post composer. Visible only to logged-in users with posting capability.",
+	"keywords": [ "composer", "post", "social" ],
+	"textdomain": "quickpostr",
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"color": {
+			"background": true,
+			"text": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": true
+		}
+	},
+	"attributes": {
+		"defaultMode": {
+			"type": "string",
+			"default": "status",
+			"enum": [ "status", "photo" ]
+		},
+		"showSlugPreview": {
+			"type": "boolean",
+			"default": true
+		},
+		"placeholderText": {
+			"type": "string",
+			"default": "What's on your mind?"
+		}
+	},
+	"editorScript": "file:./build/index.js",
+	"editorStyle": "file:./editor.css",
+	"style": "file:./style.css",
+	"render": "file:./render.php"
+}
