@@ -1,20 +1,24 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { generateTitle } from '../hooks/useAutoTitle.js';
 import { createPost } from '../hooks/useWpApi.js';
 import SlugPreview from './SlugPreview.jsx';
 import TagInput from './TagInput.jsx';
 
-const config = window.quickpostrConfig ?? {};
+const config       = window.quickpostrConfig ?? {};
+const DRAFT_KEY    = 'quickpostr_draft_text';
+const DRAFT_DELAY  = 500;
 
 /**
  * Text / status post composer.
  *
  * Props:
- *   creds     object  — auth credentials
- *   onSuccess ()=>void — called after a post is published
+ *   creds     object            — auth credentials
+ *   onSuccess (wpPost) => void  — called with the created post object
  */
 export default function TextComposer({ creds, onSuccess }) {
-  const [text,               setTextValue]       = useState('');
+  const [text,               setTextValue]         = useState(
+    () => localStorage.getItem(DRAFT_KEY) ?? ''
+  );
   const [selectedTags,       setSelectedTags]       = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(
     config.settings?.defaultCategory ? [config.settings.defaultCategory] : []
@@ -22,9 +26,23 @@ export default function TextComposer({ creds, onSuccess }) {
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
   const [flash,      setFlash]      = useState(false);
+  const draftTimer = useRef(null);
 
-  const title        = generateTitle('text', text, '');
+  const title         = generateTitle('text', text, '');
   const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+  // Auto-save draft to localStorage (debounced).
+  useEffect(() => {
+    clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      if (text) {
+        localStorage.setItem(DRAFT_KEY, text);
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    }, DRAFT_DELAY);
+    return () => clearTimeout(draftTimer.current);
+  }, [text]);
 
   const handleSubmit = useCallback(async () => {
     if (!text.trim() || submitting) return;
@@ -32,7 +50,7 @@ export default function TextComposer({ creds, onSuccess }) {
     setError(null);
 
     try {
-      await createPost({
+      const wpPost = await createPost({
         title,
         content:    `<p>${text.trim().replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>')}</p>`,
         status:     defaultStatus,
@@ -42,6 +60,7 @@ export default function TextComposer({ creds, onSuccess }) {
         meta:       { _quickpostr_post: '1' },
       }, creds);
 
+      localStorage.removeItem(DRAFT_KEY);
       setTextValue('');
       setSelectedTags([]);
       setSelectedCategories(
@@ -49,7 +68,7 @@ export default function TextComposer({ creds, onSuccess }) {
       );
       setFlash(true);
       setTimeout(() => setFlash(false), 2500);
-      onSuccess?.();
+      onSuccess?.(wpPost);
     } catch (err) {
       setError(err.message ?? 'Failed to publish. Please try again.');
     } finally {
@@ -57,7 +76,6 @@ export default function TextComposer({ creds, onSuccess }) {
     }
   }, [text, title, selectedTags, selectedCategories, creds, submitting, defaultStatus, onSuccess]);
 
-  // Allow Ctrl/Cmd+Enter to submit.
   function handleKeyDown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSubmit();
   }
@@ -73,6 +91,7 @@ export default function TextComposer({ creds, onSuccess }) {
         disabled={submitting}
         aria-label="Post content"
         rows={6}
+        autoFocus
       />
 
       <SlugPreview title={title} />
@@ -98,6 +117,7 @@ export default function TextComposer({ creds, onSuccess }) {
           onClick={handleSubmit}
           disabled={!text.trim() || submitting}
           aria-label={submitting ? 'Publishing…' : 'Publish post'}
+          type="button"
         >
           {submitting ? 'Publishing…' : defaultStatus === 'draft' ? 'Save Draft' : 'Post'}
         </button>

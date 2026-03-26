@@ -1,23 +1,27 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { generateTitle } from '../hooks/useAutoTitle.js';
 import { uploadMedia, createPost } from '../hooks/useWpApi.js';
 import SlugPreview from './SlugPreview.jsx';
 import TagInput from './TagInput.jsx';
 
-const config = window.quickpostrConfig ?? {};
+const config      = window.quickpostrConfig ?? {};
 const MAX_RETRIES = 3;
+const DRAFT_KEY   = 'quickpostr_draft_caption';
+const DRAFT_DELAY = 500;
 
 /**
  * Photo post composer — tap-to-upload, image preview, caption, publish.
  *
  * Props:
- *   creds     object  — auth credentials
- *   onSuccess ()=>void
+ *   creds     object            — auth credentials
+ *   onSuccess (wpPost) => void  — called with the created post object
  */
 export default function PhotoComposer({ creds, onSuccess }) {
   const [file,               setFile]               = useState(null);
   const [preview,            setPreview]            = useState(null);
-  const [caption,            setCaption]            = useState('');
+  const [caption,            setCaption]            = useState(
+    () => localStorage.getItem(DRAFT_KEY) ?? ''
+  );
   const [selectedTags,       setSelectedTags]       = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(
     config.settings?.defaultCategory ? [config.settings.defaultCategory] : []
@@ -26,7 +30,18 @@ export default function PhotoComposer({ creds, onSuccess }) {
   const [progress,    setProgress]    = useState(0); // 0-100
   const [error,       setError]       = useState(null);
   const [flash,       setFlash]       = useState(false);
-  const inputRef = useRef(null);
+  const inputRef   = useRef(null);
+  const draftTimer = useRef(null);
+
+  // Auto-save caption draft (debounced).
+  useEffect(() => {
+    clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      if (caption) localStorage.setItem(DRAFT_KEY, caption);
+      else         localStorage.removeItem(DRAFT_KEY);
+    }, DRAFT_DELAY);
+    return () => clearTimeout(draftTimer.current);
+  }, [caption]);
 
   const title         = generateTitle('photo', '', caption);
   const defaultStatus = config.settings?.defaultStatus ?? 'publish';
@@ -84,7 +99,7 @@ export default function PhotoComposer({ creds, onSuccess }) {
       const media = await uploadWithRetry(file);
       setProgress(75);
 
-      await createPost({
+      const wpPost = await createPost({
         title,
         content:        caption.trim()
                           ? `<p>${caption.trim()}</p>`
@@ -98,6 +113,7 @@ export default function PhotoComposer({ creds, onSuccess }) {
       }, creds);
 
       setProgress(100);
+      localStorage.removeItem(DRAFT_KEY);
 
       // Reset form.
       clearFile();
@@ -108,7 +124,7 @@ export default function PhotoComposer({ creds, onSuccess }) {
       setProgress(0);
       setFlash(true);
       setTimeout(() => setFlash(false), 2500);
-      onSuccess?.();
+      onSuccess?.(wpPost);
     } catch (err) {
       setError(err.message ?? 'Failed to publish. Tap to retry.');
     } finally {

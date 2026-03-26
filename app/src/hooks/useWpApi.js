@@ -103,14 +103,42 @@ export function getTags(creds) {
   return request('GET', '/wp/v2/tags?per_page=100', null, creds);
 }
 
+export function deletePost(id, creds) {
+  return request('DELETE', `/wp/v2/posts/${id}?force=false`, null, creds);
+}
+
 /**
  * Fetch the QuickPostr feed for the current user.
+ * Returns the posts array with a `_totalPages` property attached.
  *
  * @param {{ format?: 'status'|'photo', perPage?: number, page?: number }} params
  * @param {object} creds
  */
-export function getFeed({ format, perPage = 20, page = 1 } = {}, creds) {
+export async function getFeed({ format, perPage = 20, page = 1 } = {}, creds) {
+  const url    = (config.restUrl ?? '/wp-json/').replace(/\/$/, '') + `/quickpostr/v1/feed`;
   const params = new URLSearchParams({ per_page: perPage, page });
   if (format) params.set('format', format);
-  return request('GET', `/quickpostr/v1/feed?${params}`, null, creds);
+
+  const headers = {
+    ...authHeaders(creds),
+    'Content-Type': 'application/json',
+  };
+
+  const response = await fetch(`${url}?${params}`, {
+    method: 'GET',
+    headers,
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: response.statusText }));
+    throw Object.assign(new Error(err.message ?? 'Request failed'), {
+      status: response.status,
+      data: err,
+    });
+  }
+
+  const posts = await response.json();
+  posts._totalPages = parseInt(response.headers.get('X-WP-TotalPages') ?? '1', 10);
+  return posts;
 }

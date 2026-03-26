@@ -1,22 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
+import Feed from './Feed.jsx';
 
 /**
- * Root composer shell — segmented mode switcher + header with logout.
+ * Shape a raw WP REST post response into the feed card format.
+ */
+function shapePost(wpPost) {
+  return {
+    id:                 wpPost.id,
+    title:              wpPost.title?.raw ?? '',
+    content:            wpPost.content?.rendered ?? '',
+    date:               wpPost.date_gmt ?? wpPost.date,
+    status:             wpPost.status,
+    format:             wpPost.format ?? 'standard',
+    link:               wpPost.link,
+    featured_media_url: '',
+  };
+}
+
+/**
+ * Root composer shell — header, mode switcher, composers, and feed.
  *
  * Props:
- *   creds     object  — auth credentials passed down to composers
- *   user      object  — WP user object
+ *   creds     object  — auth credentials
+ *   user      object  — WP user object (name, avatar_urls)
  *   onLogout  ()=>void
  */
 export default function Composer({ creds, user, onLogout }) {
   const [mode, setMode] = useState('text');
+  const feedRef         = useRef(null);
+
+  function handleSuccess(wpPost) {
+    if (wpPost && feedRef.current) {
+      feedRef.current.prepend(shapePost(wpPost));
+    }
+  }
+
+  // Avatar: use WP-generated 48px URL, or fall back to initials.
+  const avatarUrl = user?.avatar_urls?.['48'];
+  const initials  = (user?.name ?? '?')
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
   return (
     <div className="composer">
       <header className="composer__header">
-        <span className="composer__brand">QuickPostr</span>
+        <div className="composer__identity">
+          <div className="composer__avatar" aria-hidden="true">
+            {avatarUrl
+              ? <img src={avatarUrl} alt="" width="32" height="32" />
+              : <span>{initials}</span>
+            }
+          </div>
+          <span className="composer__user-name">{user?.name}</span>
+        </div>
         <button
           className="composer__logout"
           onClick={onLogout}
@@ -42,12 +83,14 @@ export default function Composer({ creds, user, onLogout }) {
         ))}
       </div>
 
-      <main className="composer__body">
+      <div className="composer__body">
         {mode === 'text'
-          ? <TextComposer creds={creds} />
-          : <PhotoComposer creds={creds} />
+          ? <TextComposer creds={creds} onSuccess={handleSuccess} />
+          : <PhotoComposer creds={creds} onSuccess={handleSuccess} />
         }
-      </main>
+      </div>
+
+      <Feed ref={feedRef} creds={creds} />
     </div>
   );
 }
