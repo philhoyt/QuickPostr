@@ -458,6 +458,247 @@
 	margin-top: 0.75rem;
 }
 
+/* ── Edit mode ──────────────────────────────────────────────────────────── */
+.wp-block-quickpostr-composer .qp-composer__edit-bar {
+	padding: 0.4rem 1rem;
+	background: var(--qp-accent);
+	color: #000;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	text-align: center;
+}
+
+.wp-block-quickpostr-composer .qp-composer__cancel-edit {
+	background: none;
+	border: none;
+	color: var(--qp-text-muted);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	cursor: pointer;
+	padding: 0.25rem 0.5rem;
+	border-radius: var(--qp-radius-sm);
+	transition: color var(--qp-transition);
+}
+
+.wp-block-quickpostr-composer .qp-composer__cancel-edit:hover {
+	color: var(--qp-text);
+}
+
+.wp-block-quickpostr-composer .qp-composer__loading {
+	padding: 2rem 1rem;
+	text-align: center;
+	color: var(--qp-text-muted);
+	font-size: 0.875rem;
+}
+
+/* ── Draft resume banner ─────────────────────────────────────────────────── */
+.wp-block-quickpostr-composer .qp-draft-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.625rem 0.75rem;
+	margin-bottom: 0.75rem;
+	background: var(--qp-surface);
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-sm);
+	font-size: 0.8125rem;
+}
+
+.wp-block-quickpostr-composer .qp-draft-banner__actions {
+	display: flex;
+	gap: 0.5rem;
+	flex-shrink: 0;
+}
+
+.wp-block-quickpostr-composer .qp-draft-banner__resume {
+	padding: 0.25rem 0.625rem;
+	background: var(--qp-accent);
+	color: #000;
+	border: none;
+	border-radius: var(--qp-radius-pill);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.wp-block-quickpostr-composer .qp-draft-banner__discard {
+	padding: 0.25rem 0.625rem;
+	background: none;
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-pill);
+	color: var(--qp-text-muted);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	cursor: pointer;
+}
+
+/* ── Delete Post block ───────────────────────────────────────────────────── */
+.qp-delete-post {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.qp-delete-post__btn,
+.qp-delete-post__yes,
+.qp-delete-post__no {
+	background: none;
+	border: none;
+	font-family: inherit;
+	font-size: 0.8125rem;
+	cursor: pointer;
+	padding: 0.2rem 0.5rem;
+	border-radius: var(--wp--custom--border-radius--sm, 6px);
+	transition: color 150ms ease;
+}
+
+.qp-delete-post__btn {
+	color: var(--wp--preset--color--contrast-2, #666);
+}
+
+.qp-delete-post__btn:hover {
+	color: #dc2626;
+}
+
+.qp-delete-post__confirm {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
+}
+
+.qp-delete-post__yes {
+	color: #dc2626;
+	font-weight: 600;
+}
+
+.qp-delete-post__yes:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.qp-delete-post__no {
+	color: var(--wp--preset--color--contrast-2, #666);
+}
+
+/* ── Edit Post block ─────────────────────────────────────────────────────── */
+.qp-edit-post__link {
+	font-size: 0.8125rem;
+	color: var(--wp--preset--color--contrast-2, #666);
+	text-decoration: none;
+}
+
+.qp-edit-post__link:hover {
+	color: var(--wp--preset--color--accent, #0073aa);
+	text-decoration: underline;
+}
+
+/* ── Profile edit blocks ─────────────────────────────────────────────────── */
+.qp-profile-edit-name,
+.qp-profile-edit-bio {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.qp-profile-edit__value {
+	line-height: 1.5;
+}
+
+.qp-profile-edit__value[contenteditable="true"] {
+	outline: 2px solid var(--wp--preset--color--accent, #0073aa);
+	border-radius: 4px;
+	padding: 0.1em 0.2em;
+}
+
+.qp-profile-edit__controls {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.qp-profile-edit__edit-btn {
+	background: none;
+	border: 1px solid currentColor;
+	border-radius: var(--wp--custom--border-radius--pill, 999px);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	padding: 0.2rem 0.625rem;
+	cursor: pointer;
+	color: var(--wp--preset--color--contrast-2, #666);
+	transition: color 150ms ease;
+}
+
+.qp-profile-edit__edit-btn:hover:not(:disabled) {
+	color: var(--wp--preset--color--contrast, #111);
+}
+
+.qp-profile-edit__edit-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.qp-profile-edit__actions {
+	display: inline-flex;
+	gap: 0.375rem;
+}
+
+.qp-profile-edit__save-btn,
+.qp-profile-edit__cancel-btn {
+	background: none;
+	border: none;
+	font-family: inherit;
+	font-size: 0.8125rem;
+	padding: 0.2rem 0.625rem;
+	border-radius: var(--wp--custom--border-radius--pill, 999px);
+	cursor: pointer;
+}
+
+.qp-profile-edit__save-btn {
+	background: var(--wp--preset--color--accent, #0073aa);
+	color: #fff;
+	font-weight: 600;
+}
+
+.qp-profile-edit__save-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.qp-profile-edit__cancel-btn {
+	color: var(--wp--preset--color--contrast-2, #666);
+	border: 1px solid var(--wp--preset--color--contrast-3, #e0e0e0);
+}
+
+.qp-profile-edit__textarea {
+	width: 100%;
+	padding: 0.5rem 0.625rem;
+	border: 1px solid var(--wp--preset--color--contrast-3, #e0e0e0);
+	border-radius: 4px;
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	resize: vertical;
+	background: transparent;
+	color: inherit;
+	box-sizing: border-box;
+}
+
+.qp-profile-edit__status {
+	font-size: 0.8125rem;
+}
+
+.qp-profile-edit__status--ok {
+	color: #16a34a;
+}
+
+.qp-profile-edit__status--error {
+	color: #dc2626;
+}
+
 /* ── Error + flash ──────────────────────────────────────────────────────── */
 .wp-block-quickpostr-composer .qp-composer-error {
 	margin: 0.5rem 0 0;

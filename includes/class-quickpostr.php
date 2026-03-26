@@ -36,10 +36,14 @@ class QuickPostr {
 	}
 
 	/**
-	 * Register the Composer block.
+	 * Register all plugin blocks.
 	 */
 	public function register_block(): void {
 		register_block_type( QUICKPOSTR_PATH . 'blocks/composer/' );
+		register_block_type( QUICKPOSTR_PATH . 'blocks/delete-post/' );
+		register_block_type( QUICKPOSTR_PATH . 'blocks/edit-post/' );
+		register_block_type( QUICKPOSTR_PATH . 'blocks/profile-edit-name/' );
+		register_block_type( QUICKPOSTR_PATH . 'blocks/profile-edit-bio/' );
 	}
 
 	/**

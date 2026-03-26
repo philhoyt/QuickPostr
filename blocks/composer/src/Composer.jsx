@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
+import { getPost } from './api.js';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -10,11 +11,32 @@ const config = window.quickpostrConfig ?? {};
  * Renders the mode bar (Status / Photo) and the active composer.
  * On success, reloads the page so the theme's Query Loop reflects the new post.
  *
- * Photo mode is a placeholder until Phase 3.
+ * Edit mode: when ?qp-edit={id} is present in the URL, fetches the post,
+ * pre-fills the correct composer, and submits as an update instead of a create.
  */
 export default function Composer() {
 	const initialMode = config.blockAttrs?.defaultMode ?? 'status';
-	const [ mode, setMode ] = useState( initialMode );
+	const [ mode,        setMode ]        = useState( initialMode );
+	const [ editPost,    setEditPost ]    = useState( null );
+	const [ editLoading, setEditLoading ] = useState( false );
+
+	// Detect ?qp-edit param and load the post into the composer.
+	useEffect( () => {
+		const params = new URLSearchParams( window.location.search );
+		const editId = parseInt( params.get( 'qp-edit' ), 10 );
+		if ( ! editId ) {
+			return;
+		}
+
+		setEditLoading( true );
+		getPost( editId )
+			.then( ( post ) => {
+				setEditPost( post );
+				setMode( post.format === 'image' ? 'photo' : 'status' );
+			} )
+			.catch( () => {} )
+			.finally( () => setEditLoading( false ) );
+	}, [] );
 
 	const user      = config.currentUser ?? {};
 	const avatarUrl = user.avatarUrls?.[ '48' ];
@@ -26,7 +48,27 @@ export default function Composer() {
 		.toUpperCase();
 
 	function handleSuccess() {
+		// Remove qp-edit param before reloading so we return to normal compose mode.
+		const url = new URL( window.location.href );
+		url.searchParams.delete( 'qp-edit' );
+		window.history.replaceState( {}, '', url );
 		window.location.reload();
+	}
+
+	function handleCancelEdit() {
+		const url = new URL( window.location.href );
+		url.searchParams.delete( 'qp-edit' );
+		window.history.replaceState( {}, '', url );
+		setEditPost( null );
+		setMode( initialMode );
+	}
+
+	if ( editLoading ) {
+		return (
+			<div className="qp-composer">
+				<p className="qp-composer__loading">Loading…</p>
+			</div>
+		);
 	}
 
 	return (
@@ -41,29 +83,53 @@ export default function Composer() {
 					</div>
 					<span className="qp-composer__user-name">{ user.name }</span>
 				</div>
+
+				{ editPost && (
+					<button
+						type="button"
+						className="qp-composer__cancel-edit"
+						onClick={ handleCancelEdit }
+					>
+						&#x2715; Cancel edit
+					</button>
+				) }
 			</header>
 
-			<div className="qp-composer__mode-bar" role="tablist" aria-label="Post type">
-				{ [ 'status', 'photo' ].map( ( m ) => (
-					<button
-						key={ m }
-						role="tab"
-						aria-selected={ mode === m }
-						className={ `qp-composer__mode-btn${ mode === m ? ' qp-composer__mode-btn--active' : '' }` }
-						onClick={ () => setMode( m ) }
-						type="button"
-					>
-						{ m === 'status' ? 'Status' : 'Photo' }
-					</button>
-				) ) }
-			</div>
+			{ ! editPost && (
+				<div className="qp-composer__mode-bar" role="tablist" aria-label="Post type">
+					{ [ 'status', 'photo' ].map( ( m ) => (
+						<button
+							key={ m }
+							role="tab"
+							aria-selected={ mode === m }
+							className={ `qp-composer__mode-btn${ mode === m ? ' qp-composer__mode-btn--active' : '' }` }
+							onClick={ () => setMode( m ) }
+							type="button"
+						>
+							{ m === 'status' ? 'Status' : 'Photo' }
+						</button>
+					) ) }
+				</div>
+			) }
+
+			{ editPost && (
+				<div className="qp-composer__edit-bar" role="status">
+					Editing post
+				</div>
+			) }
 
 			<div className="qp-composer__body">
 				{ mode === 'status' && (
-					<TextComposer onSuccess={ handleSuccess } />
+					<TextComposer
+						onSuccess={ handleSuccess }
+						editPost={ editPost ?? undefined }
+					/>
 				) }
 				{ mode === 'photo' && (
-					<PhotoComposer onSuccess={ handleSuccess } />
+					<PhotoComposer
+						onSuccess={ handleSuccess }
+						editPost={ editPost ?? undefined }
+					/>
 				) }
 			</div>
 		</div>

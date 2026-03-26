@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { createPost, uploadMedia } from './api.js';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPost, updatePost, uploadMedia } from './api.js';
 import TagInput from './TagInput.jsx';
 
 const config      = window.quickpostrConfig ?? {};
@@ -12,8 +12,9 @@ const MAX_BYTES   = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
  *
  * Props:
  *   onSuccess (wpPost, mediaUrl) => void
+ *   editPost  {object|undefined} — when set, the composer is in edit mode
  */
-export default function PhotoComposer( { onSuccess } ) {
+export default function PhotoComposer( { onSuccess, editPost } ) {
 	const [ file,               setFile ]               = useState( null );
 	const [ preview,            setPreview ]            = useState( null );
 	const [ caption,            setCaption ]            = useState( '' );
@@ -28,6 +29,13 @@ export default function PhotoComposer( { onSuccess } ) {
 
 	const fileInputRef  = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+	// Pre-fill caption from editPost.
+	useEffect( () => {
+		if ( editPost ) {
+			setCaption( editPost.content?.raw ?? '' );
+		}
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	function pickFile( f ) {
 		if ( ! f ) return;
@@ -77,7 +85,9 @@ export default function PhotoComposer( { onSuccess } ) {
 	}
 
 	async function handleSubmit() {
-		if ( ! file || submitting ) return;
+		// In edit mode without a new file, we can still update the caption.
+		if ( ! editPost && ! file ) return;
+		if ( submitting ) return;
 
 		setSubmitting( true );
 		setError( null );
@@ -86,19 +96,44 @@ export default function PhotoComposer( { onSuccess } ) {
 		const previewUrl = preview;
 
 		try {
-			const media  = await uploadMedia( file );
-			const wpPost = await createPost( {
-				title:          '',
-				content:        caption,
-				status:         defaultStatus,
-				format:         'image',
-				featured_media: media.id,
-				tags:           selectedTags,
-				categories:     selectedCategories,
-				meta:           { _quickpostr_post: '1' },
-			} );
+			let wpPost;
 
-			onSuccess?.( wpPost, media.source_url );
+			if ( editPost && ! file ) {
+				// Edit mode: update caption only, keep existing featured media.
+				wpPost = await updatePost( editPost.id, {
+					content:    caption,
+					status:     defaultStatus,
+					tags:       selectedTags,
+					categories: selectedCategories,
+				} );
+				onSuccess?.( wpPost, '' );
+			} else {
+				// New file: upload media then create/update post.
+				const media = await uploadMedia( file );
+
+				if ( editPost ) {
+					wpPost = await updatePost( editPost.id, {
+						content:        caption,
+						status:         defaultStatus,
+						featured_media: media.id,
+						tags:           selectedTags,
+						categories:     selectedCategories,
+					} );
+				} else {
+					wpPost = await createPost( {
+						title:          '',
+						content:        caption,
+						status:         defaultStatus,
+						format:         'image',
+						featured_media: media.id,
+						tags:           selectedTags,
+						categories:     selectedCategories,
+						meta:           { _quickpostr_post: '1' },
+					} );
+				}
+
+				onSuccess?.( wpPost, media.source_url );
+			}
 
 			// Reset form.
 			if ( previewUrl ) URL.revokeObjectURL( previewUrl );
@@ -221,13 +256,13 @@ export default function PhotoComposer( { onSuccess } ) {
 				<button
 					className="qp-composer-submit"
 					onClick={ handleSubmit }
-					disabled={ ! file || submitting }
-					aria-label={ submitting ? 'Publishing…' : 'Publish photo' }
+					disabled={ ( ! editPost && ! file ) || submitting }
+					aria-label={ submitting ? 'Publishing…' : ( editPost ? 'Update' : 'Publish photo' ) }
 					type="button"
 				>
 					{ submitting
 						? 'Publishing…'
-						: defaultStatus === 'draft' ? 'Save Draft' : 'Post'
+						: editPost ? 'Update' : ( defaultStatus === 'draft' ? 'Save Draft' : 'Post' )
 					}
 				</button>
 			</footer>

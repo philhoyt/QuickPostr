@@ -103,3 +103,44 @@ export function getCategories() {
 	const qs = new URLSearchParams( { per_page: '100', _fields: 'id,name,parent' } );
 	return request( 'GET', `/wp/v2/categories?${ qs }` );
 }
+
+/**
+ * Fetch a single post in edit context (raw content).
+ *
+ * @param {number} id
+ * @returns {Promise<object>}
+ */
+export function getPost( id ) {
+	const qs = new URLSearchParams( { context: 'edit', _fields: 'id,title,content,format,status' } );
+	return request( 'GET', `/wp/v2/posts/${ id }?${ qs }` );
+}
+
+/**
+ * Update an existing post.
+ *
+ * @param {number} id
+ * @param {object} fields
+ * @returns {Promise<object>}
+ */
+export function updatePost( id, fields ) {
+	return request( 'PUT', `/wp/v2/posts/${ id }`, fields );
+}
+
+/**
+ * Return the current user's latest QuickPostr draft, or null if none.
+ *
+ * @returns {Promise<object|null>}
+ */
+export function getDraft() {
+	return request( 'GET', '/quickpostr/v1/draft' );
+}
+
+/**
+ * Permanently delete a draft post (move to trash).
+ *
+ * @param {number} id
+ * @returns {Promise<object>}
+ */
+export function discardDraft( id ) {
+	return request( 'DELETE', `/wp/v2/posts/${ id }` );
+}

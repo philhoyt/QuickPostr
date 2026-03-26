@@ -1,11 +1,14 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
-import { createPost } from './api.js';
+import { createPost, updatePost, getDraft, discardDraft } from './api.js';
 import SlugPreview from './SlugPreview.jsx';
 import TagInput from './TagInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
+
+/** Debounce delay (ms) for draft auto-save. */
+const DRAFT_SAVE_DELAY = 800;
 
 /**
  * Minimal rich-text toolbar button.
@@ -111,17 +114,23 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  *
  * Props:
  *   onSuccess (wpPost) => void
+ *   editPost  {object|undefined} — when set, the composer is in edit mode
  */
-export default function TextComposer( { onSuccess } ) {
+export default function TextComposer( { onSuccess, editPost } ) {
 	const editorRef = useRef( null );
+	const draftTimer = useRef( null );
+
 	const [ html,               setHtml ]               = useState( '' );
 	const [ selectedTags,       setSelectedTags ]       = useState( [] );
 	const [ selectedCategories, setSelectedCategories ] = useState(
 		config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : []
 	);
-	const [ submitting, setSubmitting ] = useState( false );
-	const [ error,      setError ]      = useState( null );
-	const [ flash,      setFlash ]      = useState( false );
+	const [ submitting,  setSubmitting ]  = useState( false );
+	const [ error,       setError ]       = useState( null );
+	const [ flash,       setFlash ]       = useState( false );
+	const [ draftId,     setDraftId ]     = useState( null );
+	const [ draftBanner, setDraftBanner ] = useState( false );
+	const [ draftPost,   setDraftPost ]   = useState( null );
 
 	const placeholder   = config.blockAttrs?.placeholderText ?? "What's on your mind?";
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
@@ -130,10 +139,86 @@ export default function TextComposer( { onSuccess } ) {
 	const plainText = editorRef.current?.innerText?.trim() ?? '';
 	const title     = generateTitle( 'text', plainText, '' );
 
-	// Autofocus on mount.
+	// On mount: pre-fill from editPost, OR check for an existing draft.
 	useEffect( () => {
+		if ( editPost ) {
+			const raw = editPost.content?.raw ?? '';
+			setDraftId( editPost.id );
+			setHtml( raw );
+			if ( editorRef.current ) {
+				editorRef.current.innerHTML = raw;
+			}
+			return;
+		}
+
+		getDraft()
+			.then( ( draft ) => {
+				if ( draft && draft.format !== 'image' ) {
+					setDraftPost( draft );
+					setDraftBanner( true );
+				}
+			} )
+			.catch( () => {} );
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Autofocus (only when not loading an edit post — avoids scroll jump).
+	useEffect( () => {
+		if ( ! editPost ) {
+			editorRef.current?.focus();
+		}
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	/** Schedule a debounced draft save whenever content changes. */
+	function scheduleDraftSave( content ) {
+		if ( editPost ) return; // Edit mode: no auto-save as draft.
+		clearTimeout( draftTimer.current );
+		draftTimer.current = setTimeout( async () => {
+			if ( ! content ) return;
+			try {
+				if ( draftId ) {
+					await updatePost( draftId, { content, status: 'draft' } );
+				} else {
+					const newDraft = await createPost( {
+						title:   '',
+						content,
+						status:  'draft',
+						format:  'status',
+						meta:    { _quickpostr_post: '1' },
+					} );
+					setDraftId( newDraft.id );
+				}
+			} catch ( _ ) {
+				// Silent: draft save failures don't interrupt the user.
+			}
+		}, DRAFT_SAVE_DELAY );
+	}
+
+	function handleHtmlChange( newHtml ) {
+		setHtml( newHtml );
+		scheduleDraftSave( newHtml );
+	}
+
+	function resumeDraft() {
+		const raw = draftPost?.content?.raw ?? '';
+		setDraftId( draftPost.id );
+		setHtml( raw );
+		if ( editorRef.current ) {
+			editorRef.current.innerHTML = raw;
+		}
+		setDraftBanner( false );
+		setDraftPost( null );
 		editorRef.current?.focus();
-	}, [] );
+	}
+
+	async function handleDiscardDraft() {
+		setDraftBanner( false );
+		if ( draftPost?.id ) {
+			try {
+				await discardDraft( draftPost.id );
+			} catch ( _ ) {}
+		}
+		setDraftPost( null );
+	}
 
 	const handleSubmit = useCallback( async () => {
 		const plain = editorRef.current?.innerText?.trim() ?? '';
@@ -143,23 +228,48 @@ export default function TextComposer( { onSuccess } ) {
 		setError( null );
 
 		try {
-			const wpPost = await createPost( {
-				title:      '',  // PHP generates the authoritative title server-side.
-				content:    html,
-				status:     defaultStatus,
-				format:     'status',
-				tags:       selectedTags,
-				categories: selectedCategories,
-				meta:       { _quickpostr_post: '1' },
-			} );
+			let wpPost;
+
+			if ( editPost ) {
+				// Edit mode: update the existing post.
+				wpPost = await updatePost( editPost.id, {
+					content:    html,
+					status:     defaultStatus,
+					tags:       selectedTags,
+					categories: selectedCategories,
+				} );
+			} else if ( draftId ) {
+				// Publish the auto-saved draft.
+				wpPost = await updatePost( draftId, {
+					title:      '',
+					content:    html,
+					status:     defaultStatus,
+					format:     'status',
+					tags:       selectedTags,
+					categories: selectedCategories,
+				} );
+			} else {
+				// No draft: create a new post.
+				wpPost = await createPost( {
+					title:      '',
+					content:    html,
+					status:     defaultStatus,
+					format:     'status',
+					tags:       selectedTags,
+					categories: selectedCategories,
+					meta:       { _quickpostr_post: '1' },
+				} );
+			}
 
 			onSuccess?.( wpPost );
 
 			// Reset.
+			clearTimeout( draftTimer.current );
 			if ( editorRef.current ) {
 				editorRef.current.innerHTML = '';
 			}
 			setHtml( '' );
+			setDraftId( null );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : []
@@ -171,7 +281,7 @@ export default function TextComposer( { onSuccess } ) {
 		} finally {
 			setSubmitting( false );
 		}
-	}, [ html, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess ] );
+	}, [ html, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess, editPost, draftId ] );
 
 	function handleKeyDown( e ) {
 		if ( ( e.ctrlKey || e.metaKey ) && e.key === 'Enter' ) {
@@ -180,14 +290,29 @@ export default function TextComposer( { onSuccess } ) {
 	}
 
 	const hasContent = ( editorRef.current?.innerText?.trim() ?? '' ).length > 0;
+	const submitLabel = editPost ? 'Update' : ( defaultStatus === 'draft' ? 'Save Draft' : 'Post' );
 
 	return (
 		<div className="qp-text-composer" onKeyDown={ handleKeyDown }>
+			{ draftBanner && (
+				<div className="qp-draft-banner" role="status">
+					<span>Resume your saved draft?</span>
+					<div className="qp-draft-banner__actions">
+						<button type="button" className="qp-draft-banner__resume" onClick={ resumeDraft }>
+							Resume
+						</button>
+						<button type="button" className="qp-draft-banner__discard" onClick={ handleDiscardDraft }>
+							Discard
+						</button>
+					</div>
+				</div>
+			) }
+
 			<RichEditor
 				placeholder={ placeholder }
 				disabled={ submitting }
 				editorRef={ editorRef }
-				onChange={ setHtml }
+				onChange={ handleHtmlChange }
 			/>
 
 			<SlugPreview title={ title } />
@@ -211,19 +336,16 @@ export default function TextComposer( { onSuccess } ) {
 					className="qp-composer-submit"
 					onClick={ handleSubmit }
 					disabled={ ! hasContent || submitting }
-					aria-label={ submitting ? 'Publishing…' : 'Publish post' }
+					aria-label={ submitting ? 'Publishing…' : submitLabel }
 					type="button"
 				>
-					{ submitting
-						? 'Publishing…'
-						: defaultStatus === 'draft' ? 'Save Draft' : 'Post'
-					}
+					{ submitting ? 'Publishing…' : submitLabel }
 				</button>
 			</footer>
 
 			{ flash && (
 				<div className="qp-composer-flash" role="status" aria-live="assertive">
-					Posted!
+					{ editPost ? 'Updated!' : 'Posted!' }
 				</div>
 			) }
 		</div>

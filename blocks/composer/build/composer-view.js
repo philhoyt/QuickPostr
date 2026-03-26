@@ -16,8 +16,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TextComposer.jsx */ "./blocks/composer/src/TextComposer.jsx");
 /* harmony import */ var _PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./PhotoComposer.jsx */ "./blocks/composer/src/PhotoComposer.jsx");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./api.js */ "./blocks/composer/src/api.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__);
+
 
 
 
@@ -30,44 +32,86 @@ const config = window.quickpostrConfig ?? {};
  * Renders the mode bar (Status / Photo) and the active composer.
  * On success, reloads the page so the theme's Query Loop reflects the new post.
  *
- * Photo mode is a placeholder until Phase 3.
+ * Edit mode: when ?qp-edit={id} is present in the URL, fetches the post,
+ * pre-fills the correct composer, and submits as an update instead of a create.
  */
 function Composer() {
   const initialMode = config.blockAttrs?.defaultMode ?? 'status';
   const [mode, setMode] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(initialMode);
+  const [editPost, setEditPost] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [editLoading, setEditLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+
+  // Detect ?qp-edit param and load the post into the composer.
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const params = new URLSearchParams(window.location.search);
+    const editId = parseInt(params.get('qp-edit'), 10);
+    if (!editId) {
+      return;
+    }
+    setEditLoading(true);
+    (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.getPost)(editId).then(post => {
+      setEditPost(post);
+      setMode(post.format === 'image' ? 'photo' : 'status');
+    }).catch(() => {}).finally(() => setEditLoading(false));
+  }, []);
   const user = config.currentUser ?? {};
   const avatarUrl = user.avatarUrls?.['48'];
   const initials = (user.name ?? '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
   function handleSuccess() {
+    // Remove qp-edit param before reloading so we return to normal compose mode.
+    const url = new URL(window.location.href);
+    url.searchParams.delete('qp-edit');
+    window.history.replaceState({}, '', url);
     window.location.reload();
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+  function handleCancelEdit() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('qp-edit');
+    window.history.replaceState({}, '', url);
+    setEditPost(null);
+    setMode(initialMode);
+  }
+  if (editLoading) {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+      className: "qp-composer",
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+        className: "qp-composer__loading",
+        children: "Loading\u2026"
+      })
+    });
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
     className: "qp-composer",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("header", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("header", {
       className: "qp-composer__header",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
         className: "qp-composer__identity",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
           className: "qp-composer__avatar",
           "aria-hidden": "true",
-          children: avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("img", {
+          children: avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("img", {
             src: avatarUrl,
             alt: "",
             width: "32",
             height: "32"
-          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
             children: initials
           })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
           className: "qp-composer__user-name",
           children: user.name
         })]
-      })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+      }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
+        type: "button",
+        className: "qp-composer__cancel-edit",
+        onClick: handleCancelEdit,
+        children: "\u2715 Cancel edit"
+      })]
+    }), !editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
       className: "qp-composer__mode-bar",
       role: "tablist",
       "aria-label": "Post type",
-      children: ['status', 'photo'].map(m => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+      children: ['status', 'photo'].map(m => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
         role: "tab",
         "aria-selected": mode === m,
         className: `qp-composer__mode-btn${mode === m ? ' qp-composer__mode-btn--active' : ''}`,
@@ -75,12 +119,18 @@ function Composer() {
         type: "button",
         children: m === 'status' ? 'Status' : 'Photo'
       }, m))
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+    }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+      className: "qp-composer__edit-bar",
+      role: "status",
+      children: "Editing post"
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
       className: "qp-composer__body",
-      children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {
-        onSuccess: handleSuccess
-      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
-        onSuccess: handleSuccess
+      children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {
+        onSuccess: handleSuccess,
+        editPost: editPost ?? undefined
+      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
+        onSuccess: handleSuccess,
+        editPost: editPost ?? undefined
       })]
     })]
   });
@@ -118,9 +168,11 @@ const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
  *
  * Props:
  *   onSuccess (wpPost, mediaUrl) => void
+ *   editPost  {object|undefined} — when set, the composer is in edit mode
  */
 function PhotoComposer({
-  onSuccess
+  onSuccess,
+  editPost
 }) {
   const [file, setFile] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [preview, setPreview] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
@@ -133,6 +185,14 @@ function PhotoComposer({
   const [flash, setFlash] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const fileInputRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+  // Pre-fill caption from editPost.
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (editPost) {
+      setCaption(editPost.content?.raw ?? '');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   function pickFile(f) {
     if (!f) return;
     if (!f.type.startsWith('image/')) {
@@ -172,27 +232,52 @@ function PhotoComposer({
     }
   }
   async function handleSubmit() {
-    if (!file || submitting) return;
+    // In edit mode without a new file, we can still update the caption.
+    if (!editPost && !file) return;
+    if (submitting) return;
     setSubmitting(true);
     setError(null);
 
     // Capture preview URL before async state changes.
     const previewUrl = preview;
     try {
-      const media = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.uploadMedia)(file);
-      const wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createPost)({
-        title: '',
-        content: caption,
-        status: defaultStatus,
-        format: 'image',
-        featured_media: media.id,
-        tags: selectedTags,
-        categories: selectedCategories,
-        meta: {
-          _quickpostr_post: '1'
+      let wpPost;
+      if (editPost && !file) {
+        // Edit mode: update caption only, keep existing featured media.
+        wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.updatePost)(editPost.id, {
+          content: caption,
+          status: defaultStatus,
+          tags: selectedTags,
+          categories: selectedCategories
+        });
+        onSuccess?.(wpPost, '');
+      } else {
+        // New file: upload media then create/update post.
+        const media = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.uploadMedia)(file);
+        if (editPost) {
+          wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.updatePost)(editPost.id, {
+            content: caption,
+            status: defaultStatus,
+            featured_media: media.id,
+            tags: selectedTags,
+            categories: selectedCategories
+          });
+        } else {
+          wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createPost)({
+            title: '',
+            content: caption,
+            status: defaultStatus,
+            format: 'image',
+            featured_media: media.id,
+            tags: selectedTags,
+            categories: selectedCategories,
+            meta: {
+              _quickpostr_post: '1'
+            }
+          });
         }
-      });
-      onSuccess?.(wpPost, media.source_url);
+        onSuccess?.(wpPost, media.source_url);
+      }
 
       // Reset form.
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -304,10 +389,10 @@ function PhotoComposer({
       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
         className: "qp-composer-submit",
         onClick: handleSubmit,
-        disabled: !file || submitting,
-        "aria-label": submitting ? 'Publishing…' : 'Publish photo',
+        disabled: !editPost && !file || submitting,
+        "aria-label": submitting ? 'Publishing…' : editPost ? 'Update' : 'Publish photo',
         type: "button",
-        children: submitting ? 'Publishing…' : defaultStatus === 'draft' ? 'Save Draft' : 'Post'
+        children: submitting ? 'Publishing…' : editPost ? 'Update' : defaultStatus === 'draft' ? 'Save Draft' : 'Post'
       })
     }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
       className: "qp-composer-flash",
@@ -552,6 +637,9 @@ __webpack_require__.r(__webpack_exports__);
 
 const config = window.quickpostrConfig ?? {};
 
+/** Debounce delay (ms) for draft auto-save. */
+const DRAFT_SAVE_DELAY = 800;
+
 /**
  * Minimal rich-text toolbar button.
  */
@@ -669,17 +757,23 @@ function RichEditor({
  *
  * Props:
  *   onSuccess (wpPost) => void
+ *   editPost  {object|undefined} — when set, the composer is in edit mode
  */
 function TextComposer({
-  onSuccess
+  onSuccess,
+  editPost
 }) {
   const editorRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const draftTimer = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const [html, setHtml] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
   const [selectedTags, setSelectedTags] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
   const [selectedCategories, setSelectedCategories] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
   const [submitting, setSubmitting] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [flash, setFlash] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [draftId, setDraftId] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [draftBanner, setDraftBanner] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [draftPost, setDraftPost] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const placeholder = config.blockAttrs?.placeholderText ?? "What's on your mind?";
   const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
@@ -687,35 +781,133 @@ function TextComposer({
   const plainText = editorRef.current?.innerText?.trim() ?? '';
   const title = (0,_useAutoTitle_js__WEBPACK_IMPORTED_MODULE_2__.generateTitle)('text', plainText, '');
 
-  // Autofocus on mount.
+  // On mount: pre-fill from editPost, OR check for an existing draft.
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (editPost) {
+      const raw = editPost.content?.raw ?? '';
+      setDraftId(editPost.id);
+      setHtml(raw);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = raw;
+      }
+      return;
+    }
+    (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.getDraft)().then(draft => {
+      if (draft && draft.format !== 'image') {
+        setDraftPost(draft);
+        setDraftBanner(true);
+      }
+    }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Autofocus (only when not loading an edit post — avoids scroll jump).
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!editPost) {
+      editorRef.current?.focus();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Schedule a debounced draft save whenever content changes. */
+  function scheduleDraftSave(content) {
+    if (editPost) return; // Edit mode: no auto-save as draft.
+    clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(async () => {
+      if (!content) return;
+      try {
+        if (draftId) {
+          await (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.updatePost)(draftId, {
+            content,
+            status: 'draft'
+          });
+        } else {
+          const newDraft = await (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.createPost)({
+            title: '',
+            content,
+            status: 'draft',
+            format: 'status',
+            meta: {
+              _quickpostr_post: '1'
+            }
+          });
+          setDraftId(newDraft.id);
+        }
+      } catch (_) {
+        // Silent: draft save failures don't interrupt the user.
+      }
+    }, DRAFT_SAVE_DELAY);
+  }
+  function handleHtmlChange(newHtml) {
+    setHtml(newHtml);
+    scheduleDraftSave(newHtml);
+  }
+  function resumeDraft() {
+    const raw = draftPost?.content?.raw ?? '';
+    setDraftId(draftPost.id);
+    setHtml(raw);
+    if (editorRef.current) {
+      editorRef.current.innerHTML = raw;
+    }
+    setDraftBanner(false);
+    setDraftPost(null);
     editorRef.current?.focus();
-  }, []);
+  }
+  async function handleDiscardDraft() {
+    setDraftBanner(false);
+    if (draftPost?.id) {
+      try {
+        await (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.discardDraft)(draftPost.id);
+      } catch (_) {}
+    }
+    setDraftPost(null);
+  }
   const handleSubmit = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(async () => {
     const plain = editorRef.current?.innerText?.trim() ?? '';
     if (!plain || submitting) return;
     setSubmitting(true);
     setError(null);
     try {
-      const wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.createPost)({
-        title: '',
-        // PHP generates the authoritative title server-side.
-        content: html,
-        status: defaultStatus,
-        format: 'status',
-        tags: selectedTags,
-        categories: selectedCategories,
-        meta: {
-          _quickpostr_post: '1'
-        }
-      });
+      let wpPost;
+      if (editPost) {
+        // Edit mode: update the existing post.
+        wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.updatePost)(editPost.id, {
+          content: html,
+          status: defaultStatus,
+          tags: selectedTags,
+          categories: selectedCategories
+        });
+      } else if (draftId) {
+        // Publish the auto-saved draft.
+        wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.updatePost)(draftId, {
+          title: '',
+          content: html,
+          status: defaultStatus,
+          format: 'status',
+          tags: selectedTags,
+          categories: selectedCategories
+        });
+      } else {
+        // No draft: create a new post.
+        wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.createPost)({
+          title: '',
+          content: html,
+          status: defaultStatus,
+          format: 'status',
+          tags: selectedTags,
+          categories: selectedCategories,
+          meta: {
+            _quickpostr_post: '1'
+          }
+        });
+      }
       onSuccess?.(wpPost);
 
       // Reset.
+      clearTimeout(draftTimer.current);
       if (editorRef.current) {
         editorRef.current.innerHTML = '';
       }
       setHtml('');
+      setDraftId(null);
       setSelectedTags([]);
       setSelectedCategories(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
       setFlash(true);
@@ -725,21 +917,41 @@ function TextComposer({
     } finally {
       setSubmitting(false);
     }
-  }, [html, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess]);
+  }, [html, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess, editPost, draftId]);
   function handleKeyDown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       handleSubmit();
     }
   }
   const hasContent = (editorRef.current?.innerText?.trim() ?? '').length > 0;
+  const submitLabel = editPost ? 'Update' : defaultStatus === 'draft' ? 'Save Draft' : 'Post';
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
     className: "qp-text-composer",
     onKeyDown: handleKeyDown,
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(RichEditor, {
+    children: [draftBanner && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      className: "qp-draft-banner",
+      role: "status",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        children: "Resume your saved draft?"
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        className: "qp-draft-banner__actions",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+          type: "button",
+          className: "qp-draft-banner__resume",
+          onClick: resumeDraft,
+          children: "Resume"
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+          type: "button",
+          className: "qp-draft-banner__discard",
+          onClick: handleDiscardDraft,
+          children: "Discard"
+        })]
+      })]
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(RichEditor, {
       placeholder: placeholder,
       disabled: submitting,
       editorRef: editorRef,
-      onChange: setHtml
+      onChange: handleHtmlChange
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_SlugPreview_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
       title: title
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_TagInput_jsx__WEBPACK_IMPORTED_MODULE_5__["default"], {
@@ -761,15 +973,15 @@ function TextComposer({
         className: "qp-composer-submit",
         onClick: handleSubmit,
         disabled: !hasContent || submitting,
-        "aria-label": submitting ? 'Publishing…' : 'Publish post',
+        "aria-label": submitting ? 'Publishing…' : submitLabel,
         type: "button",
-        children: submitting ? 'Publishing…' : defaultStatus === 'draft' ? 'Save Draft' : 'Post'
+        children: submitting ? 'Publishing…' : submitLabel
       })]
     }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
       className: "qp-composer-flash",
       role: "status",
       "aria-live": "assertive",
-      children: "Posted!"
+      children: editPost ? 'Updated!' : 'Posted!'
     })]
   });
 }
@@ -785,8 +997,12 @@ function TextComposer({
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   createPost: () => (/* binding */ createPost),
+/* harmony export */   discardDraft: () => (/* binding */ discardDraft),
 /* harmony export */   getCategories: () => (/* binding */ getCategories),
+/* harmony export */   getDraft: () => (/* binding */ getDraft),
+/* harmony export */   getPost: () => (/* binding */ getPost),
 /* harmony export */   searchTags: () => (/* binding */ searchTags),
+/* harmony export */   updatePost: () => (/* binding */ updatePost),
 /* harmony export */   uploadMedia: () => (/* binding */ uploadMedia)
 /* harmony export */ });
 /**
@@ -895,6 +1111,50 @@ function getCategories() {
     _fields: 'id,name,parent'
   });
   return request('GET', `/wp/v2/categories?${qs}`);
+}
+
+/**
+ * Fetch a single post in edit context (raw content).
+ *
+ * @param {number} id
+ * @returns {Promise<object>}
+ */
+function getPost(id) {
+  const qs = new URLSearchParams({
+    context: 'edit',
+    _fields: 'id,title,content,format,status'
+  });
+  return request('GET', `/wp/v2/posts/${id}?${qs}`);
+}
+
+/**
+ * Update an existing post.
+ *
+ * @param {number} id
+ * @param {object} fields
+ * @returns {Promise<object>}
+ */
+function updatePost(id, fields) {
+  return request('PUT', `/wp/v2/posts/${id}`, fields);
+}
+
+/**
+ * Return the current user's latest QuickPostr draft, or null if none.
+ *
+ * @returns {Promise<object|null>}
+ */
+function getDraft() {
+  return request('GET', '/quickpostr/v1/draft');
+}
+
+/**
+ * Permanently delete a draft post (move to trash).
+ *
+ * @param {number} id
+ * @returns {Promise<object>}
+ */
+function discardDraft(id) {
+  return request('DELETE', `/wp/v2/posts/${id}`);
 }
 
 /***/ },
