@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName -- short name intentional; class is QuickPostr_Settings.
 /**
  * Admin settings page for QuickPostr.
  *
@@ -160,10 +160,10 @@ class QuickPostr_Settings {
 		}
 
 		return array(
-			'allowed_roles'     => $allowed_roles ?: $defaults['allowed_roles'],
+			'allowed_roles'     => $allowed_roles ? $allowed_roles : $defaults['allowed_roles'],
 			'default_status'    => in_array( $input['default_status'] ?? '', array( 'publish', 'draft' ), true )
-								   ? $input['default_status']
-								   : $defaults['default_status'],
+									? $input['default_status']
+									: $defaults['default_status'],
 			'default_category'  => absint( $input['default_category'] ?? 0 ),
 			'show_slug_preview' => ! empty( $input['show_slug_preview'] ),
 			'hide_admin_bar'    => ! empty( $input['hide_admin_bar'] ),

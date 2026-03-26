@@ -86,7 +86,7 @@ class QuickPostr {
 				'single'        => true,
 				'default'       => '',
 				'show_in_rest'  => true,
-				'auth_callback' => function() {
+				'auth_callback' => function () {
 					return current_user_can( 'edit_posts' );
 				},
 			)
@@ -137,12 +137,13 @@ class QuickPostr {
 	 * @param \WP_Post         $post    The inserted post.
 	 * @param \WP_REST_Request $request The REST request.
 	 */
-	public function assign_source_terms( \WP_Post $post, \WP_REST_Request $request ): void {
+	public function assign_source_terms( \WP_Post $post, \WP_REST_Request $request ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		if ( ! get_post_meta( $post->ID, '_quickpostr_post', true ) ) {
 			return;
 		}
 
-		$format      = get_post_format( $post->ID ) ?: 'status';
+		$raw_format  = get_post_format( $post->ID );
+		$format      = $raw_format ? $raw_format : 'status';
 		$format_term = ( 'image' === $format ) ? 'photo' : 'status';
 
 		wp_set_object_terms( $post->ID, array( 'app', $format_term ), 'quickpostr_source' );
@@ -180,7 +181,7 @@ class QuickPostr {
 			$label = ( 'photo' === $format )
 				? __( 'Photo', 'quickpostr' )
 				: __( 'Status', 'quickpostr' );
-			return $label . ' — ' . ( $date ?: wp_date( 'M j, Y' ) );
+			return $label . ' — ' . ( $date ? $date : wp_date( 'M j, Y' ) );
 		}
 
 		if ( mb_strlen( $source ) <= 55 ) {
@@ -226,7 +227,7 @@ class QuickPostr {
 		if ( ! $show ) {
 			return $show;
 		}
-		if ( current_user_can( 'administrator' ) ) {
+		if ( current_user_can( 'manage_options' ) ) {
 			return $show;
 		}
 		$settings = QuickPostr_Settings::get();

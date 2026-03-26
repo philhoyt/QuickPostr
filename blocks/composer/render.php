@@ -21,10 +21,10 @@ if ( ! is_user_logged_in() || ! current_user_can( 'edit_posts' ) ) {
 }
 
 // Optionally enforce allowed_roles from plugin settings.
-$settings     = QuickPostr_Settings::get();
-$allowed      = (array) $settings['allowed_roles'];
-$current_user = wp_get_current_user();
-$user_roles   = (array) $current_user->roles;
+$settings        = QuickPostr_Settings::get();
+$allowed         = (array) $settings['allowed_roles'];
+$quickpostr_user = wp_get_current_user();
+$user_roles      = (array) $quickpostr_user->roles;
 
 if ( ! array_intersect( $user_roles, $allowed ) ) {
 	return;
@@ -35,7 +35,10 @@ if ( ! array_intersect( $user_roles, $allowed ) ) {
 $asset_file = QUICKPOSTR_PATH . 'blocks/composer/build/composer-view.asset.php';
 $asset      = file_exists( $asset_file )
 	? require $asset_file
-	: array( 'dependencies' => array(), 'version' => QUICKPOSTR_VERSION );
+	: array(
+		'dependencies' => array(),
+		'version'      => QUICKPOSTR_VERSION,
+	);
 
 // Enqueue the front-end composer bundle.
 wp_enqueue_script(
@@ -54,30 +57,25 @@ wp_enqueue_style(
 );
 
 // Build the config object passed to the React app.
-$avatar_urls = rest_get_avatar_urls( $current_user->user_email );
+$avatar_urls  = rest_get_avatar_urls( $quickpostr_user->user_email );
 $actor_handle = '';
-if ( function_exists( 'get_user_meta' ) ) {
-	// ActivityPub stores the actor identifier as user meta; key may change —
-	// check the ActivityPub plugin source before relying on a specific key.
-	$actor_handle = '';
-}
 
 $config = array(
-	'restUrl'     => rest_url(),
-	'nonce'       => wp_create_nonce( 'wp_rest' ),
-	'currentUser' => array(
-		'id'          => $current_user->ID,
-		'name'        => $current_user->display_name,
+	'restUrl'       => rest_url(),
+	'nonce'         => wp_create_nonce( 'wp_rest' ),
+	'currentUser'   => array(
+		'id'          => $quickpostr_user->ID,
+		'name'        => $quickpostr_user->display_name,
 		'avatarUrls'  => $avatar_urls,
 		'actorHandle' => $actor_handle,
 	),
-	'settings'    => array(
+	'settings'      => array(
 		'defaultStatus'   => $settings['default_status'],
 		'defaultCategory' => (int) $settings['default_category'],
 		'showSlugPreview' => (bool) $settings['show_slug_preview'],
 		'frontEndEdit'    => (bool) $settings['front_end_edit'],
 	),
-	'blockAttrs'  => array(
+	'blockAttrs'    => array(
 		'defaultMode'     => $attributes['defaultMode'] ?? 'status',
 		'showSlugPreview' => $attributes['showSlugPreview'] ?? true,
 		'placeholderText' => $attributes['placeholderText'] ?? __( "What's on your mind?", 'quickpostr' ),
