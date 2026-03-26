@@ -262,8 +262,8 @@ class QuickPostr {
 	}
 
 	/**
-	 * Suppress the WordPress admin bar for non-administrator roles when
-	 * the hide_admin_bar setting is enabled.
+	 * Suppress the WordPress admin bar based on the hide_admin_bar and
+	 * hide_admin_bar_admins settings.
 	 *
 	 * @param bool $show Whether to show the admin bar.
 	 * @return bool
@@ -272,10 +272,10 @@ class QuickPostr {
 		if ( ! $show ) {
 			return $show;
 		}
-		if ( current_user_can( 'manage_options' ) ) {
-			return $show;
-		}
 		$settings = QuickPostr_Settings::get();
+		if ( current_user_can( 'manage_options' ) ) {
+			return ! empty( $settings['hide_admin_bar_admins'] ) ? false : $show;
+		}
 		if ( ! empty( $settings['hide_admin_bar'] ) ) {
 			return false;
 		}

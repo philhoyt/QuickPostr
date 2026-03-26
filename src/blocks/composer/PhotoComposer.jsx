@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { createPost, updatePost, uploadMedia } from './api.js';
+import { createPost, updatePost, uploadMedia, getMediaUrl } from './api.js';
 import TagInput from './TagInput.jsx';
+import { generateTitle } from './useAutoTitle.js';
 
 const config      = window.quickpostrConfig ?? {};
 const MAX_BYTES   = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
@@ -17,6 +18,7 @@ const MAX_BYTES   = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
 export default function PhotoComposer( { onSuccess, editPost } ) {
 	const [ file,               setFile ]               = useState( null );
 	const [ preview,            setPreview ]            = useState( null );
+	const [ existingPhotoUrl,   setExistingPhotoUrl ]   = useState( null );
 	const [ caption,            setCaption ]            = useState( '' );
 	const [ dragging,           setDragging ]           = useState( false );
 	const [ selectedTags,       setSelectedTags ]       = useState( [] );
@@ -30,10 +32,14 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 	const fileInputRef  = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
-	// Pre-fill caption from editPost.
+	// Pre-fill caption and load existing photo from editPost.
 	useEffect( () => {
-		if ( editPost ) {
-			setCaption( editPost.content?.raw ?? '' );
+		if ( ! editPost ) return;
+		setCaption( editPost.content?.raw ?? '' );
+		if ( editPost.featured_media ) {
+			getMediaUrl( editPost.featured_media )
+				.then( ( url ) => setExistingPhotoUrl( url ) )
+				.catch( () => {} );
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -79,6 +85,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		if ( preview ) URL.revokeObjectURL( preview );
 		setFile( null );
 		setPreview( null );
+		setExistingPhotoUrl( null );
 		if ( fileInputRef.current ) {
 			fileInputRef.current.value = '';
 		}
@@ -121,7 +128,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 					} );
 				} else {
 					wpPost = await createPost( {
-						title:          '',
+						title:          generateTitle( 'photo', '', caption ),
 						content:        caption,
 						status:         defaultStatus,
 						format:         'image',
@@ -168,7 +175,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 	return (
 		<div className="qp-photo-composer">
-			{ ! file && (
+			{ ! file && ! existingPhotoUrl && ! ( editPost && editPost.featured_media ) && (
 				<div
 					className={ dropzoneClass }
 					onDrop={ handleDrop }
@@ -208,10 +215,10 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ file && (
+			{ ( file || existingPhotoUrl ) && (
 				<div className="qp-photo-preview">
 					<img
-						src={ preview }
+						src={ preview ?? existingPhotoUrl }
 						alt="Selected photo preview"
 						className="qp-photo-preview__img"
 					/>
@@ -227,7 +234,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ file && (
+			{ ( file || editPost ) && (
 				<>
 					<textarea
 						className="qp-photo-caption"

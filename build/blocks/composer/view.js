@@ -167,8 +167,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
 /* harmony import */ var _TagInput_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TagInput.jsx */ "./src/blocks/composer/TagInput.jsx");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _useAutoTitle_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./useAutoTitle.js */ "./src/blocks/composer/useAutoTitle.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__);
+
 
 
 
@@ -191,6 +193,7 @@ function PhotoComposer({
 }) {
   const [file, setFile] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [preview, setPreview] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [caption, setCaption] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
   const [dragging, setDragging] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const [selectedTags, setSelectedTags] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
@@ -201,10 +204,12 @@ function PhotoComposer({
   const fileInputRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
-  // Pre-fill caption from editPost.
+  // Pre-fill caption and load existing photo from editPost.
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (editPost) {
-      setCaption(editPost.content?.raw ?? '');
+    if (!editPost) return;
+    setCaption(editPost.content?.raw ?? '');
+    if (editPost.featured_media) {
+      (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.getMediaUrl)(editPost.featured_media).then(url => setExistingPhotoUrl(url)).catch(() => {});
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -242,6 +247,7 @@ function PhotoComposer({
     if (preview) URL.revokeObjectURL(preview);
     setFile(null);
     setPreview(null);
+    setExistingPhotoUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -279,7 +285,7 @@ function PhotoComposer({
           });
         } else {
           wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createPost)({
-            title: '',
+            title: (0,_useAutoTitle_js__WEBPACK_IMPORTED_MODULE_3__.generateTitle)('photo', '', caption),
             content: caption,
             status: defaultStatus,
             format: 'image',
@@ -317,9 +323,9 @@ function PhotoComposer({
     }
   }
   const dropzoneClass = ['qp-photo-dropzone', dragging ? 'qp-photo-dropzone--active' : ''].filter(Boolean).join(' ');
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
     className: "qp-photo-composer",
-    children: [!file && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+    children: [!file && !existingPhotoUrl && !(editPost && editPost.featured_media) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
       className: dropzoneClass,
       onDrop: handleDrop,
       onDragOver: handleDragOver,
@@ -329,7 +335,7 @@ function PhotoComposer({
       role: "button",
       tabIndex: 0,
       "aria-label": "Choose a photo to upload",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("svg", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("svg", {
         className: "qp-photo-dropzone__icon",
         "aria-hidden": "true",
         xmlns: "http://www.w3.org/2000/svg",
@@ -337,27 +343,27 @@ function PhotoComposer({
         fill: "none",
         stroke: "currentColor",
         strokeWidth: "1.5",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("rect", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("rect", {
           x: "3",
           y: "3",
           width: "18",
           height: "18",
           rx: "3",
           ry: "3"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("circle", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("circle", {
           cx: "8.5",
           cy: "8.5",
           r: "1.5"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("polyline", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("polyline", {
           points: "21 15 16 10 5 21"
         })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("span", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("span", {
         className: "qp-photo-dropzone__label",
-        children: ["Drop a photo here or ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        children: ["Drop a photo here or ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
           className: "qp-photo-dropzone__browse",
           children: "browse"
         })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("input", {
         ref: fileInputRef,
         type: "file",
         accept: "image/*",
@@ -366,13 +372,13 @@ function PhotoComposer({
         "aria-hidden": "true",
         tabIndex: -1
       })]
-    }), file && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+    }), (file || existingPhotoUrl) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
       className: "qp-photo-preview",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("img", {
-        src: preview,
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("img", {
+        src: preview ?? existingPhotoUrl,
         alt: "Selected photo preview",
         className: "qp-photo-preview__img"
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
         type: "button",
         className: "qp-photo-preview__remove",
         onClick: clearFile,
@@ -380,8 +386,8 @@ function PhotoComposer({
         disabled: submitting,
         children: "\u2715"
       })]
-    }), file && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.Fragment, {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("textarea", {
+    }), (file || editPost) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("textarea", {
         className: "qp-photo-caption",
         placeholder: "Add a caption\u2026 (optional)",
         value: caption,
@@ -389,19 +395,19 @@ function PhotoComposer({
         disabled: submitting,
         rows: 3,
         "aria-label": "Photo caption"
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_TagInput_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_TagInput_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
         selectedTags: selectedTags,
         selectedCategories: selectedCategories,
         onTagsChange: setSelectedTags,
         onCategoriesChange: setSelectedCategories
       })]
-    }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+    }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
       className: "qp-composer-error",
       role: "alert",
       children: error
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("footer", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("footer", {
       className: "qp-photo-composer__footer",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
         className: "qp-composer-submit",
         onClick: handleSubmit,
         disabled: !editPost && !file || submitting,
@@ -409,7 +415,7 @@ function PhotoComposer({
         type: "button",
         children: submitting ? 'Publishing…' : editPost ? 'Update' : defaultStatus === 'draft' ? 'Save Draft' : 'Post'
       })
-    }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+    }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
       className: "qp-composer-flash",
       role: "status",
       "aria-live": "assertive",
@@ -1040,6 +1046,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   discardDraft: () => (/* binding */ discardDraft),
 /* harmony export */   getCategories: () => (/* binding */ getCategories),
 /* harmony export */   getDraft: () => (/* binding */ getDraft),
+/* harmony export */   getMediaUrl: () => (/* binding */ getMediaUrl),
 /* harmony export */   getPost: () => (/* binding */ getPost),
 /* harmony export */   searchTags: () => (/* binding */ searchTags),
 /* harmony export */   updatePost: () => (/* binding */ updatePost),
@@ -1162,9 +1169,20 @@ function getCategories() {
 function getPost(id) {
   const qs = new URLSearchParams({
     context: 'edit',
-    _fields: 'id,title,content,format,status'
+    _fields: 'id,title,content,format,status,featured_media'
   });
   return request('GET', `/wp/v2/posts/${id}?${qs}`);
+}
+
+/**
+ * Fetch the source URL for a media item.
+ *
+ * @param {number} id
+ * @returns {Promise<string>}
+ */
+async function getMediaUrl(id) {
+  const data = await request('GET', `/wp/v2/media/${id}?_fields=source_url`);
+  return data.source_url ?? '';
 }
 
 /**

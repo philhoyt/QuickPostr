@@ -36,12 +36,13 @@ class QuickPostr_Settings {
 	 */
 	public static function defaults(): array {
 		return array(
-			'allowed_roles'     => array( 'administrator', 'editor', 'author' ),
-			'default_status'    => 'publish',
-			'default_category'  => 0,
-			'show_slug_preview' => true,
-			'hide_admin_bar'    => true,
-			'front_end_edit'    => true,
+			'allowed_roles'         => array( 'administrator', 'editor', 'author' ),
+			'default_status'        => 'publish',
+			'default_category'      => 0,
+			'show_slug_preview'     => true,
+			'hide_admin_bar'        => true,
+			'hide_admin_bar_admins' => false,
+			'front_end_edit'        => true,
 		);
 	}
 
@@ -128,6 +129,14 @@ class QuickPostr_Settings {
 		);
 
 		add_settings_field(
+			'hide_admin_bar_admins',
+			esc_html__( 'Hide Admin Bar (Administrators)', 'quickpostr' ),
+			array( $this, 'field_hide_admin_bar_admins' ),
+			'quickpostr',
+			'quickpostr_general'
+		);
+
+		add_settings_field(
 			'front_end_edit',
 			esc_html__( 'Front-End Post Management', 'quickpostr' ),
 			array( $this, 'field_front_end_edit' ),
@@ -160,14 +169,15 @@ class QuickPostr_Settings {
 		}
 
 		return array(
-			'allowed_roles'     => $allowed_roles ? $allowed_roles : $defaults['allowed_roles'],
-			'default_status'    => in_array( $input['default_status'] ?? '', array( 'publish', 'draft' ), true )
+			'allowed_roles'         => $allowed_roles ? $allowed_roles : $defaults['allowed_roles'],
+			'default_status'        => in_array( $input['default_status'] ?? '', array( 'publish', 'draft' ), true )
 									? $input['default_status']
 									: $defaults['default_status'],
-			'default_category'  => absint( $input['default_category'] ?? 0 ),
-			'show_slug_preview' => ! empty( $input['show_slug_preview'] ),
-			'hide_admin_bar'    => ! empty( $input['hide_admin_bar'] ),
-			'front_end_edit'    => ! empty( $input['front_end_edit'] ),
+			'default_category'      => absint( $input['default_category'] ?? 0 ),
+			'show_slug_preview'     => ! empty( $input['show_slug_preview'] ),
+			'hide_admin_bar'        => ! empty( $input['hide_admin_bar'] ),
+			'hide_admin_bar_admins' => ! empty( $input['hide_admin_bar_admins'] ),
+			'front_end_edit'        => ! empty( $input['front_end_edit'] ),
 		);
 	}
 
@@ -261,6 +271,19 @@ class QuickPostr_Settings {
 	}
 
 	/**
+	 * Render the hide_admin_bar_admins checkbox field.
+	 */
+	public function field_hide_admin_bar_admins(): void {
+		$settings = self::get();
+		printf(
+			'<input type="checkbox" name="%1$s[hide_admin_bar_admins]" value="1"%2$s> <span class="description">%3$s</span>',
+			esc_attr( self::OPTION_KEY ),
+			checked( $settings['hide_admin_bar_admins'], true, false ),
+			esc_html__( 'Also hide the WordPress admin bar for administrators.', 'quickpostr' )
+		);
+	}
+
+	/**
 	 * Render the front_end_edit checkbox field.
 	 */
 	public function field_front_end_edit(): void {
@@ -269,7 +292,7 @@ class QuickPostr_Settings {
 			'<input type="checkbox" name="%1$s[front_end_edit]" value="1"%2$s> <span class="description">%3$s</span>',
 			esc_attr( self::OPTION_KEY ),
 			checked( $settings['front_end_edit'], true, false ),
-			esc_html__( 'Allow post deletion from the front-end feed (Phase 9).', 'quickpostr' )
+			esc_html__( 'Allow post editing and deletion from the front end.', 'quickpostr' )
 		);
 	}
 

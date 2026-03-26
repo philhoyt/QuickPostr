@@ -111,8 +111,19 @@ export function getCategories() {
  * @returns {Promise<object>}
  */
 export function getPost( id ) {
-	const qs = new URLSearchParams( { context: 'edit', _fields: 'id,title,content,format,status' } );
+	const qs = new URLSearchParams( { context: 'edit', _fields: 'id,title,content,format,status,featured_media' } );
 	return request( 'GET', `/wp/v2/posts/${ id }?${ qs }` );
+}
+
+/**
+ * Fetch the source URL for a media item.
+ *
+ * @param {number} id
+ * @returns {Promise<string>}
+ */
+export async function getMediaUrl( id ) {
+	const data = await request( 'GET', `/wp/v2/media/${ id }?_fields=source_url` );
+	return data.source_url ?? '';
 }
 
 /**

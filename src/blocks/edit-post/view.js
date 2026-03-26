@@ -26,7 +26,7 @@
 			btn.textContent = 'Loading…';
 
 			const url = cfg.restUrl + 'wp/v2/posts/' + postId +
-				'?context=edit&_fields=id,title,content,format,status';
+				'?context=edit&_fields=id,title,content,format,status,featured_media';
 
 			fetch( url, {
 				headers: {

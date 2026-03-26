@@ -25,7 +25,7 @@
     btn.addEventListener('click', function () {
       btn.disabled = true;
       btn.textContent = 'Loading…';
-      const url = cfg.restUrl + 'wp/v2/posts/' + postId + '?context=edit&_fields=id,title,content,format,status';
+      const url = cfg.restUrl + 'wp/v2/posts/' + postId + '?context=edit&_fields=id,title,content,format,status,featured_media';
       fetch(url, {
         headers: {
           'X-WP-Nonce': cfg.nonce
