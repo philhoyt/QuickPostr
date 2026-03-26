@@ -141,7 +141,7 @@ class QuickPostr_Rest {
 		$posts = array();
 		foreach ( $query->posts as $post ) {
 			$featured_media_url = '';
-			if ( $post->post_parent || has_post_thumbnail( $post ) ) {
+			if ( has_post_thumbnail( $post ) ) {
 				$thumb = wp_get_attachment_image_src( get_post_thumbnail_id( $post ), 'large' );
 				if ( $thumb ) {
 					$featured_media_url = $thumb[0];

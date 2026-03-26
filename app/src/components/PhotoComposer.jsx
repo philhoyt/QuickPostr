@@ -124,7 +124,7 @@ export default function PhotoComposer({ creds, onSuccess }) {
       setProgress(0);
       setFlash(true);
       setTimeout(() => setFlash(false), 2500);
-      onSuccess?.(wpPost);
+      onSuccess?.(wpPost, media.source_url ?? '');
     } catch (err) {
       setError(err.message ?? 'Failed to publish. Tap to retry.');
     } finally {

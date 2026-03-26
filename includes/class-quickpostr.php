@@ -25,10 +25,33 @@ class QuickPostr {
 		( new QuickPostr_Rest() )->init();
 
 		add_action( 'init', array( $this, 'register_taxonomy' ) );
+		add_action( 'init', array( $this, 'register_post_meta' ) );
 		add_action( 'init', array( $this, 'seed_terms' ) );
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
+	}
+
+	/**
+	 * Register the _quickpostr_post meta key so the REST API can write it.
+	 * The value is the signal that triggers taxonomy term assignment in
+	 * assign_source_terms() — without this, WP silently drops the meta
+	 * from the REST payload and no terms are ever assigned.
+	 */
+	public function register_post_meta(): void {
+		register_post_meta(
+			'post',
+			'_quickpostr_post',
+			array(
+				'type'          => 'string',
+				'single'        => true,
+				'default'       => '',
+				'show_in_rest'  => true,
+				'auth_callback' => function() {
+					return current_user_can( 'edit_posts' );
+				},
+			)
+		);
 	}
 
 	/**

@@ -6,7 +6,7 @@ import Feed from './Feed.jsx';
 /**
  * Shape a raw WP REST post response into the feed card format.
  */
-function shapePost(wpPost) {
+function shapePost(wpPost, featuredMediaUrl = '') {
   return {
     id:                 wpPost.id,
     title:              wpPost.title?.raw ?? '',
@@ -15,7 +15,7 @@ function shapePost(wpPost) {
     status:             wpPost.status,
     format:             wpPost.format ?? 'standard',
     link:               wpPost.link,
-    featured_media_url: '',
+    featured_media_url: featuredMediaUrl,
   };
 }
 
@@ -31,9 +31,9 @@ export default function Composer({ creds, user, onLogout }) {
   const [mode, setMode] = useState('text');
   const feedRef         = useRef(null);
 
-  function handleSuccess(wpPost) {
+  function handleSuccess(wpPost, featuredMediaUrl) {
     if (wpPost && feedRef.current) {
-      feedRef.current.prepend(shapePost(wpPost));
+      feedRef.current.prepend(shapePost(wpPost, featuredMediaUrl));
     }
   }
 
