@@ -6,37 +6,15 @@ import { getPost } from './api.js';
 const config = window.quickpostrConfig ?? {};
 
 /**
- * Normalize a WP REST post object to the shape expected by PostCard / Feed.
- *
- * @param {object} wpPost
- * @returns {object}
- */
-function shapePost( wpPost ) {
-	return {
-		id:                 wpPost.id,
-		title:              wpPost.title?.rendered ?? '',
-		content:            wpPost.content?.rendered ?? '',
-		date_gmt:           wpPost.date_gmt ?? new Date().toISOString().replace( 'Z', '' ),
-		status:             wpPost.status,
-		format:             wpPost.format ?? 'standard',
-		link:               wpPost.link ?? '',
-		featured_media_url: '',
-	};
-}
-
-/**
  * Front-end composer root.
  *
  * Renders the mode bar (Status / Photo) and the active composer.
- * On success, prepends the new post to the Feed via feedRef (no page reload).
+ * On success, reloads the page so the theme's Query Loop reflects the new post.
  *
  * Edit mode: when ?qp-edit={id} is present in the URL, fetches the post,
  * pre-fills the correct composer, and submits as an update instead of a create.
- *
- * Props:
- *   feedRef {React.RefObject} — ref pointing to Feed's { prepend } handle
  */
-export default function Composer( { feedRef } ) {
+export default function Composer() {
 	const initialMode = config.blockAttrs?.defaultMode ?? 'status';
 	const [ mode,        setMode ]        = useState( initialMode );
 	const [ editPost,    setEditPost ]    = useState( null );
@@ -85,24 +63,12 @@ export default function Composer( { feedRef } ) {
 		.join( '' )
 		.toUpperCase();
 
-	function handleSuccess( wpPost, mediaUrl ) {
-		// Remove qp-edit param.
+	function handleSuccess() {
+		// Remove qp-edit param before reloading so we return to normal compose mode.
 		const url = new URL( window.location.href );
 		url.searchParams.delete( 'qp-edit' );
 		window.history.replaceState( {}, '', url );
-
-		if ( editPost ) {
-			// Edit mode: exit edit, post already exists in the feed.
-			setEditPost( null );
-			setMode( initialMode );
-		} else if ( wpPost ) {
-			// New post: prepend to Feed optimistically.
-			const shaped = shapePost( wpPost );
-			if ( mediaUrl ) {
-				shaped.featured_media_url = mediaUrl;
-			}
-			feedRef?.current?.prepend( shaped );
-		}
+		window.location.reload();
 	}
 
 	function handleCancelEdit() {

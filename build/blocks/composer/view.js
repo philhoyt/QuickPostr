@@ -27,39 +27,15 @@ __webpack_require__.r(__webpack_exports__);
 const config = window.quickpostrConfig ?? {};
 
 /**
- * Normalize a WP REST post object to the shape expected by PostCard / Feed.
- *
- * @param {object} wpPost
- * @returns {object}
- */
-function shapePost(wpPost) {
-  return {
-    id: wpPost.id,
-    title: wpPost.title?.rendered ?? '',
-    content: wpPost.content?.rendered ?? '',
-    date_gmt: wpPost.date_gmt ?? new Date().toISOString().replace('Z', ''),
-    status: wpPost.status,
-    format: wpPost.format ?? 'standard',
-    link: wpPost.link ?? '',
-    featured_media_url: ''
-  };
-}
-
-/**
  * Front-end composer root.
  *
  * Renders the mode bar (Status / Photo) and the active composer.
- * On success, prepends the new post to the Feed via feedRef (no page reload).
+ * On success, reloads the page so the theme's Query Loop reflects the new post.
  *
  * Edit mode: when ?qp-edit={id} is present in the URL, fetches the post,
  * pre-fills the correct composer, and submits as an update instead of a create.
- *
- * Props:
- *   feedRef {React.RefObject} — ref pointing to Feed's { prepend } handle
  */
-function Composer({
-  feedRef
-}) {
+function Composer() {
   const initialMode = config.blockAttrs?.defaultMode ?? 'status';
   const [mode, setMode] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(initialMode);
   const [editPost, setEditPost] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
@@ -96,23 +72,12 @@ function Composer({
   const user = config.currentUser ?? {};
   const avatarUrl = user.avatarUrls?.['48'];
   const initials = (user.name ?? '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  function handleSuccess(wpPost, mediaUrl) {
-    // Remove qp-edit param.
+  function handleSuccess() {
+    // Remove qp-edit param before reloading so we return to normal compose mode.
     const url = new URL(window.location.href);
     url.searchParams.delete('qp-edit');
     window.history.replaceState({}, '', url);
-    if (editPost) {
-      // Edit mode: exit edit, post already exists in the feed.
-      setEditPost(null);
-      setMode(initialMode);
-    } else if (wpPost) {
-      // New post: prepend to Feed optimistically.
-      const shaped = shapePost(wpPost);
-      if (mediaUrl) {
-        shaped.featured_media_url = mediaUrl;
-      }
-      feedRef?.current?.prepend(shaped);
-    }
+    window.location.reload();
   }
   function handleCancelEdit() {
     const url = new URL(window.location.href);
@@ -185,142 +150,6 @@ function Composer({
     })]
   });
 }
-
-/***/ },
-
-/***/ "./src/blocks/composer/Feed.jsx"
-/*!**************************************!*\
-  !*** ./src/blocks/composer/Feed.jsx ***!
-  \**************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "react");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
-/* harmony import */ var _PostCard_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./PostCard.jsx */ "./src/blocks/composer/PostCard.jsx");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
-
-
-
-
-/**
- * Feed — scrollable list of the current user's posts.
- *
- * Exposes a `prepend(post)` method via ref so Composer can optimistically
- * add new posts without a page reload.
- *
- * @type {React.ForwardRefExoticComponent}
- */
-
-const Feed = (0,react__WEBPACK_IMPORTED_MODULE_0__.forwardRef)(function Feed(_props, ref) {
-  const [posts, setPosts] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
-  const [page, setPage] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(1);
-  const [totalPages, setTotalPages] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(1);
-  const [loading, setLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
-  const [loadingMore, setLoadingMore] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
-  const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
-  const [activeFormat, setActiveFormat] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('all');
-
-  // Expose prepend() to parent via feedRef.
-  (0,react__WEBPACK_IMPORTED_MODULE_0__.useImperativeHandle)(ref, () => ({
-    prepend(post) {
-      // Skip if the new post doesn't match the active format filter.
-      if (activeFormat !== 'all') {
-        const postFormat = post.format === 'image' ? 'photo' : post.format || 'status';
-        if (postFormat !== activeFormat) {
-          return;
-        }
-      }
-      setPosts(prev => [post, ...prev]);
-    }
-  }), [activeFormat]);
-
-  // Reload when the format filter changes.
-  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    setLoading(true);
-    setError(null);
-    setPage(1);
-    (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.getFeed)({
-      format: activeFormat
-    }).then(({
-      posts: newPosts,
-      totalPages: tp
-    }) => {
-      setPosts(newPosts);
-      setTotalPages(tp);
-    }).catch(err => setError(err.message ?? 'Failed to load posts.')).finally(() => setLoading(false));
-  }, [activeFormat]);
-  function handleLoadMore() {
-    const nextPage = page + 1;
-    setLoadingMore(true);
-    (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.getFeed)({
-      format: activeFormat,
-      page: nextPage
-    }).then(({
-      posts: morePosts,
-      totalPages: tp
-    }) => {
-      setPosts(prev => [...prev, ...morePosts]);
-      setPage(nextPage);
-      setTotalPages(tp);
-    }).catch(err => setError(err.message ?? 'Failed to load more posts.')).finally(() => setLoadingMore(false));
-  }
-  function handleDelete(id) {
-    setPosts(prev => prev.filter(p => p.id !== id));
-  }
-  const filters = ['all', 'status', 'photo'];
-  const filterLabels = {
-    all: 'All',
-    status: 'Status',
-    photo: 'Photos'
-  };
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
-    className: "qp-feed",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-      className: "qp-feed__filters",
-      role: "tablist",
-      "aria-label": "Filter posts",
-      children: filters.map(f => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
-        role: "tab",
-        "aria-selected": activeFormat === f,
-        className: `qp-feed__filter${activeFormat === f ? ' qp-feed__filter--active' : ''}`,
-        onClick: () => setActiveFormat(f),
-        type: "button",
-        children: filterLabels[f]
-      }, f))
-    }), loading && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
-      className: "qp-feed__loading",
-      children: "Loading\u2026"
-    }), !loading && error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
-      className: "qp-feed__error",
-      role: "alert",
-      children: error
-    }), !loading && !error && posts.length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
-      className: "qp-feed__empty",
-      children: "Nothing here yet. Write your first post."
-    }), posts.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("ul", {
-      className: "qp-feed__list",
-      children: posts.map(post => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("li", {
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_PostCard_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
-          post: post,
-          onDelete: handleDelete
-        })
-      }, post.id))
-    }), !loading && page < totalPages && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
-      className: "qp-feed__load-more",
-      onClick: handleLoadMore,
-      disabled: loadingMore,
-      type: "button",
-      children: loadingMore ? 'Loading…' : 'Load more'
-    })]
-  });
-});
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Feed);
 
 /***/ },
 
@@ -585,94 +414,6 @@ function PhotoComposer({
       role: "status",
       "aria-live": "assertive",
       children: "Posted!"
-    })]
-  });
-}
-
-/***/ },
-
-/***/ "./src/blocks/composer/PostCard.jsx"
-/*!******************************************!*\
-  !*** ./src/blocks/composer/PostCard.jsx ***!
-  \******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ PostCard)
-/* harmony export */ });
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "react");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
-/* harmony import */ var _relativeTime_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./relativeTime.js */ "./src/blocks/composer/relativeTime.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
-
-
-
-
-/**
- * Renders a single post in the feed.
- *
- * Props:
- *   post     {object}           — normalized post object from getFeed / shapePost
- *   onDelete (id: number) => void
- */
-
-function PostCard({
-  post,
-  onDelete
-}) {
-  const [deleting, setDeleting] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
-  const formatLabel = post.format === 'image' ? 'photo' : post.format || 'status';
-  async function handleDelete() {
-    if (!window.confirm('Delete this post?')) {
-      return;
-    }
-    setDeleting(true);
-    try {
-      await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.deletePost)(post.id);
-      onDelete(post.id);
-    } catch (err) {
-      // eslint-disable-next-line no-alert
-      window.alert('Failed to delete: ' + (err.message ?? 'Unknown error'));
-      setDeleting(false);
-    }
-  }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("article", {
-    className: "qp-post-card",
-    children: [post.featured_media_url && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("img", {
-      className: "qp-post-card__image",
-      src: post.featured_media_url,
-      alt: ""
-    }), post.content && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-      className: "qp-post-card__content"
-      // Content is sanitized server-side by wpautop before storage.
-      // eslint-disable-next-line react/no-danger
-      ,
-      dangerouslySetInnerHTML: {
-        __html: post.content
-      }
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("footer", {
-      className: "qp-post-card__footer",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
-        className: "qp-post-card__meta",
-        children: [post.date_gmt && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("time", {
-          className: "qp-post-card__timestamp",
-          dateTime: post.date_gmt.endsWith('Z') ? post.date_gmt : post.date_gmt + 'Z',
-          children: (0,_relativeTime_js__WEBPACK_IMPORTED_MODULE_2__.relativeTime)(post.date_gmt)
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
-          className: "qp-post-card__format-badge",
-          children: formatLabel
-        })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
-        type: "button",
-        className: "qp-post-card__delete",
-        onClick: handleDelete,
-        disabled: deleting,
-        "aria-label": "Delete post",
-        children: deleting ? '…' : 'Delete'
-      })]
     })]
   });
 }
@@ -1296,11 +1037,9 @@ function TextComposer({
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   createPost: () => (/* binding */ createPost),
-/* harmony export */   deletePost: () => (/* binding */ deletePost),
 /* harmony export */   discardDraft: () => (/* binding */ discardDraft),
 /* harmony export */   getCategories: () => (/* binding */ getCategories),
 /* harmony export */   getDraft: () => (/* binding */ getDraft),
-/* harmony export */   getFeed: () => (/* binding */ getFeed),
 /* harmony export */   getPost: () => (/* binding */ getPost),
 /* harmony export */   searchTags: () => (/* binding */ searchTags),
 /* harmony export */   updatePost: () => (/* binding */ updatePost),
@@ -1456,121 +1195,6 @@ function getDraft() {
  */
 function discardDraft(id) {
   return request('DELETE', `/wp/v2/posts/${id}`);
-}
-
-/**
- * Move a published post to the trash.
- *
- * @param {number} id
- * @returns {Promise<object>}
- */
-function deletePost(id) {
-  return request('DELETE', `/wp/v2/posts/${id}`);
-}
-
-/**
- * Fetch a page of the current user's published posts.
- *
- * Returns `{ posts, totalPages }` where each post is normalized for PostCard.
- * Passes `format` to the REST API for server-side filtering when not 'all'.
- *
- * @param {object} opts
- * @param {string} [opts.format]   'all' | 'status' | 'photo'
- * @param {number} [opts.page]
- * @param {number} [opts.perPage]
- * @returns {Promise<{posts: Array, totalPages: number}>}
- */
-async function getFeed({
-  format = 'all',
-  page = 1,
-  perPage = 20
-} = {}) {
-  const user = config.currentUser ?? {};
-  const qs = new URLSearchParams({
-    author: String(user.id ?? ''),
-    per_page: String(perPage),
-    page: String(page),
-    _embed: 'wp:featuredmedia'
-  });
-  if (format !== 'all') {
-    qs.set('format', format === 'photo' ? 'image' : format);
-  }
-  const url = (config.restUrl ?? '').replace(/\/$/, '') + '/wp/v2/posts?' + qs;
-  const res = await fetch(url, {
-    headers: {
-      'X-WP-Nonce': config.nonce ?? ''
-    },
-    credentials: 'include'
-  });
-  if (!res.ok) {
-    let message = `HTTP ${res.status}`;
-    try {
-      const errData = await res.json();
-      message = errData.message ?? message;
-    } catch (_) {}
-    throw new Error(message);
-  }
-  const totalPages = parseInt(res.headers.get('X-WP-TotalPages') ?? '1', 10);
-  const raw = await res.json();
-  const posts = raw.map(post => ({
-    id: post.id,
-    title: post.title?.rendered ?? '',
-    content: post.content?.rendered ?? '',
-    date_gmt: post.date_gmt ?? '',
-    status: post.status,
-    format: post.format ?? 'standard',
-    link: post.link ?? '',
-    featured_media_url: post._embedded?.['wp:featuredmedia']?.[0]?.source_url ?? ''
-  }));
-  return {
-    posts,
-    totalPages
-  };
-}
-
-/***/ },
-
-/***/ "./src/blocks/composer/relativeTime.js"
-/*!*********************************************!*\
-  !*** ./src/blocks/composer/relativeTime.js ***!
-  \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   relativeTime: () => (/* binding */ relativeTime)
-/* harmony export */ });
-/**
- * Format an ISO UTC timestamp as a relative time string.
- *
- * @param {string} isoUtc — UTC ISO string (with or without trailing Z).
- * @returns {string}
- */
-function relativeTime(isoUtc) {
-  // Ensure UTC interpretation.
-  const normalized = isoUtc.endsWith('Z') ? isoUtc : isoUtc + 'Z';
-  const date = new Date(normalized);
-  const diffMs = Date.now() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) {
-    return 'just now';
-  }
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) {
-    return diffMin + 'm';
-  }
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) {
-    return diffHr + 'h';
-  }
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[date.getMonth()];
-  const day = date.getDate();
-  const oneYearMs = 365 * 24 * 60 * 60 * 1000;
-  if (diffMs < oneYearMs) {
-    return month + ' ' + day;
-  }
-  return month + ' ' + day + ', ' + date.getFullYear();
 }
 
 /***/ },
@@ -1742,37 +1366,22 @@ var __webpack_exports__ = {};
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "react");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _Composer_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Composer.jsx */ "./src/blocks/composer/Composer.jsx");
-/* harmony import */ var _Feed_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Feed.jsx */ "./src/blocks/composer/Feed.jsx");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _Composer_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Composer.jsx */ "./src/blocks/composer/Composer.jsx");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__);
 /**
  * Front-end entry point.
  *
- * Mounts the Composer + Feed app into the block's wrapper div.
+ * Mounts the React Composer into the block's wrapper div.
  * React and @wordpress/rich-text are bundled here — they are not
  * available as WordPress globals on the front end.
  */
 
 
 
-
-
-function App() {
-  const feedRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_Composer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
-      feedRef: feedRef
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_Feed_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
-      ref: feedRef
-    })]
-  });
-}
 const el = document.getElementById('quickpostr-composer');
 if (el) {
-  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createRoot)(el).render(/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(App, {}));
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createRoot)(el).render(/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_Composer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {}));
 }
 })();
 
