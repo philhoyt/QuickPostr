@@ -43,6 +43,7 @@ class QuickPostr_Settings {
 			'hide_admin_bar'        => true,
 			'hide_admin_bar_admins' => false,
 			'front_end_edit'        => true,
+			'strip_exif'            => true,
 		);
 	}
 
@@ -143,6 +144,14 @@ class QuickPostr_Settings {
 			'quickpostr',
 			'quickpostr_general'
 		);
+
+		add_settings_field(
+			'strip_exif',
+			esc_html__( 'Strip Photo Metadata', 'quickpostr' ),
+			array( $this, 'field_strip_exif' ),
+			'quickpostr',
+			'quickpostr_general'
+		);
 	}
 
 	/**
@@ -178,6 +187,7 @@ class QuickPostr_Settings {
 			'hide_admin_bar'        => ! empty( $input['hide_admin_bar'] ),
 			'hide_admin_bar_admins' => ! empty( $input['hide_admin_bar_admins'] ),
 			'front_end_edit'        => ! empty( $input['front_end_edit'] ),
+			'strip_exif'            => ! empty( $input['strip_exif'] ),
 		);
 	}
 
@@ -293,6 +303,19 @@ class QuickPostr_Settings {
 			esc_attr( self::OPTION_KEY ),
 			checked( $settings['front_end_edit'], true, false ),
 			esc_html__( 'Allow post editing and deletion from the front end.', 'quickpostr' )
+		);
+	}
+
+	/**
+	 * Render the strip_exif checkbox field.
+	 */
+	public function field_strip_exif(): void {
+		$settings = self::get();
+		printf(
+			'<input type="checkbox" name="%1$s[strip_exif]" value="1"%2$s> <span class="description">%3$s</span>',
+			esc_attr( self::OPTION_KEY ),
+			checked( $settings['strip_exif'], true, false ),
+			esc_html__( 'Strip EXIF metadata (GPS, camera info) from uploaded images. Requires the Imagick PHP extension.', 'quickpostr' )
 		);
 	}
 

@@ -32,6 +32,7 @@ class QuickPostr {
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
+		add_filter( 'wp_handle_upload', array( $this, 'maybe_strip_exif' ), 10, 1 );
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 	}
 
@@ -288,6 +289,45 @@ class QuickPostr {
 			return false;
 		}
 		return $show;
+	}
+
+	/**
+	 * Strip EXIF metadata from uploaded JPEG images when the setting is enabled.
+	 *
+	 * Uses Imagick::stripImage() which removes all profiles and comments
+	 * (including GPS coordinates and camera info) without re-encoding the image.
+	 * Fails silently so uploads are never blocked if stripping is unavailable.
+	 *
+	 * @param array $upload Upload data from wp_handle_upload.
+	 * @return array Unmodified upload data (file is modified in place).
+	 */
+	public function maybe_strip_exif( array $upload ): array {
+		$settings = QuickPostr_Settings::get();
+		if ( empty( $settings['strip_exif'] ) ) {
+			return $upload;
+		}
+
+		$file = $upload['file'] ?? '';
+		$type = $upload['type'] ?? '';
+
+		if ( ! $file || 'image/jpeg' !== $type ) {
+			return $upload;
+		}
+
+		if ( ! class_exists( 'Imagick' ) ) {
+			return $upload;
+		}
+
+		try {
+			$image = new Imagick( $file );
+			$image->stripImage();
+			$image->writeImage( $file );
+			$image->destroy();
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Fail silently — better to keep metadata than break the upload.
+		}
+
+		return $upload;
 	}
 
 	/**
