@@ -79,12 +79,20 @@ class QuickPostr {
 			QUICKPOSTR_VERSION,
 			array( 'in_footer' => true )
 		);
+		wp_register_script(
+			'quickpostr-share-post-view',
+			QUICKPOSTR_URL . 'build/blocks/share-post/view.js',
+			array(),
+			QUICKPOSTR_VERSION,
+			array( 'in_footer' => true )
+		);
 
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/profile-edit-name/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/profile-edit-bio/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/share-post/' );
 	}
 
 	/**
