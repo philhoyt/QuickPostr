@@ -1,0 +1,30 @@
+# Node
+app/node_modules/
+app/node_modules
+
+# Build artifacts — keep /build committed (users don't need Node to install)
+# but ignore source maps if generated
+*.map
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
+
+# PHP/Composer
+vendor/
+
+# WordPress
+wp-content/
+
+# Project docs (internal planning only)
+/docs
