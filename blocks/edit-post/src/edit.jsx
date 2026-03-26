@@ -8,15 +8,13 @@ import { __ } from '@wordpress/i18n';
 export default function Edit() {
 	return (
 		<div { ...useBlockProps() }>
-			{ /* eslint-disable-next-line jsx-a11y/anchor-is-valid */ }
-			<a
-				className="qp-edit-post__link"
-				href="#"
-				onClick={ ( e ) => e.preventDefault() }
-				aria-disabled="true"
+			<button
+				type="button"
+				className="qp-edit-post__btn"
+				disabled
 			>
 				{ __( 'Edit', 'quickpostr' ) }
-			</a>
+			</button>
 		</div>
 	);
 }

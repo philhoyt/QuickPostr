@@ -41,25 +41,15 @@ if ( empty( $settings['front_end_edit'] ) ) {
 	return;
 }
 
-// Enqueue view script once per page.
-$handle = 'quickpostr-delete-post';
-if ( ! wp_script_is( $handle, 'enqueued' ) ) {
-	wp_enqueue_script(
-		$handle,
-		QUICKPOSTR_URL . 'blocks/delete-post/view.js',
-		array(),
-		QUICKPOSTR_VERSION,
-		array( 'in_footer' => true )
-	);
-	wp_localize_script(
-		$handle,
-		'quickpostrDeletePost',
-		array(
-			'restUrl' => rest_url(),
-			'nonce'   => wp_create_nonce( 'wp_rest' ),
-		)
-	);
-}
+// Pass REST config to the view script (registered via viewScript in block.json).
+wp_localize_script(
+	'quickpostr-delete-post-view',
+	'quickpostrDeletePost',
+	array(
+		'restUrl' => rest_url(),
+		'nonce'   => wp_create_nonce( 'wp_rest' ),
+	)
+);
 
 $wrapper_attributes = get_block_wrapper_attributes(
 	array(

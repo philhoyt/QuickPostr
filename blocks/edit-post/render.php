@@ -2,9 +2,10 @@
 /**
  * Server-side render for quickpostr/edit-post.
  *
- * Renders an edit link for the current post in a Query Loop.
- * The link appends ?qp-edit={id} to the home URL so the Composer
- * block on that page can detect and pre-fill the editor.
+ * Renders an edit button for the current post in a Query Loop.
+ * On click, the view script fetches the post and fires a custom DOM event
+ * so the Composer block can pre-fill in-place without a page reload.
+ * Falls back to ?qp-edit={id} navigation if no Composer is present.
  *
  * @package QuickPostr
  *
@@ -42,15 +43,26 @@ if ( empty( $settings['front_end_edit'] ) ) {
 	return;
 }
 
-// Link to the home page (where the Composer block lives) with the edit param.
-$edit_url = add_query_arg( 'qp-edit', $post_id, home_url( '/' ) );
+// Pass REST config to the view script (registered via viewScript in block.json).
+wp_localize_script(
+	'quickpostr-edit-post-view',
+	'quickpostrEditPost',
+	array(
+		'restUrl' => rest_url(),
+		'nonce'   => wp_create_nonce( 'wp_rest' ),
+		'homeUrl' => home_url( '/' ),
+	)
+);
 
 $wrapper_attributes = get_block_wrapper_attributes(
-	array( 'class' => 'qp-edit-post' )
+	array(
+		'class'        => 'qp-edit-post',
+		'data-post-id' => (string) $post_id,
+	)
 );
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
-	<a href="<?php echo esc_url( $edit_url ); ?>" class="qp-edit-post__link">
+	<button type="button" class="qp-edit-post__btn">
 		<?php esc_html_e( 'Edit', 'quickpostr' ); ?>
-	</a>
+	</button>
 </div>

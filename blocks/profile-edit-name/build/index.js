@@ -91,7 +91,7 @@ module.exports = window["wp"]["i18n"];
   \*********************************************/
 (module) {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/profile-edit-name","version":"1.0.0","title":"Profile: Display Name","category":"quickpostr","description":"Shows the current user\'s display name with an inline edit control. For use on profile pages.","keywords":["profile","name","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false},"editorScript":"file:./build/index.js","render":"file:./render.php"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/profile-edit-name","version":"1.0.0","title":"Profile: Display Name","category":"quickpostr","description":"Shows the current user\'s display name with an inline edit control. For use on profile pages.","keywords":["profile","name","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false},"editorScript":"file:./build/index.js","viewScript":"quickpostr-profile-edit","style":"file:./style.css","render":"file:./render.php"}');
 
 /***/ }
 

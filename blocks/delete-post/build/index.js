@@ -86,7 +86,7 @@ module.exports = window["wp"]["i18n"];
   \***************************************/
 (module) {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/delete-post","version":"1.0.0","title":"Delete Post","category":"quickpostr","description":"Delete button for the current post. Place inside a Query Loop post template.","keywords":["delete","remove","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false,"lock":false},"usesContext":["postId","postType"],"editorScript":"file:./build/index.js","render":"file:./render.php"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/delete-post","version":"1.0.0","title":"Delete Post","category":"quickpostr","description":"Delete button for the current post. Place inside a Query Loop post template.","keywords":["delete","remove","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false,"lock":false},"usesContext":["postId","postType"],"editorScript":"file:./build/index.js","viewScript":"quickpostr-delete-post-view","style":"file:./style.css","render":"file:./render.php"}');
 
 /***/ }
 

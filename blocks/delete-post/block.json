@@ -15,5 +15,7 @@
     },
     "usesContext": [ "postId", "postType" ],
     "editorScript": "file:./build/index.js",
+    "viewScript": "quickpostr-delete-post-view",
+    "style": "file:./style.css",
     "render": "file:./render.php"
 }

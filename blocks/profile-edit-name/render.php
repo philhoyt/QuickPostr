@@ -21,24 +21,18 @@ if ( ! is_user_logged_in() ) {
 
 $quickpostr_user = wp_get_current_user();
 
-// Enqueue shared profile-edit view script once per page.
-$handle = 'quickpostr-profile-edit';
-if ( ! wp_script_is( $handle, 'enqueued' ) ) {
-	wp_enqueue_script(
-		$handle,
-		QUICKPOSTR_URL . 'blocks/profile-edit.js',
-		array(),
-		QUICKPOSTR_VERSION,
-		array( 'in_footer' => true )
-	);
+// Pass REST config to the shared view script once per page.
+static $profile_edit_localized = false;
+if ( ! $profile_edit_localized ) {
 	wp_localize_script(
-		$handle,
+		'quickpostr-profile-edit',
 		'quickpostrProfileEdit',
 		array(
 			'restUrl' => rest_url(),
 			'nonce'   => wp_create_nonce( 'wp_rest' ),
 		)
 	);
+	$profile_edit_localized = true;
 }
 
 $wrapper_attributes = get_block_wrapper_attributes(

@@ -117,8 +117,9 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  *   editPost  {object|undefined} — when set, the composer is in edit mode
  */
 export default function TextComposer( { onSuccess, editPost } ) {
-	const editorRef = useRef( null );
-	const draftTimer = useRef( null );
+	const editorRef      = useRef( null );
+	const draftTimer     = useRef( null );
+	const wasEditingRef  = useRef( false );
 
 	const [ html,               setHtml ]               = useState( '' );
 	const [ selectedTags,       setSelectedTags ]       = useState( [] );
@@ -139,16 +140,10 @@ export default function TextComposer( { onSuccess, editPost } ) {
 	const plainText = editorRef.current?.innerText?.trim() ?? '';
 	const title     = generateTitle( 'text', plainText, '' );
 
-	// On mount: pre-fill from editPost, OR check for an existing draft.
+	// On mount: check for an existing draft.
 	useEffect( () => {
 		if ( editPost ) {
-			const raw = editPost.content?.raw ?? '';
-			setDraftId( editPost.id );
-			setHtml( raw );
-			if ( editorRef.current ) {
-				editorRef.current.innerHTML = raw;
-			}
-			return;
+			return; // handled by the editPost effect below
 		}
 
 		getDraft()
@@ -160,6 +155,32 @@ export default function TextComposer( { onSuccess, editPost } ) {
 			} )
 			.catch( () => {} );
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Pre-fill or clear the editor when editPost changes.
+	useEffect( () => {
+		if ( ! editPost ) {
+			// Cancel edit — reset only if we were previously editing.
+			if ( wasEditingRef.current ) {
+				wasEditingRef.current = false;
+				setDraftId( null );
+				setHtml( '' );
+				if ( editorRef.current ) {
+					editorRef.current.innerHTML = '';
+					editorRef.current.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				}
+			}
+			return;
+		}
+		wasEditingRef.current = true;
+		const raw = editPost.content?.raw ?? '';
+		setDraftId( editPost.id );
+		setHtml( raw );
+		if ( editorRef.current ) {
+			editorRef.current.innerHTML = raw;
+			// Trigger RichEditor's handleInput so isEmpty state clears the placeholder.
+			editorRef.current.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+		}
+	}, [ editPost ] );
 
 	// Autofocus (only when not loading an edit post — avoids scroll jump).
 	useEffect( () => {

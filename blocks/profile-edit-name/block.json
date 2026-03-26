@@ -13,5 +13,7 @@
         "reusable": false
     },
     "editorScript": "file:./build/index.js",
+    "viewScript": "quickpostr-profile-edit",
+    "style": "file:./style.css",
     "render": "file:./render.php"
 }

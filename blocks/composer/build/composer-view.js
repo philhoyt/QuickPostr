@@ -41,7 +41,22 @@ function Composer() {
   const [editPost, setEditPost] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [editLoading, setEditLoading] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
 
-  // Detect ?qp-edit param and load the post into the composer.
+  // Listen for 'quickpostr:edit-post' from the Edit Post block view script.
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    function handleEditEvent(e) {
+      e.preventDefault(); // Signal to view.js that we handled it.
+      const post = e.detail?.post;
+      if (!post) {
+        return;
+      }
+      setEditPost(post);
+      setMode(post.format === 'image' ? 'photo' : 'status');
+    }
+    document.addEventListener('quickpostr:edit-post', handleEditEvent);
+    return () => document.removeEventListener('quickpostr:edit-post', handleEditEvent);
+  }, []);
+
+  // Detect ?qp-edit param and load the post into the composer (fallback path).
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     const params = new URLSearchParams(window.location.search);
     const editId = parseInt(params.get('qp-edit'), 10);
@@ -765,6 +780,7 @@ function TextComposer({
 }) {
   const editorRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const draftTimer = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const wasEditingRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(false);
   const [html, setHtml] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
   const [selectedTags, setSelectedTags] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
   const [selectedCategories, setSelectedCategories] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
@@ -781,16 +797,10 @@ function TextComposer({
   const plainText = editorRef.current?.innerText?.trim() ?? '';
   const title = (0,_useAutoTitle_js__WEBPACK_IMPORTED_MODULE_2__.generateTitle)('text', plainText, '');
 
-  // On mount: pre-fill from editPost, OR check for an existing draft.
+  // On mount: check for an existing draft.
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     if (editPost) {
-      const raw = editPost.content?.raw ?? '';
-      setDraftId(editPost.id);
-      setHtml(raw);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = raw;
-      }
-      return;
+      return; // handled by the editPost effect below
     }
     (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.getDraft)().then(draft => {
       if (draft && draft.format !== 'image') {
@@ -799,6 +809,36 @@ function TextComposer({
       }
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-fill or clear the editor when editPost changes.
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!editPost) {
+      // Cancel edit — reset only if we were previously editing.
+      if (wasEditingRef.current) {
+        wasEditingRef.current = false;
+        setDraftId(null);
+        setHtml('');
+        if (editorRef.current) {
+          editorRef.current.innerHTML = '';
+          editorRef.current.dispatchEvent(new Event('input', {
+            bubbles: true
+          }));
+        }
+      }
+      return;
+    }
+    wasEditingRef.current = true;
+    const raw = editPost.content?.raw ?? '';
+    setDraftId(editPost.id);
+    setHtml(raw);
+    if (editorRef.current) {
+      editorRef.current.innerHTML = raw;
+      // Trigger RichEditor's handleInput so isEmpty state clears the placeholder.
+      editorRef.current.dispatchEvent(new Event('input', {
+        bubbles: true
+      }));
+    }
+  }, [editPost]);
 
   // Autofocus (only when not loading an edit post — avoids scroll jump).
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {

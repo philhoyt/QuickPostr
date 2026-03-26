@@ -29,11 +29,10 @@ __webpack_require__.r(__webpack_exports__);
 function Edit() {
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
     ...(0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_0__.useBlockProps)(),
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("a", {
-      className: "qp-edit-post__link",
-      href: "#",
-      onClick: e => e.preventDefault(),
-      "aria-disabled": "true",
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("button", {
+      type: "button",
+      className: "qp-edit-post__btn",
+      disabled: true,
       children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Edit', 'quickpostr')
     })
   });
@@ -87,7 +86,7 @@ module.exports = window["wp"]["i18n"];
   \*************************************/
 (module) {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/edit-post","version":"1.0.0","title":"Edit Post","category":"quickpostr","description":"Edit link for the current post. Loads the post into the Composer block for editing. Place inside a Query Loop post template.","keywords":["edit","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false,"lock":false},"usesContext":["postId","postType"],"editorScript":"file:./build/index.js","render":"file:./render.php"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/edit-post","version":"1.0.0","title":"Edit Post","category":"quickpostr","description":"Edit link for the current post. Loads the post into the Composer block for editing. Place inside a Query Loop post template.","keywords":["edit","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false,"lock":false},"usesContext":["postId","postType"],"editorScript":"file:./build/index.js","viewScript":"quickpostr-edit-post-view","style":"file:./style.css","render":"file:./render.php"}');
 
 /***/ }
 

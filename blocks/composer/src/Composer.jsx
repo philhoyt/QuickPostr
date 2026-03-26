@@ -20,7 +20,23 @@ export default function Composer() {
 	const [ editPost,    setEditPost ]    = useState( null );
 	const [ editLoading, setEditLoading ] = useState( false );
 
-	// Detect ?qp-edit param and load the post into the composer.
+	// Listen for 'quickpostr:edit-post' from the Edit Post block view script.
+	useEffect( () => {
+		function handleEditEvent( e ) {
+			e.preventDefault(); // Signal to view.js that we handled it.
+			const post = e.detail?.post;
+			if ( ! post ) {
+				return;
+			}
+			setEditPost( post );
+			setMode( post.format === 'image' ? 'photo' : 'status' );
+		}
+
+		document.addEventListener( 'quickpostr:edit-post', handleEditEvent );
+		return () => document.removeEventListener( 'quickpostr:edit-post', handleEditEvent );
+	}, [] );
+
+	// Detect ?qp-edit param and load the post into the composer (fallback path).
 	useEffect( () => {
 		const params = new URLSearchParams( window.location.search );
 		const editId = parseInt( params.get( 'qp-edit' ), 10 );

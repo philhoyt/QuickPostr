@@ -37,8 +37,34 @@ class QuickPostr {
 
 	/**
 	 * Register all plugin blocks.
+	 *
+	 * The profile-edit blocks share a single view script that lives outside
+	 * either block directory, so it must be registered manually here.
+	 * Both block.json files reference it by handle (no file: prefix).
 	 */
 	public function register_block(): void {
+		wp_register_script(
+			'quickpostr-delete-post-view',
+			QUICKPOSTR_URL . 'blocks/delete-post/view.js',
+			array(),
+			QUICKPOSTR_VERSION,
+			array( 'in_footer' => true )
+		);
+		wp_register_script(
+			'quickpostr-edit-post-view',
+			QUICKPOSTR_URL . 'blocks/edit-post/view.js',
+			array(),
+			QUICKPOSTR_VERSION,
+			array( 'in_footer' => true )
+		);
+		wp_register_script(
+			'quickpostr-profile-edit',
+			QUICKPOSTR_URL . 'blocks/profile-edit.js',
+			array(),
+			QUICKPOSTR_VERSION,
+			array( 'in_footer' => true )
+		);
+
 		register_block_type( QUICKPOSTR_PATH . 'blocks/composer/' );
 		register_block_type( QUICKPOSTR_PATH . 'blocks/delete-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'blocks/edit-post/' );
