@@ -24,39 +24,82 @@ class QuickPostr {
 		( new QuickPostr_Settings() )->init();
 		( new QuickPostr_Rest() )->init();
 
-		add_action( 'init', array( $this, 'register_post_meta' ) );
+		add_action( 'init', array( $this, 'register_taxonomy' ) );
+		add_action( 'init', array( $this, 'seed_terms' ) );
+		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 	}
 
 	/**
-	 * Register the _quickpostr_post meta key so the REST API can write it.
+	 * Register the private quickpostr_source taxonomy.
 	 */
-	public function register_post_meta(): void {
-		register_post_meta(
+	public function register_taxonomy(): void {
+		register_taxonomy(
+			'quickpostr_source',
 			'post',
-			'_quickpostr_post',
 			array(
-				'type'          => 'string',
-				'single'        => true,
-				'default'       => '',
-				'show_in_rest'  => true,
-				'auth_callback' => function() {
-					return current_user_can( 'edit_posts' );
-				},
+				'label'             => __( 'QuickPostr Source', 'quickpostr' ),
+				'public'            => false,
+				'publicly_queryable' => false,
+				'show_ui'           => false,
+				'show_in_menu'      => false,
+				'show_in_nav_menus' => false,
+				'show_in_rest'      => false,
+				'show_tagcloud'     => false,
+				'show_admin_column' => false,
+				'hierarchical'      => false,
+				'rewrite'           => false,
 			)
 		);
 	}
 
 	/**
-	 * Return an empty string for the title of any post created by QuickPostr.
+	 * Ensure the required taxonomy terms exist.
+	 * Uses wp_insert_term which is a no-op if the term already exists.
+	 */
+	public function seed_terms(): void {
+		$terms = array( 'app', 'status', 'photo' );
+		foreach ( $terms as $slug ) {
+			if ( ! term_exists( $slug, 'quickpostr_source' ) ) {
+				wp_insert_term( $slug, 'quickpostr_source', array( 'slug' => $slug ) );
+			}
+		}
+	}
+
+	/**
+	 * Assign quickpostr_source terms after a post is created via the REST API.
+	 * Triggered only when the _quickpostr_post meta flag is present.
+	 *
+	 * @param \WP_Post         $post    The inserted post.
+	 * @param \WP_REST_Request $request The REST request.
+	 */
+	public function assign_source_terms( \WP_Post $post, \WP_REST_Request $request ): void {
+		if ( ! get_post_meta( $post->ID, '_quickpostr_post', true ) ) {
+			return;
+		}
+
+		$format = get_post_format( $post->ID ) ?: 'status';
+		// Map WP format slugs to our taxonomy terms.
+		$format_term = ( 'image' === $format ) ? 'photo' : 'status';
+
+		wp_set_object_terms( $post->ID, array( 'app', $format_term ), 'quickpostr_source' );
+	}
+
+	/**
+	 * Suppress the title on the front-end for posts created by QuickPostr.
+	 * Deliberately skipped in admin and REST contexts so ActivityPub
+	 * and admin list views receive the real stored title.
 	 *
 	 * @param string $title   The post title.
 	 * @param int    $post_id The post ID.
 	 * @return string
 	 */
 	public function suppress_title( string $title, int $post_id ): string {
-		if ( get_post_meta( $post_id, '_quickpostr_post', true ) ) {
+		if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return $title;
+		}
+		if ( has_term( 'app', 'quickpostr_source', $post_id ) ) {
 			return '';
 		}
 		return $title;

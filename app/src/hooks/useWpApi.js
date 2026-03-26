@@ -102,3 +102,15 @@ export function getCategories(creds) {
 export function getTags(creds) {
   return request('GET', '/wp/v2/tags?per_page=100', null, creds);
 }
+
+/**
+ * Fetch the QuickPostr feed for the current user.
+ *
+ * @param {{ format?: 'status'|'photo', perPage?: number, page?: number }} params
+ * @param {object} creds
+ */
+export function getFeed({ format, perPage = 20, page = 1 } = {}, creds) {
+  const params = new URLSearchParams({ per_page: perPage, page });
+  if (format) params.set('format', format);
+  return request('GET', `/quickpostr/v1/feed?${params}`, null, creds);
+}
