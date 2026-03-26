@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
+import LinkComposer from './LinkComposer.jsx';
 import { getPost } from './api.js';
 
 const config = window.quickpostrConfig ?? {};
@@ -29,7 +30,7 @@ export default function Composer() {
 				return;
 			}
 			setEditPost( post );
-			setMode( post.format === 'image' ? 'photo' : 'status' );
+			setMode( post.format === 'image' ? 'photo' : 'status' ); // link posts fall back to status edit
 		}
 
 		document.addEventListener( 'quickpostr:edit-post', handleEditEvent );
@@ -48,7 +49,7 @@ export default function Composer() {
 		getPost( editId )
 			.then( ( post ) => {
 				setEditPost( post );
-				setMode( post.format === 'image' ? 'photo' : 'status' );
+				setMode( post.format === 'image' ? 'photo' : 'status' ); // link posts fall back to status edit
 			} )
 			.catch( () => {} )
 			.finally( () => setEditLoading( false ) );
@@ -113,7 +114,7 @@ export default function Composer() {
 
 			{ ! editPost && (
 				<div className="qp-composer__mode-bar" role="tablist" aria-label="Post type">
-					{ [ 'status', 'photo' ].map( ( m ) => (
+					{ [ 'status', 'photo', 'link' ].map( ( m ) => (
 						<button
 							key={ m }
 							role="tab"
@@ -122,7 +123,7 @@ export default function Composer() {
 							onClick={ () => setMode( m ) }
 							type="button"
 						>
-							{ m === 'status' ? 'Status' : 'Photo' }
+							{ { status: 'Status', photo: 'Photo', link: 'Link' }[ m ] }
 						</button>
 					) ) }
 				</div>
@@ -145,6 +146,11 @@ export default function Composer() {
 					<PhotoComposer
 						onSuccess={ handleSuccess }
 						editPost={ editPost ?? undefined }
+					/>
+				) }
+				{ mode === 'link' && (
+					<LinkComposer
+						onSuccess={ handleSuccess }
 					/>
 				) }
 			</div>

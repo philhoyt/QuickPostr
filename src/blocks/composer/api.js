@@ -198,3 +198,15 @@ export function discardDraft( id ) {
 	return request( 'DELETE', `/wp/v2/posts/${ id }` );
 }
 
+/**
+ * Fetch Open Graph preview data via the Better Bookmarks REST endpoint.
+ * Requires Better Bookmarks to be installed and active.
+ *
+ * @param {string} url
+ * @returns {Promise<{url, title, description, image, domain}>}
+ */
+export function fetchLinkPreview( url ) {
+	const qs = new URLSearchParams( { url } );
+	return request( 'GET', `/better-bookmarks/v1/preview?${ qs }` );
+}
+

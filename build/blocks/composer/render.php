@@ -55,7 +55,8 @@ $config = array(
 		'showSlugPreview' => $attributes['showSlugPreview'] ?? true,
 		'placeholderText' => $attributes['placeholderText'] ?? __( "What's on your mind?", 'quickpostr' ),
 	),
-	'maxUploadSize' => wp_max_upload_size(),
+	'maxUploadSize'   => wp_max_upload_size(),
+	'betterBookmarks' => class_exists( 'Better_Bookmarks' ),
 );
 
 // Enqueue the WP media modal so PhotoComposer can open the library picker.

@@ -16,9 +16,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TextComposer.jsx */ "./src/blocks/composer/TextComposer.jsx");
 /* harmony import */ var _PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./PhotoComposer.jsx */ "./src/blocks/composer/PhotoComposer.jsx");
-/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _LinkComposer_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./LinkComposer.jsx */ "./src/blocks/composer/LinkComposer.jsx");
+/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__);
+
 
 
 
@@ -50,7 +52,7 @@ function Composer() {
         return;
       }
       setEditPost(post);
-      setMode(post.format === 'image' ? 'photo' : 'status');
+      setMode(post.format === 'image' ? 'photo' : 'status'); // link posts fall back to status edit
     }
     document.addEventListener('quickpostr:edit-post', handleEditEvent);
     return () => document.removeEventListener('quickpostr:edit-post', handleEditEvent);
@@ -64,9 +66,9 @@ function Composer() {
       return;
     }
     setEditLoading(true);
-    (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.getPost)(editId).then(post => {
+    (0,_api_js__WEBPACK_IMPORTED_MODULE_4__.getPost)(editId).then(post => {
       setEditPost(post);
-      setMode(post.format === 'image' ? 'photo' : 'status');
+      setMode(post.format === 'image' ? 'photo' : 'status'); // link posts fall back to status edit
     }).catch(() => {}).finally(() => setEditLoading(false));
   }, []);
   const user = config.currentUser ?? {};
@@ -87,66 +89,276 @@ function Composer() {
     setMode(initialMode);
   }
   if (editLoading) {
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "qp-composer",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("p", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
         className: "qp-composer__loading",
         children: "Loading\u2026"
       })
     });
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "qp-composer",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("header", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("header", {
       className: "qp-composer__header",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
         className: "qp-composer__identity",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
           className: "qp-composer__avatar",
           "aria-hidden": "true",
-          children: avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("img", {
+          children: avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("img", {
             src: avatarUrl,
             alt: "",
             width: "32",
             height: "32"
-          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
+          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
             children: initials
           })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
           className: "qp-composer__user-name",
           children: user.name
         })]
-      }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
+      }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
         type: "button",
         className: "qp-composer__cancel-edit",
         onClick: handleCancelEdit,
         children: "\u2715 Cancel edit"
       })]
-    }), !editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+    }), !editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "qp-composer__mode-bar",
       role: "tablist",
       "aria-label": "Post type",
-      children: ['status', 'photo'].map(m => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
+      children: ['status', 'photo', 'link'].map(m => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
         role: "tab",
         "aria-selected": mode === m,
         className: `qp-composer__mode-btn${mode === m ? ' qp-composer__mode-btn--active' : ''}`,
         onClick: () => setMode(m),
         type: "button",
-        children: m === 'status' ? 'Status' : 'Photo'
+        children: {
+          status: 'Status',
+          photo: 'Photo',
+          link: 'Link'
+        }[m]
       }, m))
-    }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
+    }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "qp-composer__edit-bar",
       role: "status",
       children: "Editing post"
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "qp-composer__body",
-      children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {
+      children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
-      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
+      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
+      }), mode === 'link' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_LinkComposer_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
+        onSuccess: handleSuccess
       })]
+    })]
+  });
+}
+
+/***/ },
+
+/***/ "./src/blocks/composer/LinkComposer.jsx"
+/*!**********************************************!*\
+  !*** ./src/blocks/composer/LinkComposer.jsx ***!
+  \**********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ LinkComposer)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "react");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
+/* harmony import */ var _TagInput_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TagInput.jsx */ "./src/blocks/composer/TagInput.jsx");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+const config = window.quickpostrConfig ?? {};
+
+/**
+ * Serialize a Better Bookmarks link-card block.
+ * Produces a self-closing dynamic block comment that render.php handles.
+ *
+ * @param {object} attrs — {url, title, description, image, domain}
+ * @returns {string}
+ */
+function serializeLinkCard(attrs) {
+  return '<!-- wp:better-bookmarks/link-card ' + JSON.stringify(attrs) + ' /-->';
+}
+
+/**
+ * Link / bookmark composer.
+ *
+ * If Better Bookmarks is installed, fetches OG preview data and serializes a
+ * better-bookmarks/link-card block as post content. Falls back to a plain
+ * <a> paragraph if Better Bookmarks is unavailable or preview fetch fails.
+ *
+ * Props:
+ *   onSuccess (wpPost) => void
+ */
+function LinkComposer({
+  onSuccess
+}) {
+  const [url, setUrl] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
+  const [preview, setPreview] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [fetching, setFetching] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [fetchError, setFetchError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [submitting, setSubmitting] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [flash, setFlash] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [selectedTags, setSelectedTags] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+  const [selectedCategories, setSelectedCategories] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+  const bbAvailable = config.betterBookmarks ?? false;
+  const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+  async function handleFetch() {
+    const trimmed = url.trim();
+    if (!trimmed || fetching) return;
+    setFetching(true);
+    setFetchError(null);
+    setPreview(null);
+    try {
+      const data = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.fetchLinkPreview)(trimmed);
+      setPreview(data);
+    } catch {
+      setFetchError('Could not fetch preview. Check the URL and try again.');
+    } finally {
+      setFetching(false);
+    }
+  }
+  function handleUrlKeyDown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (bbAvailable) {
+        handleFetch();
+      }
+    }
+  }
+  function handleUrlChange(e) {
+    setUrl(e.target.value);
+    setPreview(null);
+    setFetchError(null);
+  }
+  const handleSubmit = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(async () => {
+    const trimmed = url.trim();
+    if (!trimmed || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      let content;
+      if (bbAvailable && preview) {
+        content = serializeLinkCard(preview);
+      } else {
+        const label = preview?.title || trimmed;
+        content = `<p><a href="${trimmed}">${label}</a></p>`;
+      }
+      const wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createPost)({
+        title: '',
+        content,
+        status: defaultStatus,
+        format: 'link',
+        tags: selectedTags,
+        categories: selectedCategories,
+        meta: {
+          _quickpostr_post: '1'
+        }
+      });
+      onSuccess?.(wpPost);
+      setUrl('');
+      setPreview(null);
+      setSelectedTags([]);
+      setSelectedCategories(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+      setFlash(true);
+      setTimeout(() => setFlash(false), 2500);
+    } catch (err) {
+      setError(err.message ?? 'Failed to publish. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [url, preview, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess, bbAvailable]);
+  const canSubmit = url.trim() && !submitting;
+  const submitLabel = defaultStatus === 'draft' ? 'Save Draft' : 'Post';
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+    className: "qp-link-composer",
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      className: "qp-link-composer__url-row",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
+        type: "url",
+        className: "qp-link-composer__url-input",
+        placeholder: bbAvailable ? 'Paste a URL and press Enter…' : 'Paste a URL…',
+        value: url,
+        onChange: handleUrlChange,
+        onKeyDown: handleUrlKeyDown,
+        disabled: submitting,
+        "aria-label": "URL"
+      }), bbAvailable && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+        type: "button",
+        className: "qp-link-composer__fetch-btn",
+        onClick: handleFetch,
+        disabled: !url.trim() || fetching,
+        children: fetching ? '…' : 'Preview'
+      })]
+    }), fetchError && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+      className: "qp-composer-error",
+      role: "alert",
+      children: fetchError
+    }), preview && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      className: "qp-link-composer__preview",
+      children: [preview.image && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+        className: "qp-link-composer__preview-image",
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("img", {
+          src: preview.image,
+          alt: "",
+          loading: "lazy"
+        })
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+        className: "qp-link-composer__preview-body",
+        children: [preview.domain && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+          className: "qp-link-composer__preview-domain",
+          children: preview.domain
+        }), preview.title && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("strong", {
+          className: "qp-link-composer__preview-title",
+          children: preview.title
+        }), preview.description && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+          className: "qp-link-composer__preview-description",
+          children: preview.description
+        })]
+      })]
+    }), !bbAvailable && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("p", {
+      className: "qp-link-composer__no-bb",
+      children: ["Install ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("strong", {
+        children: "Better Bookmarks"
+      }), " to include a rich link card in the post."]
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_TagInput_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
+      selectedTags: selectedTags,
+      selectedCategories: selectedCategories,
+      onTagsChange: setSelectedTags,
+      onCategoriesChange: setSelectedCategories
+    }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+      className: "qp-composer-error",
+      role: "alert",
+      children: error
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("footer", {
+      className: "qp-link-composer__footer",
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+        className: "qp-composer-submit",
+        type: "button",
+        onClick: handleSubmit,
+        disabled: !canSubmit,
+        children: submitting ? 'Publishing…' : submitLabel
+      })
+    }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+      className: "qp-composer-flash",
+      role: "status",
+      "aria-live": "assertive",
+      children: "Posted!"
     })]
   });
 }
@@ -1265,6 +1477,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   createPost: () => (/* binding */ createPost),
 /* harmony export */   createTag: () => (/* binding */ createTag),
 /* harmony export */   discardDraft: () => (/* binding */ discardDraft),
+/* harmony export */   fetchLinkPreview: () => (/* binding */ fetchLinkPreview),
 /* harmony export */   getCategory: () => (/* binding */ getCategory),
 /* harmony export */   getDraft: () => (/* binding */ getDraft),
 /* harmony export */   getMediaUrl: () => (/* binding */ getMediaUrl),
@@ -1483,6 +1696,20 @@ function getDraft() {
  */
 function discardDraft(id) {
   return request('DELETE', `/wp/v2/posts/${id}`);
+}
+
+/**
+ * Fetch Open Graph preview data via the Better Bookmarks REST endpoint.
+ * Requires Better Bookmarks to be installed and active.
+ *
+ * @param {string} url
+ * @returns {Promise<{url, title, description, image, domain}>}
+ */
+function fetchLinkPreview(url) {
+  const qs = new URLSearchParams({
+    url
+  });
+  return request('GET', `/better-bookmarks/v1/preview?${qs}`);
 }
 
 /***/ },

@@ -175,7 +175,7 @@ class QuickPostr {
 	 * Uses wp_insert_term which is a no-op if the term already exists.
 	 */
 	public function seed_terms(): void {
-		$terms = array( 'app', 'status', 'photo' );
+		$terms = array( 'app', 'status', 'photo', 'link' );
 		foreach ( $terms as $slug ) {
 			if ( ! term_exists( $slug, 'quickpostr_source' ) ) {
 				wp_insert_term( $slug, 'quickpostr_source', array( 'slug' => $slug ) );
@@ -196,9 +196,16 @@ class QuickPostr {
 			return;
 		}
 
-		$raw_format  = get_post_format( $post->ID );
-		$format      = $raw_format ? $raw_format : 'status';
-		$format_term = ( 'image' === $format ) ? 'photo' : 'status';
+		$raw_format = get_post_format( $post->ID );
+		$format     = $raw_format ? $raw_format : 'status';
+
+		if ( 'image' === $format ) {
+			$format_term = 'photo';
+		} elseif ( 'link' === $format ) {
+			$format_term = 'link';
+		} else {
+			$format_term = 'status';
+		}
 
 		wp_set_object_terms( $post->ID, array( 'app', $format_term ), 'quickpostr_source' );
 
@@ -232,9 +239,13 @@ class QuickPostr {
 		$source = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $content ) ) );
 
 		if ( empty( $source ) ) {
-			$label = ( 'photo' === $format )
-				? __( 'Photo', 'quickpostr' )
-				: __( 'Status', 'quickpostr' );
+			if ( 'photo' === $format ) {
+				$label = __( 'Photo', 'quickpostr' );
+			} elseif ( 'link' === $format ) {
+				$label = __( 'Link', 'quickpostr' );
+			} else {
+				$label = __( 'Status', 'quickpostr' );
+			}
 			return $label . ' — ' . ( $date ? $date : wp_date( 'M j, Y' ) );
 		}
 
