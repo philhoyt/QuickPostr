@@ -30,12 +30,19 @@ if ( ! array_intersect( $user_roles, $allowed ) ) {
 	return;
 }
 
+// Read the generated asset manifest so WordPress loads all dependencies
+// (wp-element, react, react-jsx-runtime, wp-rich-text) before our script.
+$asset_file = QUICKPOSTR_PATH . 'blocks/composer/build/composer-view.asset.php';
+$asset      = file_exists( $asset_file )
+	? require $asset_file
+	: array( 'dependencies' => array(), 'version' => QUICKPOSTR_VERSION );
+
 // Enqueue the front-end composer bundle.
 wp_enqueue_script(
 	'quickpostr-composer-view',
 	QUICKPOSTR_URL . 'blocks/composer/build/composer-view.js',
-	array(), // React is bundled — no WP dependencies.
-	QUICKPOSTR_VERSION,
+	$asset['dependencies'],
+	$asset['version'],
 	array( 'in_footer' => true )
 );
 

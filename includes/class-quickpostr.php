@@ -28,6 +28,7 @@ class QuickPostr {
 		add_action( 'init', array( $this, 'seed_terms' ) );
 		add_action( 'init', array( $this, 'register_block' ) );
 		add_action( 'init', array( $this, 'register_block_patterns' ) );
+		add_filter( 'block_categories_all', array( $this, 'register_block_category' ), 10, 1 );
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
@@ -39,6 +40,25 @@ class QuickPostr {
 	 */
 	public function register_block(): void {
 		register_block_type( QUICKPOSTR_PATH . 'blocks/composer/' );
+	}
+
+	/**
+	 * Register the QuickPostr block inserter category.
+	 *
+	 * @param array $categories Existing block categories.
+	 * @return array
+	 */
+	public function register_block_category( array $categories ): array {
+		return array_merge(
+			array(
+				array(
+					'slug'  => 'quickpostr',
+					'title' => __( 'QuickPostr', 'quickpostr' ),
+					'icon'  => null,
+				),
+			),
+			$categories
+		);
 	}
 
 	/**

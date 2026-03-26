@@ -5,7 +5,7 @@
  * React and @wordpress/rich-text are bundled here — they are not
  * available as WordPress globals on the front end.
  */
-import { createRoot } from 'react-dom/client';
+import { createRoot } from '@wordpress/element';
 import Composer from './Composer.jsx';
 
 const el = document.getElementById( 'quickpostr-composer' );

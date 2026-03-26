@@ -710,39 +710,6 @@ function generateTitle(mode, text, caption) {
 
 /***/ },
 
-/***/ "./node_modules/react-dom/client.js"
-/*!******************************************!*\
-  !*** ./node_modules/react-dom/client.js ***!
-  \******************************************/
-(__unused_webpack_module, exports, __webpack_require__) {
-
-
-
-var m = __webpack_require__(/*! react-dom */ "react-dom");
-if (false) // removed by dead control flow
-{} else {
-  var i = m.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-  exports.createRoot = function(c, o) {
-    i.usingClientEntryPoint = true;
-    try {
-      return m.createRoot(c, o);
-    } finally {
-      i.usingClientEntryPoint = false;
-    }
-  };
-  exports.hydrateRoot = function(c, h, o) {
-    i.usingClientEntryPoint = true;
-    try {
-      return m.hydrateRoot(c, h, o);
-    } finally {
-      i.usingClientEntryPoint = false;
-    }
-  };
-}
-
-
-/***/ },
-
 /***/ "react"
 /*!************************!*\
   !*** external "React" ***!
@@ -753,16 +720,6 @@ module.exports = window["React"];
 
 /***/ },
 
-/***/ "react-dom"
-/*!***************************!*\
-  !*** external "ReactDOM" ***!
-  \***************************/
-(module) {
-
-module.exports = window["ReactDOM"];
-
-/***/ },
-
 /***/ "react/jsx-runtime"
 /*!**********************************!*\
   !*** external "ReactJSXRuntime" ***!
@@ -770,6 +727,16 @@ module.exports = window["ReactDOM"];
 (module) {
 
 module.exports = window["ReactJSXRuntime"];
+
+/***/ },
+
+/***/ "@wordpress/element"
+/*!*********************************!*\
+  !*** external ["wp","element"] ***!
+  \*********************************/
+(module) {
+
+module.exports = window["wp"]["element"];
 
 /***/ },
 
@@ -864,7 +831,8 @@ var __webpack_exports__ = {};
   !*** ./blocks/composer/src/composer-view.js ***!
   \**********************************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var react_dom_client__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react-dom/client */ "./node_modules/react-dom/client.js");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _Composer_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Composer.jsx */ "./blocks/composer/src/Composer.jsx");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__);
@@ -880,7 +848,7 @@ __webpack_require__.r(__webpack_exports__);
 
 const el = document.getElementById('quickpostr-composer');
 if (el) {
-  (0,react_dom_client__WEBPACK_IMPORTED_MODULE_0__.createRoot)(el).render(/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_Composer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {}));
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createRoot)(el).render(/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_Composer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {}));
 }
 })();
 
