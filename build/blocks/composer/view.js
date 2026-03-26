@@ -194,6 +194,7 @@ function PhotoComposer({
   const [file, setFile] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [preview, setPreview] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [existingPhotoUrl, setExistingPhotoUrl] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [libraryMediaId, setLibraryMediaId] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [caption, setCaption] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
   const [dragging, setDragging] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const [selectedTags, setSelectedTags] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
@@ -244,27 +245,46 @@ function PhotoComposer({
     setDragging(false);
   }
   function clearFile() {
-    if (preview) URL.revokeObjectURL(preview);
+    if (file && preview) URL.revokeObjectURL(preview);
     setFile(null);
     setPreview(null);
     setExistingPhotoUrl(null);
+    setLibraryMediaId(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   }
+  function openMediaLibrary() {
+    const frame = window.wp?.media({
+      title: 'Select a Photo',
+      button: {
+        text: 'Use this photo'
+      },
+      multiple: false,
+      library: {
+        type: 'image'
+      }
+    });
+    if (!frame) return;
+    frame.on('select', () => {
+      const attachment = frame.state().get('selection').first().toJSON();
+      setError(null);
+      setFile(null);
+      setLibraryMediaId(attachment.id);
+      setPreview(attachment.sizes?.large?.url ?? attachment.url);
+    });
+    frame.open();
+  }
   async function handleSubmit() {
-    // In edit mode without a new file, we can still update the caption.
-    if (!editPost && !file) return;
+    // In edit mode without a new file or library pick, we can still update the caption.
+    if (!editPost && !file && !libraryMediaId) return;
     if (submitting) return;
     setSubmitting(true);
     setError(null);
-
-    // Capture preview URL before async state changes.
-    const previewUrl = preview;
     try {
       let wpPost;
-      if (editPost && !file) {
-        // Edit mode: update caption only, keep existing featured media.
+      if (editPost && !file && !libraryMediaId) {
+        // Edit mode: update caption/tags only, keep existing featured media.
         wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.updatePost)(editPost.id, {
           content: caption,
           status: defaultStatus,
@@ -273,13 +293,22 @@ function PhotoComposer({
         });
         onSuccess?.(wpPost, '');
       } else {
-        // New file: upload media then create/update post.
-        const media = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.uploadMedia)(file);
+        // Resolve the media ID — either from library pick or a fresh upload.
+        let mediaId;
+        let mediaUrl;
+        if (libraryMediaId) {
+          mediaId = libraryMediaId;
+          mediaUrl = preview;
+        } else {
+          const media = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.uploadMedia)(file);
+          mediaId = media.id;
+          mediaUrl = media.source_url;
+        }
         if (editPost) {
           wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.updatePost)(editPost.id, {
             content: caption,
             status: defaultStatus,
-            featured_media: media.id,
+            featured_media: mediaId,
             tags: selectedTags,
             categories: selectedCategories
           });
@@ -289,7 +318,7 @@ function PhotoComposer({
             content: caption,
             status: defaultStatus,
             format: 'image',
-            featured_media: media.id,
+            featured_media: mediaId,
             tags: selectedTags,
             categories: selectedCategories,
             meta: {
@@ -297,13 +326,13 @@ function PhotoComposer({
             }
           });
         }
-        onSuccess?.(wpPost, media.source_url);
+        onSuccess?.(wpPost, mediaUrl);
       }
 
       // Reset form.
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setFile(null);
       setPreview(null);
+      setLibraryMediaId(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       setCaption('');
       setSelectedTags([]);
@@ -325,7 +354,7 @@ function PhotoComposer({
   const dropzoneClass = ['qp-photo-dropzone', dragging ? 'qp-photo-dropzone--active' : ''].filter(Boolean).join(' ');
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
     className: "qp-photo-composer",
-    children: [!file && !existingPhotoUrl && !(editPost && editPost.featured_media) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    children: [!file && !preview && !existingPhotoUrl && !(editPost && editPost.featured_media) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
       className: dropzoneClass,
       onDrop: handleDrop,
       onDragOver: handleDragOver,
@@ -359,9 +388,19 @@ function PhotoComposer({
         })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("span", {
         className: "qp-photo-dropzone__label",
-        children: ["Drop a photo here or ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
+        children: ["Drop a photo here, ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
           className: "qp-photo-dropzone__browse",
           children: "browse"
+        }), window.wp?.media && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+          children: [", or", ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
+            type: "button",
+            className: "qp-photo-dropzone__library",
+            onClick: e => {
+              e.stopPropagation();
+              openMediaLibrary();
+            },
+            children: "choose from library"
+          })]
         })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("input", {
         ref: fileInputRef,
@@ -372,7 +411,7 @@ function PhotoComposer({
         "aria-hidden": "true",
         tabIndex: -1
       })]
-    }), (file || existingPhotoUrl) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+    }), (file || preview || existingPhotoUrl) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
       className: "qp-photo-preview",
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("img", {
         src: preview ?? existingPhotoUrl,
@@ -386,7 +425,7 @@ function PhotoComposer({
         disabled: submitting,
         children: "\u2715"
       })]
-    }), (file || editPost) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+    }), (file || libraryMediaId || editPost) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("textarea", {
         className: "qp-photo-caption",
         placeholder: "Add a caption\u2026 (optional)",
@@ -410,7 +449,7 @@ function PhotoComposer({
       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
         className: "qp-composer-submit",
         onClick: handleSubmit,
-        disabled: !editPost && !file || submitting,
+        disabled: !editPost && !file && !libraryMediaId || submitting,
         "aria-label": submitting ? 'Publishing…' : editPost ? 'Update' : 'Publish photo',
         type: "button",
         children: submitting ? 'Publishing…' : editPost ? 'Update' : defaultStatus === 'draft' ? 'Save Draft' : 'Post'

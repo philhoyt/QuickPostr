@@ -58,6 +58,9 @@ $config = array(
 	'maxUploadSize' => wp_max_upload_size(),
 );
 
+// Enqueue the WP media modal so PhotoComposer can open the library picker.
+wp_enqueue_media();
+
 wp_add_inline_script(
 	'quickpostr-composer-view',
 	'window.quickpostrConfig = ' . wp_json_encode( $config ) . ';',

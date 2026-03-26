@@ -377,6 +377,13 @@
 	text-decoration: underline;
 }
 
+.wp-block-quickpostr-composer .qp-photo-dropzone__library {
+	all: unset;
+	color: var(--qp-accent);
+	text-decoration: underline;
+	cursor: pointer;
+}
+
 .wp-block-quickpostr-composer .qp-photo-dropzone__input {
 	position: absolute;
 	width: 1px;

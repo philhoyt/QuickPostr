@@ -19,6 +19,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 	const [ file,               setFile ]               = useState( null );
 	const [ preview,            setPreview ]            = useState( null );
 	const [ existingPhotoUrl,   setExistingPhotoUrl ]   = useState( null );
+	const [ libraryMediaId,     setLibraryMediaId ]     = useState( null );
 	const [ caption,            setCaption ]            = useState( '' );
 	const [ dragging,           setDragging ]           = useState( false );
 	const [ selectedTags,       setSelectedTags ]       = useState( [] );
@@ -82,31 +83,50 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 	}
 
 	function clearFile() {
-		if ( preview ) URL.revokeObjectURL( preview );
+		if ( file && preview ) URL.revokeObjectURL( preview );
 		setFile( null );
 		setPreview( null );
 		setExistingPhotoUrl( null );
+		setLibraryMediaId( null );
 		if ( fileInputRef.current ) {
 			fileInputRef.current.value = '';
 		}
 	}
 
+	function openMediaLibrary() {
+		const frame = window.wp?.media( {
+			title:    'Select a Photo',
+			button:   { text: 'Use this photo' },
+			multiple: false,
+			library:  { type: 'image' },
+		} );
+
+		if ( ! frame ) return;
+
+		frame.on( 'select', () => {
+			const attachment = frame.state().get( 'selection' ).first().toJSON();
+			setError( null );
+			setFile( null );
+			setLibraryMediaId( attachment.id );
+			setPreview( attachment.sizes?.large?.url ?? attachment.url );
+		} );
+
+		frame.open();
+	}
+
 	async function handleSubmit() {
-		// In edit mode without a new file, we can still update the caption.
-		if ( ! editPost && ! file ) return;
+		// In edit mode without a new file or library pick, we can still update the caption.
+		if ( ! editPost && ! file && ! libraryMediaId ) return;
 		if ( submitting ) return;
 
 		setSubmitting( true );
 		setError( null );
 
-		// Capture preview URL before async state changes.
-		const previewUrl = preview;
-
 		try {
 			let wpPost;
 
-			if ( editPost && ! file ) {
-				// Edit mode: update caption only, keep existing featured media.
+			if ( editPost && ! file && ! libraryMediaId ) {
+				// Edit mode: update caption/tags only, keep existing featured media.
 				wpPost = await updatePost( editPost.id, {
 					content:    caption,
 					status:     defaultStatus,
@@ -115,14 +135,24 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				} );
 				onSuccess?.( wpPost, '' );
 			} else {
-				// New file: upload media then create/update post.
-				const media = await uploadMedia( file );
+				// Resolve the media ID — either from library pick or a fresh upload.
+				let mediaId;
+				let mediaUrl;
+
+				if ( libraryMediaId ) {
+					mediaId  = libraryMediaId;
+					mediaUrl = preview;
+				} else {
+					const media = await uploadMedia( file );
+					mediaId  = media.id;
+					mediaUrl = media.source_url;
+				}
 
 				if ( editPost ) {
 					wpPost = await updatePost( editPost.id, {
 						content:        caption,
 						status:         defaultStatus,
-						featured_media: media.id,
+						featured_media: mediaId,
 						tags:           selectedTags,
 						categories:     selectedCategories,
 					} );
@@ -132,20 +162,20 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 						content:        caption,
 						status:         defaultStatus,
 						format:         'image',
-						featured_media: media.id,
+						featured_media: mediaId,
 						tags:           selectedTags,
 						categories:     selectedCategories,
 						meta:           { _quickpostr_post: '1' },
 					} );
 				}
 
-				onSuccess?.( wpPost, media.source_url );
+				onSuccess?.( wpPost, mediaUrl );
 			}
 
 			// Reset form.
-			if ( previewUrl ) URL.revokeObjectURL( previewUrl );
 			setFile( null );
 			setPreview( null );
+			setLibraryMediaId( null );
 			if ( fileInputRef.current ) fileInputRef.current.value = '';
 			setCaption( '' );
 			setSelectedTags( [] );
@@ -175,7 +205,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 	return (
 		<div className="qp-photo-composer">
-			{ ! file && ! existingPhotoUrl && ! ( editPost && editPost.featured_media ) && (
+			{ ! file && ! preview && ! existingPhotoUrl && ! ( editPost && editPost.featured_media ) && (
 				<div
 					className={ dropzoneClass }
 					onDrop={ handleDrop }
@@ -201,7 +231,19 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 						<polyline points="21 15 16 10 5 21" />
 					</svg>
 					<span className="qp-photo-dropzone__label">
-						Drop a photo here or <span className="qp-photo-dropzone__browse">browse</span>
+						Drop a photo here, <span className="qp-photo-dropzone__browse">browse</span>
+						{ window.wp?.media && (
+							<>
+								, or{ ' ' }
+								<button
+									type="button"
+									className="qp-photo-dropzone__library"
+									onClick={ ( e ) => { e.stopPropagation(); openMediaLibrary(); } }
+								>
+									choose from library
+								</button>
+							</>
+						) }
 					</span>
 					<input
 						ref={ fileInputRef }
@@ -215,7 +257,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( file || existingPhotoUrl ) && (
+			{ ( file || preview || existingPhotoUrl ) && (
 				<div className="qp-photo-preview">
 					<img
 						src={ preview ?? existingPhotoUrl }
@@ -234,7 +276,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( file || editPost ) && (
+			{ ( file || libraryMediaId || editPost ) && (
 				<>
 					<textarea
 						className="qp-photo-caption"
@@ -263,7 +305,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				<button
 					className="qp-composer-submit"
 					onClick={ handleSubmit }
-					disabled={ ( ! editPost && ! file ) || submitting }
+					disabled={ ( ! editPost && ! file && ! libraryMediaId ) || submitting }
 					aria-label={ submitting ? 'Publishing…' : ( editPost ? 'Update' : 'Publish photo' ) }
 					type="button"
 				>
