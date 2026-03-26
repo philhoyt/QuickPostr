@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { searchTags, createTag, searchCategories, createCategory, getCategory } from './api.js';
+import { searchTags, createTag, getTag, searchCategories, createCategory, getCategory } from './api.js';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -35,8 +35,21 @@ export default function TagInput( {
 	const tagTimer   = useRef( null );
 	const catTimer   = useRef( null );
 	const wrapperRef = useRef( null );
+	const tagInputRef = useRef( null );
+	const catInputRef = useRef( null );
 
-	// Resolve names for any pre-selected categories (e.g. default category).
+	// Resolve names for any pre-selected tags (e.g. when editing a post).
+	useEffect( () => {
+		selectedTags.forEach( ( id ) => {
+			if ( ! tagNames[ id ] ) {
+				getTag( id )
+					.then( ( tag ) => setTagNames( ( prev ) => ( { ...prev, [ tag.id ]: tag.name } ) ) )
+					.catch( () => {} );
+			}
+		} );
+	}, [ selectedTags ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Resolve names for any pre-selected categories (e.g. default category or editing a post).
 	useEffect( () => {
 		selectedCategories.forEach( ( id ) => {
 			if ( ! catNames[ id ] ) {
@@ -89,6 +102,7 @@ export default function TagInput( {
 		setTagInput( '' );
 		setTagSuggestions( [] );
 		setTagOpen( false );
+		setTimeout( () => tagInputRef.current?.focus(), 0 );
 	}
 
 	async function handleCreateTag( name ) {
@@ -151,6 +165,7 @@ export default function TagInput( {
 		setCatInput( '' );
 		setCatSuggestions( [] );
 		setCatOpen( false );
+		setTimeout( () => catInputRef.current?.focus(), 0 );
 	}
 
 	async function handleCreateCategory( name ) {
@@ -205,6 +220,7 @@ export default function TagInput( {
 				) ) }
 				<div className="qp-tag-input__search-wrap">
 					<input
+						ref={ tagInputRef }
 						type="text"
 						className="qp-tag-input__search"
 						value={ tagInput }
@@ -231,18 +247,33 @@ export default function TagInput( {
 										{ tag.name }
 									</li>
 								) ) }
-							{ ! tagSuggestions.some(
-								( t ) => t.name.toLowerCase() === tagInput.trim().toLowerCase()
-							) && (
-								<li
-									role="option"
-									aria-selected={ false }
-									className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
-									onMouseDown={ () => handleCreateTag( tagInput.trim() ) }
-								>
-									{ creatingTag ? 'Creating…' : `Create "${ tagInput.trim() }"` }
-								</li>
-							) }
+							{ ( () => {
+								const lc      = tagInput.trim().toLowerCase();
+								const exact   = tagSuggestions.find( ( t ) => t.name.toLowerCase() === lc );
+								const already = exact
+									? selectedTags.includes( exact.id )
+									: Object.entries( tagNames ).some( ( [ , n ] ) => n.toLowerCase() === lc );
+								if ( already ) {
+									return (
+										<li role="option" aria-selected={ false } className="qp-tag-input__suggestion qp-tag-input__suggestion--already">
+											Already added
+										</li>
+									);
+								}
+								if ( ! exact ) {
+									return (
+										<li
+											role="option"
+											aria-selected={ false }
+											className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
+											onMouseDown={ () => handleCreateTag( tagInput.trim() ) }
+										>
+											{ creatingTag ? 'Creating…' : `Create "${ tagInput.trim() }"` }
+										</li>
+									);
+								}
+								return null;
+							} )() }
 						</ul>
 					) }
 				</div>
@@ -265,6 +296,7 @@ export default function TagInput( {
 				) ) }
 				<div className="qp-tag-input__search-wrap">
 					<input
+						ref={ catInputRef }
 						type="text"
 						className="qp-tag-input__search"
 						value={ catInput }
@@ -291,18 +323,33 @@ export default function TagInput( {
 										{ cat.name }
 									</li>
 								) ) }
-							{ ! catSuggestions.some(
-								( c ) => c.name.toLowerCase() === catInput.trim().toLowerCase()
-							) && (
-								<li
-									role="option"
-									aria-selected={ false }
-									className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
-									onMouseDown={ () => handleCreateCategory( catInput.trim() ) }
-								>
-									{ creatingCat ? 'Creating…' : `Create "${ catInput.trim() }"` }
-								</li>
-							) }
+							{ ( () => {
+								const lc      = catInput.trim().toLowerCase();
+								const exact   = catSuggestions.find( ( c ) => c.name.toLowerCase() === lc );
+								const already = exact
+									? selectedCategories.includes( exact.id )
+									: Object.entries( catNames ).some( ( [ , n ] ) => n.toLowerCase() === lc );
+								if ( already ) {
+									return (
+										<li role="option" aria-selected={ false } className="qp-tag-input__suggestion qp-tag-input__suggestion--already">
+											Already added
+										</li>
+									);
+								}
+								if ( ! exact ) {
+									return (
+										<li
+											role="option"
+											aria-selected={ false }
+											className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
+											onMouseDown={ () => handleCreateCategory( catInput.trim() ) }
+										>
+											{ creatingCat ? 'Creating…' : `Create "${ catInput.trim() }"` }
+										</li>
+									);
+								}
+								return null;
+							} )() }
 						</ul>
 					) }
 				</div>

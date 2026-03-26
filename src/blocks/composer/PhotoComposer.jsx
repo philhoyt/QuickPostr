@@ -33,10 +33,16 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 	const fileInputRef  = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
-	// Pre-fill caption and load existing photo from editPost.
+	// Pre-fill caption, terms, and load existing photo from editPost.
 	useEffect( () => {
 		if ( ! editPost ) return;
 		setCaption( editPost.content?.raw ?? '' );
+		setSelectedTags( editPost.tags ?? [] );
+		setSelectedCategories(
+			editPost.categories?.length
+				? editPost.categories
+				: ( config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : [] )
+		);
 		if ( editPost.featured_media ) {
 			getMediaUrl( editPost.featured_media )
 				.then( ( url ) => setExistingPhotoUrl( url ) )

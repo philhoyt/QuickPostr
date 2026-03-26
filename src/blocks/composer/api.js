@@ -143,8 +143,18 @@ export function getCategory( id ) {
  * @returns {Promise<object>}
  */
 export function getPost( id ) {
-	const qs = new URLSearchParams( { context: 'edit', _fields: 'id,title,content,format,status,featured_media' } );
+	const qs = new URLSearchParams( { context: 'edit', _fields: 'id,title,content,format,status,featured_media,tags,categories' } );
 	return request( 'GET', `/wp/v2/posts/${ id }?${ qs }` );
+}
+
+/**
+ * Fetch a single tag by ID.
+ *
+ * @param {number} id
+ * @returns {Promise<{id: number, name: string}>}
+ */
+export function getTag( id ) {
+	return request( 'GET', `/wp/v2/tags/${ id }?_fields=id,name` );
 }
 
 /**

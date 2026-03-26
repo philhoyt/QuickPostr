@@ -164,6 +164,8 @@ export default function TextComposer( { onSuccess, editPost } ) {
 				wasEditingRef.current = false;
 				setDraftId( null );
 				setHtml( '' );
+				setSelectedTags( [] );
+				setSelectedCategories( config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : [] );
 				if ( editorRef.current ) {
 					editorRef.current.innerHTML = '';
 					editorRef.current.dispatchEvent( new Event( 'input', { bubbles: true } ) );
@@ -175,6 +177,12 @@ export default function TextComposer( { onSuccess, editPost } ) {
 		const raw = editPost.content?.raw ?? '';
 		setDraftId( editPost.id );
 		setHtml( raw );
+		setSelectedTags( editPost.tags ?? [] );
+		setSelectedCategories(
+			editPost.categories?.length
+				? editPost.categories
+				: ( config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : [] )
+		);
 		if ( editorRef.current ) {
 			editorRef.current.innerHTML = raw;
 			// Trigger RichEditor's handleInput so isEmpty state clears the placeholder.

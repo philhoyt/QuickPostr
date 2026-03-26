@@ -205,10 +205,12 @@ function PhotoComposer({
   const fileInputRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
-  // Pre-fill caption and load existing photo from editPost.
+  // Pre-fill caption, terms, and load existing photo from editPost.
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     if (!editPost) return;
     setCaption(editPost.content?.raw ?? '');
+    setSelectedTags(editPost.tags ?? []);
+    setSelectedCategories(editPost.categories?.length ? editPost.categories : config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
     if (editPost.featured_media) {
       (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.getMediaUrl)(editPost.featured_media).then(url => setExistingPhotoUrl(url)).catch(() => {});
     }
@@ -565,8 +567,22 @@ function TagInput({
   const tagTimer = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const catTimer = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const wrapperRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const tagInputRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const catInputRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
 
-  // Resolve names for any pre-selected categories (e.g. default category).
+  // Resolve names for any pre-selected tags (e.g. when editing a post).
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    selectedTags.forEach(id => {
+      if (!tagNames[id]) {
+        (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.getTag)(id).then(tag => setTagNames(prev => ({
+          ...prev,
+          [tag.id]: tag.name
+        }))).catch(() => {});
+      }
+    });
+  }, [selectedTags]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Resolve names for any pre-selected categories (e.g. default category or editing a post).
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     selectedCategories.forEach(id => {
       if (!catNames[id]) {
@@ -620,6 +636,7 @@ function TagInput({
     setTagInput('');
     setTagSuggestions([]);
     setTagOpen(false);
+    setTimeout(() => tagInputRef.current?.focus(), 0);
   }
   async function handleCreateTag(name) {
     if (creatingTag) return;
@@ -677,6 +694,7 @@ function TagInput({
     setCatInput('');
     setCatSuggestions([]);
     setCatOpen(false);
+    setTimeout(() => catInputRef.current?.focus(), 0);
   }
   async function handleCreateCategory(name) {
     if (creatingCat) return;
@@ -723,6 +741,7 @@ function TagInput({
       }, id)), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
         className: "qp-tag-input__search-wrap",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
+          ref: tagInputRef,
           type: "text",
           className: "qp-tag-input__search",
           value: tagInput,
@@ -742,13 +761,29 @@ function TagInput({
             className: "qp-tag-input__suggestion",
             onMouseDown: () => addTag(tag),
             children: tag.name
-          }, tag.id)), !tagSuggestions.some(t => t.name.toLowerCase() === tagInput.trim().toLowerCase()) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
-            role: "option",
-            "aria-selected": false,
-            className: "qp-tag-input__suggestion qp-tag-input__suggestion--create",
-            onMouseDown: () => handleCreateTag(tagInput.trim()),
-            children: creatingTag ? 'Creating…' : `Create "${tagInput.trim()}"`
-          })]
+          }, tag.id)), (() => {
+            const lc = tagInput.trim().toLowerCase();
+            const exact = tagSuggestions.find(t => t.name.toLowerCase() === lc);
+            const already = exact ? selectedTags.includes(exact.id) : Object.entries(tagNames).some(([, n]) => n.toLowerCase() === lc);
+            if (already) {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
+                role: "option",
+                "aria-selected": false,
+                className: "qp-tag-input__suggestion qp-tag-input__suggestion--already",
+                children: "Already added"
+              });
+            }
+            if (!exact) {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
+                role: "option",
+                "aria-selected": false,
+                className: "qp-tag-input__suggestion qp-tag-input__suggestion--create",
+                onMouseDown: () => handleCreateTag(tagInput.trim()),
+                children: creatingTag ? 'Creating…' : `Create "${tagInput.trim()}"`
+              });
+            }
+            return null;
+          })()]
         })]
       })]
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
@@ -765,6 +800,7 @@ function TagInput({
       }, id)), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
         className: "qp-tag-input__search-wrap",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
+          ref: catInputRef,
           type: "text",
           className: "qp-tag-input__search",
           value: catInput,
@@ -784,13 +820,29 @@ function TagInput({
             className: "qp-tag-input__suggestion",
             onMouseDown: () => addCategory(cat),
             children: cat.name
-          }, cat.id)), !catSuggestions.some(c => c.name.toLowerCase() === catInput.trim().toLowerCase()) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
-            role: "option",
-            "aria-selected": false,
-            className: "qp-tag-input__suggestion qp-tag-input__suggestion--create",
-            onMouseDown: () => handleCreateCategory(catInput.trim()),
-            children: creatingCat ? 'Creating…' : `Create "${catInput.trim()}"`
-          })]
+          }, cat.id)), (() => {
+            const lc = catInput.trim().toLowerCase();
+            const exact = catSuggestions.find(c => c.name.toLowerCase() === lc);
+            const already = exact ? selectedCategories.includes(exact.id) : Object.entries(catNames).some(([, n]) => n.toLowerCase() === lc);
+            if (already) {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
+                role: "option",
+                "aria-selected": false,
+                className: "qp-tag-input__suggestion qp-tag-input__suggestion--already",
+                children: "Already added"
+              });
+            }
+            if (!exact) {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("li", {
+                role: "option",
+                "aria-selected": false,
+                className: "qp-tag-input__suggestion qp-tag-input__suggestion--create",
+                onMouseDown: () => handleCreateCategory(catInput.trim()),
+                children: creatingCat ? 'Creating…' : `Create "${catInput.trim()}"`
+              });
+            }
+            return null;
+          })()]
         })]
       })]
     })]
@@ -994,6 +1046,8 @@ function TextComposer({
         wasEditingRef.current = false;
         setDraftId(null);
         setHtml('');
+        setSelectedTags([]);
+        setSelectedCategories(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
         if (editorRef.current) {
           editorRef.current.innerHTML = '';
           editorRef.current.dispatchEvent(new Event('input', {
@@ -1007,6 +1061,8 @@ function TextComposer({
     const raw = editPost.content?.raw ?? '';
     setDraftId(editPost.id);
     setHtml(raw);
+    setSelectedTags(editPost.tags ?? []);
+    setSelectedCategories(editPost.categories?.length ? editPost.categories : config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
     if (editorRef.current) {
       editorRef.current.innerHTML = raw;
       // Trigger RichEditor's handleInput so isEmpty state clears the placeholder.
@@ -1220,6 +1276,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   getDraft: () => (/* binding */ getDraft),
 /* harmony export */   getMediaUrl: () => (/* binding */ getMediaUrl),
 /* harmony export */   getPost: () => (/* binding */ getPost),
+/* harmony export */   getTag: () => (/* binding */ getTag),
 /* harmony export */   searchCategories: () => (/* binding */ searchCategories),
 /* harmony export */   searchTags: () => (/* binding */ searchTags),
 /* harmony export */   updatePost: () => (/* binding */ updatePost),
@@ -1379,9 +1436,19 @@ function getCategory(id) {
 function getPost(id) {
   const qs = new URLSearchParams({
     context: 'edit',
-    _fields: 'id,title,content,format,status,featured_media'
+    _fields: 'id,title,content,format,status,featured_media,tags,categories'
   });
   return request('GET', `/wp/v2/posts/${id}?${qs}`);
+}
+
+/**
+ * Fetch a single tag by ID.
+ *
+ * @param {number} id
+ * @returns {Promise<{id: number, name: string}>}
+ */
+function getTag(id) {
+  return request('GET', `/wp/v2/tags/${id}?_fields=id,name`);
 }
 
 /**

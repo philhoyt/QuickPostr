@@ -310,6 +310,13 @@
 	font-style: italic;
 }
 
+.wp-block-quickpostr-composer .qp-tag-input__suggestion--already {
+	color: var(--wp--preset--color--contrast-2, #666);
+	border-top: 1px solid var(--qp-border);
+	font-style: italic;
+	cursor: default;
+}
+
 .wp-block-quickpostr-composer .qp-tag-input__categories {
 	margin-top: 0.75rem;
 	display: flex;
