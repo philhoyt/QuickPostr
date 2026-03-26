@@ -1072,13 +1072,6 @@ function TextComposer({
     }
   }, [editPost]);
 
-  // Autofocus (only when not loading an edit post — avoids scroll jump).
-  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (!editPost) {
-      editorRef.current?.focus();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   /** Schedule a debounced draft save whenever content changes. */
   function scheduleDraftSave(content) {
     if (editPost) return; // Edit mode: no auto-save as draft.

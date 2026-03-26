@@ -190,12 +190,6 @@ export default function TextComposer( { onSuccess, editPost } ) {
 		}
 	}, [ editPost ] );
 
-	// Autofocus (only when not loading an edit post — avoids scroll jump).
-	useEffect( () => {
-		if ( ! editPost ) {
-			editorRef.current?.focus();
-		}
-	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	/** Schedule a debounced draft save whenever content changes. */
 	function scheduleDraftSave( content ) {
