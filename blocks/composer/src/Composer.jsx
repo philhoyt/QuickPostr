@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import TextComposer from './TextComposer.jsx';
+import PhotoComposer from './PhotoComposer.jsx';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -62,9 +63,7 @@ export default function Composer() {
 					<TextComposer onSuccess={ handleSuccess } />
 				) }
 				{ mode === 'photo' && (
-					<p className="qp-composer__coming-soon">
-						Photo composer coming soon.
-					</p>
+					<PhotoComposer onSuccess={ handleSuccess } />
 				) }
 			</div>
 		</div>

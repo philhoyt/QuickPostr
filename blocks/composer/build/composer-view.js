@@ -15,8 +15,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "react");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TextComposer.jsx */ "./blocks/composer/src/TextComposer.jsx");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./PhotoComposer.jsx */ "./blocks/composer/src/PhotoComposer.jsx");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
+
 
 
 
@@ -39,33 +41,33 @@ function Composer() {
   function handleSuccess() {
     window.location.reload();
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
     className: "qp-composer",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("header", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("header", {
       className: "qp-composer__header",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
         className: "qp-composer__identity",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
           className: "qp-composer__avatar",
           "aria-hidden": "true",
-          children: avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("img", {
+          children: avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("img", {
             src: avatarUrl,
             alt: "",
             width: "32",
             height: "32"
-          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("span", {
+          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
             children: initials
           })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("span", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
           className: "qp-composer__user-name",
           children: user.name
         })]
       })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
       className: "qp-composer__mode-bar",
       role: "tablist",
       "aria-label": "Post type",
-      children: ['status', 'photo'].map(m => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("button", {
+      children: ['status', 'photo'].map(m => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
         role: "tab",
         "aria-selected": mode === m,
         className: `qp-composer__mode-btn${mode === m ? ' qp-composer__mode-btn--active' : ''}`,
@@ -73,14 +75,245 @@ function Composer() {
         type: "button",
         children: m === 'status' ? 'Status' : 'Photo'
       }, m))
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
       className: "qp-composer__body",
-      children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {
+      children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_1__["default"], {
         onSuccess: handleSuccess
-      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
-        className: "qp-composer__coming-soon",
-        children: "Photo composer coming soon."
+      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
+        onSuccess: handleSuccess
       })]
+    })]
+  });
+}
+
+/***/ },
+
+/***/ "./blocks/composer/src/PhotoComposer.jsx"
+/*!***********************************************!*\
+  !*** ./blocks/composer/src/PhotoComposer.jsx ***!
+  \***********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ PhotoComposer)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "react");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./api.js */ "./blocks/composer/src/api.js");
+/* harmony import */ var _TagInput_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TagInput.jsx */ "./blocks/composer/src/TagInput.jsx");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+const config = window.quickpostrConfig ?? {};
+const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
+
+/**
+ * Photo post composer.
+ *
+ * Flow: pick/drop image → optional caption → upload media → create post.
+ *
+ * Props:
+ *   onSuccess (wpPost, mediaUrl) => void
+ */
+function PhotoComposer({
+  onSuccess
+}) {
+  const [file, setFile] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [preview, setPreview] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [caption, setCaption] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
+  const [dragging, setDragging] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [selectedTags, setSelectedTags] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+  const [selectedCategories, setSelectedCategories] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+  const [submitting, setSubmitting] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [flash, setFlash] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const fileInputRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+  function pickFile(f) {
+    if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      setError('Please select an image file.');
+      return;
+    }
+    if (f.size > MAX_BYTES) {
+      const mb = Math.round(MAX_BYTES / 1024 / 1024);
+      setError(`File too large — maximum size is ${mb} MB.`);
+      return;
+    }
+    setError(null);
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+  }
+  function handleInputChange(e) {
+    pickFile(e.target.files?.[0] ?? null);
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    pickFile(e.dataTransfer.files?.[0] ?? null);
+  }
+  function handleDragOver(e) {
+    e.preventDefault();
+    setDragging(true);
+  }
+  function handleDragLeave() {
+    setDragging(false);
+  }
+  function clearFile() {
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(null);
+    setPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }
+  async function handleSubmit() {
+    if (!file || submitting) return;
+    setSubmitting(true);
+    setError(null);
+
+    // Capture preview URL before async state changes.
+    const previewUrl = preview;
+    try {
+      const media = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.uploadMedia)(file);
+      const wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createPost)({
+        title: '',
+        content: caption,
+        status: defaultStatus,
+        format: 'image',
+        featured_media: media.id,
+        tags: selectedTags,
+        categories: selectedCategories,
+        meta: {
+          _quickpostr_post: '1'
+        }
+      });
+      onSuccess?.(wpPost, media.source_url);
+
+      // Reset form.
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setFile(null);
+      setPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setCaption('');
+      setSelectedTags([]);
+      setSelectedCategories(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+      setFlash(true);
+      setTimeout(() => setFlash(false), 2500);
+    } catch (err) {
+      setError(err.message ?? 'Failed to publish. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  function handleDropzoneKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInputRef.current?.click();
+    }
+  }
+  const dropzoneClass = ['qp-photo-dropzone', dragging ? 'qp-photo-dropzone--active' : ''].filter(Boolean).join(' ');
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+    className: "qp-photo-composer",
+    children: [!file && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      className: dropzoneClass,
+      onDrop: handleDrop,
+      onDragOver: handleDragOver,
+      onDragLeave: handleDragLeave,
+      onClick: () => fileInputRef.current?.click(),
+      onKeyDown: handleDropzoneKeyDown,
+      role: "button",
+      tabIndex: 0,
+      "aria-label": "Choose a photo to upload",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("svg", {
+        className: "qp-photo-dropzone__icon",
+        "aria-hidden": "true",
+        xmlns: "http://www.w3.org/2000/svg",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "1.5",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("rect", {
+          x: "3",
+          y: "3",
+          width: "18",
+          height: "18",
+          rx: "3",
+          ry: "3"
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("circle", {
+          cx: "8.5",
+          cy: "8.5",
+          r: "1.5"
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("polyline", {
+          points: "21 15 16 10 5 21"
+        })]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("span", {
+        className: "qp-photo-dropzone__label",
+        children: ["Drop a photo here or ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+          className: "qp-photo-dropzone__browse",
+          children: "browse"
+        })]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
+        ref: fileInputRef,
+        type: "file",
+        accept: "image/*",
+        className: "qp-photo-dropzone__input",
+        onChange: handleInputChange,
+        "aria-hidden": "true",
+        tabIndex: -1
+      })]
+    }), file && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      className: "qp-photo-preview",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("img", {
+        src: preview,
+        alt: "Selected photo preview",
+        className: "qp-photo-preview__img"
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+        type: "button",
+        className: "qp-photo-preview__remove",
+        onClick: clearFile,
+        "aria-label": "Remove photo",
+        disabled: submitting,
+        children: "\u2715"
+      })]
+    }), file && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("textarea", {
+        className: "qp-photo-caption",
+        placeholder: "Add a caption\u2026 (optional)",
+        value: caption,
+        onChange: e => setCaption(e.target.value),
+        disabled: submitting,
+        rows: 3,
+        "aria-label": "Photo caption"
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_TagInput_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
+        selectedTags: selectedTags,
+        selectedCategories: selectedCategories,
+        onTagsChange: setSelectedTags,
+        onCategoriesChange: setSelectedCategories
+      })]
+    }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+      className: "qp-composer-error",
+      role: "alert",
+      children: error
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("footer", {
+      className: "qp-photo-composer__footer",
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+        className: "qp-composer-submit",
+        onClick: handleSubmit,
+        disabled: !file || submitting,
+        "aria-label": submitting ? 'Publishing…' : 'Publish photo',
+        type: "button",
+        children: submitting ? 'Publishing…' : defaultStatus === 'draft' ? 'Save Draft' : 'Post'
+      })
+    }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+      className: "qp-composer-flash",
+      role: "status",
+      "aria-live": "assertive",
+      children: "Posted!"
     })]
   });
 }
