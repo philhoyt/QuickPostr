@@ -1,0 +1,17 @@
+.distignore
+.gitignore
+CLAUDE.md
+composer.json
+composer.lock
+node_modules
+package.json
+package-lock.json
+phpcs.xml.dist
+vendor
+webpack.config.js
+blocks/composer/src
+blocks/delete-post/src
+blocks/edit-post/src
+blocks/profile-edit-bio/src
+blocks/profile-edit-name/src
+docs

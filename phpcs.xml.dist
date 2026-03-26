@@ -5,10 +5,10 @@
     <!-- What to scan -->
     <file>quickpostr.php</file>
     <file>includes/</file>
-    <file>blocks/composer/render.php</file>
+    <file>src/blocks/</file>
 
     <!-- Ignore build output and third-party code -->
-    <exclude-pattern>blocks/composer/build/*</exclude-pattern>
+    <exclude-pattern>build/*</exclude-pattern>
     <exclude-pattern>vendor/*</exclude-pattern>
     <exclude-pattern>node_modules/*</exclude-pattern>
 

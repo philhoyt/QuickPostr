@@ -1,20 +1,45 @@
 const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
 const path          = require( 'path' );
+const CopyPlugin    = require( 'copy-webpack-plugin' );
 
 /**
  * Multi-block webpack config.
  *
- * Output path is `blocks/` with entry names that include the subdirectory,
- * so each block's build artifacts land in its own `build/` folder:
- *   composer/build/index.js
- *   delete-post/build/index.js
- *   …
+ * Extends @wordpress/scripts defaults, which auto-discover block entry points
+ * by scanning src/ for block.json files and compiling editorScript / viewScript
+ * references into build/blocks/<block-name>/.
  *
- * Block.json files reference `"file:./build/index.js"` (relative to their
- * own location), which resolves correctly without any changes.
+ * We add entries that auto-discovery won't pick up:
+ *   - composer/view.js  — the front-end React app (named handle, not file:)
+ *   - delete-post/view.js, edit-post/view.js — vanilla JS view scripts (named handle)
+ *   - shared/profile-edit.js — shared view script for both profile blocks (named handle)
+ *
+ * CSS files referenced as file: in block.json are copied via CopyPlugin (plain CSS,
+ * no PostCSS transforms needed) so they land at build/blocks/<name>/<file>.css.
  */
+
+// Extend the default CopyPlugin patterns to also copy block CSS files.
+const defaultPlugins   = defaultConfig.plugins ?? [];
+const defaultCopyIndex = defaultPlugins.findIndex( ( p ) => p.constructor?.name === 'CopyPlugin' );
+const defaultPatterns  = defaultCopyIndex >= 0 ? defaultPlugins[ defaultCopyIndex ].patterns : [];
+const extendedPlugins  = [ ...defaultPlugins ];
+
+if ( defaultCopyIndex >= 0 ) {
+	extendedPlugins[ defaultCopyIndex ] = new CopyPlugin( {
+		patterns: [
+			...defaultPatterns,
+			{
+				from: '**/*.css',
+				context: 'src',
+				noErrorOnMissing: true,
+			},
+		],
+	} );
+}
+
 module.exports = {
 	...defaultConfig,
+	plugins: extendedPlugins,
 	entry: async () => {
 		const discovered =
 			typeof defaultConfig.entry === 'function'
@@ -23,21 +48,10 @@ module.exports = {
 
 		return {
 			...discovered,
-			// Composer block (existing).
-			'composer/build/index':        path.resolve( __dirname, 'blocks/composer/src/index.js' ),
-			'composer/build/composer-view': path.resolve( __dirname, 'blocks/composer/src/composer-view.js' ),
-			// Phase 9 blocks.
-			'delete-post/build/index':        path.resolve( __dirname, 'blocks/delete-post/src/index.js' ),
-			'edit-post/build/index':          path.resolve( __dirname, 'blocks/edit-post/src/index.js' ),
-			'profile-edit-name/build/index':  path.resolve( __dirname, 'blocks/profile-edit-name/src/index.js' ),
-			'profile-edit-bio/build/index':   path.resolve( __dirname, 'blocks/profile-edit-bio/src/index.js' ),
+			'blocks/composer/view':    path.resolve( __dirname, 'src/blocks/composer/view.js' ),
+			'blocks/delete-post/view': path.resolve( __dirname, 'src/blocks/delete-post/view.js' ),
+			'blocks/edit-post/view':   path.resolve( __dirname, 'src/blocks/edit-post/view.js' ),
+			'shared/profile-edit':     path.resolve( __dirname, 'src/shared/profile-edit.js' ),
 		};
-	},
-	output: {
-		...defaultConfig.output,
-		// Root of all block build output. Entry names supply the subdirectories.
-		path:     path.resolve( __dirname, 'blocks' ),
-		filename: '[name].js',
-		clean:    false,
 	},
 };

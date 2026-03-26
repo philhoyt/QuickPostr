@@ -36,40 +36,55 @@ class QuickPostr {
 	}
 
 	/**
-	 * Register all plugin blocks.
+	 * Register all plugin blocks and their view scripts.
 	 *
-	 * The profile-edit blocks share a single view script that lives outside
-	 * either block directory, so it must be registered manually here.
-	 * Both block.json files reference it by handle (no file: prefix).
+	 * View scripts are referenced by handle (not file:) in block.json so they
+	 * must be registered here before register_block_type processes the metadata.
+	 * The composer view script reads its asset manifest for React dependencies.
 	 */
 	public function register_block(): void {
+		$composer_asset_file = QUICKPOSTR_PATH . 'build/blocks/composer/view.asset.php';
+		$composer_asset      = file_exists( $composer_asset_file )
+			? require $composer_asset_file
+			: array(
+				'dependencies' => array(),
+				'version'      => QUICKPOSTR_VERSION,
+			);
+
+		wp_register_script(
+			'quickpostr-composer-view',
+			QUICKPOSTR_URL . 'build/blocks/composer/view.js',
+			$composer_asset['dependencies'],
+			$composer_asset['version'],
+			array( 'in_footer' => true )
+		);
 		wp_register_script(
 			'quickpostr-delete-post-view',
-			QUICKPOSTR_URL . 'blocks/delete-post/view.js',
+			QUICKPOSTR_URL . 'build/blocks/delete-post/view.js',
 			array(),
 			QUICKPOSTR_VERSION,
 			array( 'in_footer' => true )
 		);
 		wp_register_script(
 			'quickpostr-edit-post-view',
-			QUICKPOSTR_URL . 'blocks/edit-post/view.js',
+			QUICKPOSTR_URL . 'build/blocks/edit-post/view.js',
 			array(),
 			QUICKPOSTR_VERSION,
 			array( 'in_footer' => true )
 		);
 		wp_register_script(
 			'quickpostr-profile-edit',
-			QUICKPOSTR_URL . 'blocks/profile-edit.js',
+			QUICKPOSTR_URL . 'build/shared/profile-edit.js',
 			array(),
 			QUICKPOSTR_VERSION,
 			array( 'in_footer' => true )
 		);
 
-		register_block_type( QUICKPOSTR_PATH . 'blocks/composer/' );
-		register_block_type( QUICKPOSTR_PATH . 'blocks/delete-post/' );
-		register_block_type( QUICKPOSTR_PATH . 'blocks/edit-post/' );
-		register_block_type( QUICKPOSTR_PATH . 'blocks/profile-edit-name/' );
-		register_block_type( QUICKPOSTR_PATH . 'blocks/profile-edit-bio/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/profile-edit-name/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/profile-edit-bio/' );
 	}
 
 	/**
