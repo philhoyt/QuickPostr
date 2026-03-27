@@ -8,13 +8,13 @@
  * loaded yet), the event goes unhandled and we fall back to navigating to
  * ?qp-edit={id} on the home URL.
  *
- * @package QuickPostr
+ * @package
  */
 ( function () {
 	const cfg = window.quickpostrEditPost ?? {};
 
 	document.querySelectorAll( '.qp-edit-post' ).forEach( function ( wrapper ) {
-		const btn    = wrapper.querySelector( '.qp-edit-post__btn' );
+		const btn = wrapper.querySelector( '.qp-edit-post__btn' );
 		const postId = parseInt( wrapper.dataset.postId, 10 );
 
 		if ( ! btn || ! postId ) {
@@ -22,10 +22,13 @@
 		}
 
 		btn.addEventListener( 'click', function () {
-			btn.disabled    = true;
+			btn.disabled = true;
 			btn.textContent = 'Loading…';
 
-			const url = cfg.restUrl + 'wp/v2/posts/' + postId +
+			const url =
+				cfg.restUrl +
+				'wp/v2/posts/' +
+				postId +
 				'?context=edit&_fields=id,title,content,format,status,featured_media,tags,categories';
 
 			fetch( url, {
@@ -41,9 +44,9 @@
 				} )
 				.then( function ( post ) {
 					const event = new CustomEvent( 'quickpostr:edit-post', {
-						bubbles:    true,
+						bubbles: true,
 						cancelable: true,
-						detail:     { post: post },
+						detail: { post },
 					} );
 
 					document.dispatchEvent( event );
@@ -55,12 +58,12 @@
 					} else {
 						// Composer handled it — scroll to top of page.
 						window.scrollTo( { top: 0, behavior: 'smooth' } );
-						btn.disabled    = false;
+						btn.disabled = false;
 						btn.textContent = 'Edit';
 					}
 				} )
 				.catch( function () {
-					btn.disabled    = false;
+					btn.disabled = false;
 					btn.textContent = 'Edit';
 				} );
 		} );

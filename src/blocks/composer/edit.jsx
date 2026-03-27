@@ -4,10 +4,7 @@
  * Renders a static, non-interactive mockup with InspectorControls for the
  * three block attributes. The real composer only runs on the front end.
  */
-import {
-	useBlockProps,
-	InspectorControls,
-} from '@wordpress/block-editor';
+import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	RadioControl,
@@ -19,7 +16,9 @@ import { __ } from '@wordpress/i18n';
 
 export default function Edit( { attributes, setAttributes } ) {
 	const { defaultMode, showSlugPreview, placeholderText } = attributes;
-	const blockProps = useBlockProps( { className: 'quickpostr-composer-preview' } );
+	const blockProps = useBlockProps( {
+		className: 'quickpostr-composer-preview',
+	} );
 
 	return (
 		<>
@@ -29,21 +28,36 @@ export default function Edit( { attributes, setAttributes } ) {
 						label={ __( 'Default Mode', 'quickpostr' ) }
 						selected={ defaultMode }
 						options={ [
-							{ label: __( 'Status', 'quickpostr' ), value: 'status' },
-							{ label: __( 'Photo', 'quickpostr' ), value: 'photo' },
+							{
+								label: __( 'Status', 'quickpostr' ),
+								value: 'status',
+							},
+							{
+								label: __( 'Photo', 'quickpostr' ),
+								value: 'photo',
+							},
 						] }
-						onChange={ ( value ) => setAttributes( { defaultMode: value } ) }
+						onChange={ ( value ) =>
+							setAttributes( { defaultMode: value } )
+						}
 					/>
 					<TextControl
 						label={ __( 'Placeholder Text', 'quickpostr' ) }
 						value={ placeholderText }
-						onChange={ ( value ) => setAttributes( { placeholderText: value } ) }
+						onChange={ ( value ) =>
+							setAttributes( { placeholderText: value } )
+						}
 					/>
 					<ToggleControl
 						label={ __( 'Show Slug Preview', 'quickpostr' ) }
-						help={ __( 'Display the auto-generated title preview below the composer.', 'quickpostr' ) }
+						help={ __(
+							'Display the auto-generated title preview below the composer.',
+							'quickpostr'
+						) }
 						checked={ showSlugPreview }
-						onChange={ ( value ) => setAttributes( { showSlugPreview: value } ) }
+						onChange={ ( value ) =>
+							setAttributes( { showSlugPreview: value } )
+						}
 					/>
 				</PanelBody>
 			</InspectorControls>
@@ -60,12 +74,23 @@ export default function Edit( { attributes, setAttributes } ) {
 					) }
 				</Notice>
 
-				<div className="quickpostr-composer-preview__shell" aria-hidden="true">
+				<div
+					className="quickpostr-composer-preview__shell"
+					aria-hidden="true"
+				>
 					<div className="quickpostr-composer-preview__mode-bar">
-						<span className={ `quickpostr-composer-preview__mode-btn${ defaultMode === 'status' ? ' is-active' : '' }` }>
+						<span
+							className={ `quickpostr-composer-preview__mode-btn${
+								defaultMode === 'status' ? ' is-active' : ''
+							}` }
+						>
 							{ __( 'Status', 'quickpostr' ) }
 						</span>
-						<span className={ `quickpostr-composer-preview__mode-btn${ defaultMode === 'photo' ? ' is-active' : '' }` }>
+						<span
+							className={ `quickpostr-composer-preview__mode-btn${
+								defaultMode === 'photo' ? ' is-active' : ''
+							}` }
+						>
 							{ __( 'Photo', 'quickpostr' ) }
 						</span>
 					</div>
@@ -79,7 +104,9 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ defaultMode === 'photo' && (
 						<div className="quickpostr-composer-preview__upload-zone">
 							<span>+</span>
-							<span>{ __( 'Tap to add a photo', 'quickpostr' ) }</span>
+							<span>
+								{ __( 'Tap to add a photo', 'quickpostr' ) }
+							</span>
 						</div>
 					) }
 

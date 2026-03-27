@@ -52,7 +52,13 @@ function Composer() {
         return;
       }
       setEditPost(post);
-      setMode(post.format === 'image' ? 'photo' : post.format === 'link' ? 'link' : 'status');
+      let newMode = 'status';
+      if (post.format === 'image') {
+        newMode = 'photo';
+      } else if (post.format === 'link') {
+        newMode = 'link';
+      }
+      setMode(newMode);
     }
     document.addEventListener('quickpostr:edit-post', handleEditEvent);
     return () => document.removeEventListener('quickpostr:edit-post', handleEditEvent);
@@ -68,7 +74,13 @@ function Composer() {
     setEditLoading(true);
     (0,_api_js__WEBPACK_IMPORTED_MODULE_4__.getPost)(editId).then(post => {
       setEditPost(post);
-      setMode(post.format === 'image' ? 'photo' : post.format === 'link' ? 'link' : 'status');
+      let editMode = 'status';
+      if (post.format === 'image') {
+        editMode = 'photo';
+      } else if (post.format === 'link') {
+        editMode = 'link';
+      }
+      setMode(editMode);
     }).catch(() => {}).finally(() => setEditLoading(false));
   }, []);
   const user = config.currentUser ?? {};
@@ -188,8 +200,8 @@ const config = window.quickpostrConfig ?? {};
  * Serialize a Better Bookmarks link-card block.
  * Produces a self-closing dynamic block comment that render.php handles.
  *
- * @param {object} attrs — {url, title, description, image, domain}
- * @returns {string}
+ * @param {Object} attrs — {url, title, description, image, domain}
+ * @return {string} Serialized block comment string.
  */
 function serializeLinkCard(attrs) {
   return '<!-- wp:better-bookmarks/link-card ' + JSON.stringify(attrs) + ' /-->';
@@ -206,7 +218,7 @@ function serializeLinkCard(attrs) {
  * or null if nothing recognisable is found.
  *
  * @param {string} raw
- * @returns {{url: string, title?: string, description?: string, image?: string, domain?: string}|null}
+ * @return {{url: string, title?: string, description?: string, image?: string, domain?: string}|null} Parsed attrs or null.
  */
 function parsePostContent(raw) {
   // BB block comment
@@ -239,6 +251,9 @@ function parsePostContent(raw) {
  * Props:
  *   onSuccess (wpPost) => void
  *   editPost  object|undefined — WP post object when in edit mode
+ * @param {Object}           root0
+ * @param {Function}         root0.onSuccess
+ * @param {object|undefined} root0.editPost
  */
 function LinkComposer({
   onSuccess,
@@ -258,7 +273,9 @@ function LinkComposer({
 
   // Pre-populate from editPost.
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (!editPost) return;
+    if (!editPost) {
+      return;
+    }
     const raw = editPost.content?.raw ?? '';
     const parsed = parsePostContent(raw);
     if (parsed?.url) {
@@ -275,7 +292,9 @@ function LinkComposer({
   }, [editPost]);
   async function handleFetch() {
     const trimmed = url.trim();
-    if (!trimmed || fetching) return;
+    if (!trimmed || fetching) {
+      return;
+    }
     setFetching(true);
     setFetchError(null);
     setPreview(null);
@@ -303,7 +322,9 @@ function LinkComposer({
   }
   const handleSubmit = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(async () => {
     const trimmed = url.trim();
-    if (!trimmed || submitting) return;
+    if (!trimmed || submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -344,7 +365,14 @@ function LinkComposer({
     }
   }, [url, preview, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess, bbAvailable, editPost]);
   const canSubmit = url.trim() && !submitting;
-  const submitLabel = editPost ? 'Update' : defaultStatus === 'draft' ? 'Save Draft' : 'Post';
+  let submitLabel;
+  if (editPost) {
+    submitLabel = 'Update';
+  } else if (defaultStatus === 'draft') {
+    submitLabel = 'Save Draft';
+  } else {
+    submitLabel = 'Post';
+  }
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
     className: "qp-link-composer",
     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
@@ -458,6 +486,9 @@ const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
  * Props:
  *   onSuccess (wpPost, mediaUrl) => void
  *   editPost  {object|undefined} — when set, the composer is in edit mode
+ * @param {Object}           root0
+ * @param {Function}         root0.onSuccess
+ * @param {object|undefined} root0.editPost
  */
 function PhotoComposer({
   onSuccess,
@@ -479,17 +510,29 @@ function PhotoComposer({
 
   // Pre-fill caption, terms, and load existing photo from editPost.
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (!editPost) return;
+    if (!editPost) {
+      return;
+    }
     setCaption(editPost.content?.raw ?? '');
     setSelectedTags(editPost.tags ?? []);
-    setSelectedCategories(editPost.categories?.length ? editPost.categories : config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+    let defaultCats;
+    if (editPost.categories?.length) {
+      defaultCats = editPost.categories;
+    } else if (config.settings?.defaultCategory) {
+      defaultCats = [config.settings.defaultCategory];
+    } else {
+      defaultCats = [];
+    }
+    setSelectedCategories(defaultCats);
     if (editPost.featured_media) {
       (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.getMediaUrl)(editPost.featured_media).then(url => setExistingPhotoUrl(url)).catch(() => {});
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function pickFile(f) {
-    if (!f) return;
+    if (!f) {
+      return;
+    }
     if (!f.type.startsWith('image/')) {
       setError('Please select an image file.');
       return;
@@ -519,7 +562,9 @@ function PhotoComposer({
     setDragging(false);
   }
   function clearFile() {
-    if (file && preview) URL.revokeObjectURL(preview);
+    if (file && preview) {
+      URL.revokeObjectURL(preview);
+    }
     setFile(null);
     setPreview(null);
     setExistingPhotoUrl(null);
@@ -539,7 +584,9 @@ function PhotoComposer({
         type: 'image'
       }
     });
-    if (!frame) return;
+    if (!frame) {
+      return;
+    }
     frame.on('select', () => {
       const attachment = frame.state().get('selection').first().toJSON();
       setError(null);
@@ -551,8 +598,12 @@ function PhotoComposer({
   }
   async function handleSubmit() {
     // In edit mode without a new file or library pick, we can still update the caption.
-    if (!editPost && !file && !libraryMediaId) return;
-    if (submitting) return;
+    if (!editPost && !file && !libraryMediaId) {
+      return;
+    }
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -607,7 +658,9 @@ function PhotoComposer({
       setFile(null);
       setPreview(null);
       setLibraryMediaId(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setCaption('');
       setSelectedTags([]);
       setSelectedCategories(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
@@ -662,7 +715,7 @@ function PhotoComposer({
         })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("span", {
         className: "qp-photo-dropzone__label",
-        children: ["Drop a photo here, ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
+        children: ["Drop a photo here,", ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("span", {
           className: "qp-photo-dropzone__browse",
           children: "browse"
         }), window.wp?.media && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
@@ -689,7 +742,7 @@ function PhotoComposer({
       className: "qp-photo-preview",
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("img", {
         src: preview ?? existingPhotoUrl,
-        alt: "Selected photo preview",
+        alt: "Preview",
         className: "qp-photo-preview__img"
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("button", {
         type: "button",
@@ -724,9 +777,17 @@ function PhotoComposer({
         className: "qp-composer-submit",
         onClick: handleSubmit,
         disabled: !editPost && !file && !libraryMediaId || submitting,
-        "aria-label": submitting ? 'Publishing…' : editPost ? 'Update' : 'Publish photo',
+        "aria-label": submitting ? 'Publishing…' : 'Submit',
         type: "button",
-        children: submitting ? 'Publishing…' : editPost ? 'Update' : defaultStatus === 'draft' ? 'Save Draft' : 'Post'
+        children: (() => {
+          if (submitting) {
+            return 'Publishing…';
+          }
+          if (editPost) {
+            return 'Update';
+          }
+          return defaultStatus === 'draft' ? 'Save Draft' : 'Post';
+        })()
       })
     }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
       className: "qp-composer-flash",
@@ -765,6 +826,8 @@ const config = window.quickpostrConfig ?? {};
  *
  * Props:
  *   title {string} — generated title to display
+ * @param {Object} root0
+ * @param {string} root0.title
  */
 function SlugPreview({
   title
@@ -772,7 +835,9 @@ function SlugPreview({
   const showFromAttrs = config.blockAttrs?.showSlugPreview;
   const showFromSettings = config.settings?.showSlugPreview;
   const show = showFromAttrs !== undefined ? showFromAttrs : showFromSettings;
-  if (!show || !title) return null;
+  if (!show || !title) {
+    return null;
+  }
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("p", {
     className: "qp-slug-preview",
     "aria-label": "Auto-generated title preview",
@@ -806,8 +871,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const config = window.quickpostrConfig ?? {};
-
 /**
  * Tag + category input with typeahead and inline creation.
  *
@@ -816,7 +879,13 @@ const config = window.quickpostrConfig ?? {};
  *   selectedCategories {number[]}  — array of category IDs
  *   onTagsChange       (ids) => void
  *   onCategoriesChange (ids) => void
+ * @param {Object}   root0
+ * @param {number[]} root0.selectedTags
+ * @param {number[]} root0.selectedCategories
+ * @param {Function} root0.onTagsChange
+ * @param {Function} root0.onCategoriesChange
  */
+
 function TagInput({
   selectedTags,
   selectedCategories,
@@ -911,7 +980,9 @@ function TagInput({
     setTimeout(() => tagInputRef.current?.focus(), 0);
   }
   async function handleCreateTag(name) {
-    if (creatingTag) return;
+    if (creatingTag) {
+      return;
+    }
     setCreatingTag(true);
     try {
       const tag = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createTag)(name);
@@ -921,9 +992,13 @@ function TagInput({
     }
   }
   function handleTagKeyDown(e) {
-    if (e.key !== 'Enter') return;
+    if (e.key !== 'Enter') {
+      return;
+    }
     const trimmed = tagInput.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      return;
+    }
     e.preventDefault();
     const exact = tagSuggestions.find(t => t.name.toLowerCase() === trimmed.toLowerCase());
     if (exact) {
@@ -969,7 +1044,9 @@ function TagInput({
     setTimeout(() => catInputRef.current?.focus(), 0);
   }
   async function handleCreateCategory(name) {
-    if (creatingCat) return;
+    if (creatingCat) {
+      return;
+    }
     setCreatingCat(true);
     try {
       const cat = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createCategory)(name);
@@ -979,9 +1056,13 @@ function TagInput({
     }
   }
   function handleCatKeyDown(e) {
-    if (e.key !== 'Enter') return;
+    if (e.key !== 'Enter') {
+      return;
+    }
     const trimmed = catInput.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      return;
+    }
     e.preventDefault();
     const exact = catSuggestions.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
     if (exact) {
@@ -1021,6 +1102,7 @@ function TagInput({
           onKeyDown: handleTagKeyDown,
           placeholder: "Add tags\u2026",
           "aria-label": "Search tags",
+          role: "combobox",
           "aria-autocomplete": "list",
           "aria-expanded": tagOpen,
           disabled: creatingTag
@@ -1080,6 +1162,7 @@ function TagInput({
           onKeyDown: handleCatKeyDown,
           placeholder: "Add categories\u2026",
           "aria-label": "Search categories",
+          role: "combobox",
           "aria-autocomplete": "list",
           "aria-expanded": catOpen,
           disabled: creatingCat
@@ -1157,6 +1240,10 @@ const DRAFT_SAVE_DELAY = 800;
 
 /**
  * Minimal rich-text toolbar button.
+ * @param {Object}   root0
+ * @param {string}   root0.label
+ * @param {Function} root0.onMouseDown
+ * @param {*}        root0.children
  */
 function ToolbarButton({
   label,
@@ -1186,6 +1273,11 @@ function ToolbarButton({
  *   disabled    {boolean}
  *   editorRef   {React.RefObject} — forwarded ref to the contenteditable div
  *   onChange    (html: string) => void
+ * @param {Object}          root0
+ * @param {string}          root0.placeholder
+ * @param {boolean}         root0.disabled
+ * @param {React.RefObject} root0.editorRef
+ * @param {Function}        root0.onChange
  */
 function RichEditor({
   placeholder,
@@ -1196,7 +1288,9 @@ function RichEditor({
   const [isEmpty, setIsEmpty] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
   function handleInput() {
     const el = editorRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const empty = el.innerText.trim() === '';
     setIsEmpty(empty);
     // Read normalized HTML via @wordpress/rich-text.
@@ -1221,6 +1315,7 @@ function RichEditor({
     handleInput();
   }
   function handleLink() {
+    // eslint-disable-next-line no-alert
     const url = window.prompt('Enter URL:');
     if (url) {
       editorRef.current?.focus();
@@ -1260,6 +1355,7 @@ function RichEditor({
       className: "qp-rich-editor__content",
       "data-placeholder": isEmpty ? placeholder : undefined,
       role: "textbox",
+      tabIndex: 0,
       "aria-multiline": "true",
       "aria-label": "Post content",
       "aria-placeholder": placeholder
@@ -1273,6 +1369,9 @@ function RichEditor({
  * Props:
  *   onSuccess (wpPost) => void
  *   editPost  {object|undefined} — when set, the composer is in edit mode
+ * @param {Object}           root0
+ * @param {Function}         root0.onSuccess
+ * @param {object|undefined} root0.editPost
  */
 function TextComposer({
   onSuccess,
@@ -1334,7 +1433,15 @@ function TextComposer({
     setDraftId(editPost.id);
     setHtml(raw);
     setSelectedTags(editPost.tags ?? []);
-    setSelectedCategories(editPost.categories?.length ? editPost.categories : config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+    let defaultCats;
+    if (editPost.categories?.length) {
+      defaultCats = editPost.categories;
+    } else if (config.settings?.defaultCategory) {
+      defaultCats = [config.settings.defaultCategory];
+    } else {
+      defaultCats = [];
+    }
+    setSelectedCategories(defaultCats);
     if (editorRef.current) {
       editorRef.current.innerHTML = raw;
       // Trigger RichEditor's handleInput so isEmpty state clears the placeholder.
@@ -1344,12 +1451,19 @@ function TextComposer({
     }
   }, [editPost]);
 
-  /** Schedule a debounced draft save whenever content changes. */
+  /**
+   * Schedule a debounced draft save whenever content changes.
+   * @param {string} content
+   */
   function scheduleDraftSave(content) {
-    if (editPost) return; // Edit mode: no auto-save as draft.
+    if (editPost) {
+      return;
+    } // Edit mode: no auto-save as draft.
     clearTimeout(draftTimer.current);
     draftTimer.current = setTimeout(async () => {
-      if (!content) return;
+      if (!content) {
+        return;
+      }
       try {
         if (draftId) {
           await (0,_api_js__WEBPACK_IMPORTED_MODULE_3__.updatePost)(draftId, {
@@ -1399,7 +1513,9 @@ function TextComposer({
   }
   const handleSubmit = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(async () => {
     const plain = editorRef.current?.innerText?.trim() ?? '';
-    if (!plain || submitting) return;
+    if (!plain || submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -1461,66 +1577,77 @@ function TextComposer({
     }
   }
   const hasContent = (editorRef.current?.innerText?.trim() ?? '').length > 0;
-  const submitLabel = editPost ? 'Update' : defaultStatus === 'draft' ? 'Save Draft' : 'Post';
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-    className: "qp-text-composer",
-    onKeyDown: handleKeyDown,
-    children: [draftBanner && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-      className: "qp-draft-banner",
-      role: "status",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
-        children: "Resume your saved draft?"
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-        className: "qp-draft-banner__actions",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
-          type: "button",
-          className: "qp-draft-banner__resume",
-          onClick: resumeDraft,
-          children: "Resume"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
-          type: "button",
-          className: "qp-draft-banner__discard",
-          onClick: handleDiscardDraft,
-          children: "Discard"
+  let submitLabel;
+  if (editPost) {
+    submitLabel = 'Update';
+  } else if (defaultStatus === 'draft') {
+    submitLabel = 'Save Draft';
+  } else {
+    submitLabel = 'Post';
+  }
+  return (
+    /*#__PURE__*/
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+    (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      className: "qp-text-composer",
+      onKeyDown: handleKeyDown,
+      children: [draftBanner && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        className: "qp-draft-banner",
+        role: "status",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+          children: "Resume your saved draft?"
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          className: "qp-draft-banner__actions",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+            type: "button",
+            className: "qp-draft-banner__resume",
+            onClick: resumeDraft,
+            children: "Resume"
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+            type: "button",
+            className: "qp-draft-banner__discard",
+            onClick: handleDiscardDraft,
+            children: "Discard"
+          })]
         })]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(RichEditor, {
+        placeholder: placeholder,
+        disabled: submitting,
+        editorRef: editorRef,
+        onChange: handleHtmlChange
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_SlugPreview_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
+        title: title
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_TagInput_jsx__WEBPACK_IMPORTED_MODULE_5__["default"], {
+        selectedTags: selectedTags,
+        selectedCategories: selectedCategories,
+        onTagsChange: setSelectedTags,
+        onCategoriesChange: setSelectedCategories
+      }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
+        className: "qp-composer-error",
+        role: "alert",
+        children: error
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("footer", {
+        className: "qp-text-composer__footer",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+          className: "qp-text-composer__char-count",
+          "aria-live": "polite",
+          children: editorRef.current?.innerText?.length ?? 0
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+          className: "qp-composer-submit",
+          onClick: handleSubmit,
+          disabled: !hasContent || submitting,
+          "aria-label": submitting ? 'Publishing…' : submitLabel,
+          type: "button",
+          children: submitting ? 'Publishing…' : submitLabel
+        })]
+      }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        className: "qp-composer-flash",
+        role: "status",
+        "aria-live": "assertive",
+        children: editPost ? 'Updated!' : 'Posted!'
       })]
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(RichEditor, {
-      placeholder: placeholder,
-      disabled: submitting,
-      editorRef: editorRef,
-      onChange: handleHtmlChange
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_SlugPreview_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
-      title: title
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_TagInput_jsx__WEBPACK_IMPORTED_MODULE_5__["default"], {
-      selectedTags: selectedTags,
-      selectedCategories: selectedCategories,
-      onTagsChange: setSelectedTags,
-      onCategoriesChange: setSelectedCategories
-    }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
-      className: "qp-composer-error",
-      role: "alert",
-      children: error
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("footer", {
-      className: "qp-text-composer__footer",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
-        className: "qp-text-composer__char-count",
-        "aria-live": "polite",
-        children: editorRef.current?.innerText?.length ?? 0
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
-        className: "qp-composer-submit",
-        onClick: handleSubmit,
-        disabled: !hasContent || submitting,
-        "aria-label": submitting ? 'Publishing…' : submitLabel,
-        type: "button",
-        children: submitting ? 'Publishing…' : submitLabel
-      })]
-    }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
-      className: "qp-composer-flash",
-      role: "status",
-      "aria-live": "assertive",
-      children: editPost ? 'Updated!' : 'Posted!'
-    })]
-  });
+    })
+  );
 }
 
 /***/ },
@@ -1558,10 +1685,10 @@ __webpack_require__.r(__webpack_exports__);
 const config = window.quickpostrConfig ?? {};
 
 /**
- * @param {string} method
- * @param {string} path    — relative to restUrl, e.g. '/wp/v2/posts'
+ * @param {string}      method
+ * @param {string}      path   — relative to restUrl, e.g. '/wp/v2/posts'
  * @param {object|null} body
- * @returns {Promise<any>}
+ * @return {Promise<any>} Parsed JSON response.
  */
 async function request(method, path, body = null) {
   const url = (config.restUrl ?? '').replace(/\/$/, '') + path;
@@ -1592,8 +1719,8 @@ async function request(method, path, body = null) {
 /**
  * Create a new post.
  *
- * @param {object} fields — post fields matching the WP REST posts schema.
- * @returns {Promise<object>} The created post object.
+ * @param {Object} fields — post fields matching the WP REST posts schema.
+ * @return {Promise<object>} The created post object.
  */
 function createPost(fields) {
   return request('POST', '/wp/v2/posts', fields);
@@ -1603,7 +1730,7 @@ function createPost(fields) {
  * Upload a media file.
  *
  * @param {File} file
- * @returns {Promise<object>} The created media object (includes source_url).
+ * @return {Promise<object>} The created media object (includes source_url).
  */
 async function uploadMedia(file) {
   const url = (config.restUrl ?? '').replace(/\/$/, '') + '/wp/v2/media';
@@ -1632,7 +1759,7 @@ async function uploadMedia(file) {
  * Search tags by name.
  *
  * @param {string} search
- * @returns {Promise<Array>}
+ * @return {Promise<Array>} Matching tags.
  */
 function searchTags(search) {
   const qs = new URLSearchParams({
@@ -1647,7 +1774,7 @@ function searchTags(search) {
  * Create a new tag.
  *
  * @param {string} name
- * @returns {Promise<{id: number, name: string}>}
+ * @return {Promise<{id: number, name: string}>} Created tag.
  */
 function createTag(name) {
   return request('POST', '/wp/v2/tags', {
@@ -1660,7 +1787,7 @@ function createTag(name) {
  *
  *
  * @param {string} search
- * @returns {Promise<Array>}
+ * @return {Promise<Array>} Matching categories.
  */
 function searchCategories(search) {
   const qs = new URLSearchParams({
@@ -1675,7 +1802,7 @@ function searchCategories(search) {
  * Create a new category.
  *
  * @param {string} name
- * @returns {Promise<{id: number, name: string}>}
+ * @return {Promise<{id: number, name: string}>} Created category.
  */
 function createCategory(name) {
   return request('POST', '/wp/v2/categories', {
@@ -1687,7 +1814,7 @@ function createCategory(name) {
  * Fetch a single category by ID.
  *
  * @param {number} id
- * @returns {Promise<{id: number, name: string}>}
+ * @return {Promise<{id: number, name: string}>} Category object.
  */
 function getCategory(id) {
   return request('GET', `/wp/v2/categories/${id}?_fields=id,name`);
@@ -1697,7 +1824,7 @@ function getCategory(id) {
  * Fetch a single post in edit context (raw content).
  *
  * @param {number} id
- * @returns {Promise<object>}
+ * @return {Promise<object>} Post object in edit context.
  */
 function getPost(id) {
   const qs = new URLSearchParams({
@@ -1711,7 +1838,7 @@ function getPost(id) {
  * Fetch a single tag by ID.
  *
  * @param {number} id
- * @returns {Promise<{id: number, name: string}>}
+ * @return {Promise<{id: number, name: string}>} Tag object.
  */
 function getTag(id) {
   return request('GET', `/wp/v2/tags/${id}?_fields=id,name`);
@@ -1721,7 +1848,7 @@ function getTag(id) {
  * Fetch the source URL for a media item.
  *
  * @param {number} id
- * @returns {Promise<string>}
+ * @return {Promise<string>} Source URL of the media item.
  */
 async function getMediaUrl(id) {
   const data = await request('GET', `/wp/v2/media/${id}?_fields=source_url`);
@@ -1732,8 +1859,8 @@ async function getMediaUrl(id) {
  * Update an existing post.
  *
  * @param {number} id
- * @param {object} fields
- * @returns {Promise<object>}
+ * @param {Object} fields
+ * @return {Promise<object>} Updated post object.
  */
 function updatePost(id, fields) {
   return request('PUT', `/wp/v2/posts/${id}`, fields);
@@ -1742,7 +1869,7 @@ function updatePost(id, fields) {
 /**
  * Return the current user's latest QuickPostr draft, or null if none.
  *
- * @returns {Promise<object|null>}
+ * @return {Promise<object|null>} Draft post or null.
  */
 function getDraft() {
   return request('GET', '/quickpostr/v1/draft');
@@ -1752,7 +1879,7 @@ function getDraft() {
  * Permanently delete a draft post (move to trash).
  *
  * @param {number} id
- * @returns {Promise<object>}
+ * @return {Promise<object>} Trashed post object.
  */
 function discardDraft(id) {
   return request('DELETE', `/wp/v2/posts/${id}`);
@@ -1763,7 +1890,7 @@ function discardDraft(id) {
  * Requires Better Bookmarks to be installed and active.
  *
  * @param {string} url
- * @returns {Promise<{url, title, description, image, domain}>}
+ * @return {Promise<{url, title, description, image, domain}>} Open Graph preview data.
  */
 function fetchLinkPreview(url) {
   const qs = new URLSearchParams({
@@ -1792,9 +1919,9 @@ __webpack_require__.r(__webpack_exports__);
  * used only for the live SlugPreview display in the composer.
  *
  * @param {'text'|'photo'} mode
- * @param {string} text    — post content (plain text)
- * @param {string} caption — photo caption (plain text)
- * @returns {string}
+ * @param {string}         text    — post content (plain text)
+ * @param {string}         caption — photo caption (plain text)
+ * @return {string} Generated post title.
  */
 function generateTitle(mode, text, caption) {
   const now = new Date();

@@ -12,7 +12,7 @@
  * loaded yet), the event goes unhandled and we fall back to navigating to
  * ?qp-edit={id} on the home URL.
  *
- * @package QuickPostr
+ * @package
  */
 (function () {
   const cfg = window.quickpostrEditPost ?? {};
@@ -40,7 +40,7 @@
           bubbles: true,
           cancelable: true,
           detail: {
-            post: post
+            post
           }
         });
         document.dispatchEvent(event);

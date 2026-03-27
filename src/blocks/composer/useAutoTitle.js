@@ -6,20 +6,18 @@
  * used only for the live SlugPreview display in the composer.
  *
  * @param {'text'|'photo'} mode
- * @param {string} text    — post content (plain text)
- * @param {string} caption — photo caption (plain text)
- * @returns {string}
+ * @param {string}         text    — post content (plain text)
+ * @param {string}         caption — photo caption (plain text)
+ * @return {string} Generated post title.
  */
 export function generateTitle( mode, text, caption ) {
-	const now     = new Date();
-	const month   = now.toLocaleString( 'en-US', { month: 'short' } );
-	const day     = now.getDate();
-	const year    = now.getFullYear();
+	const now = new Date();
+	const month = now.toLocaleString( 'en-US', { month: 'short' } );
+	const day = now.getDate();
+	const year = now.getFullYear();
 	const dateStr = `${ month } ${ day }, ${ year }`;
 
-	const source = mode === 'photo'
-		? caption.trim()
-		: text.trim();
+	const source = mode === 'photo' ? caption.trim() : text.trim();
 
 	if ( ! source ) {
 		return mode === 'photo'
@@ -31,7 +29,9 @@ export function generateTitle( mode, text, caption ) {
 		return source;
 	}
 
-	const truncated  = source.slice( 0, 55 );
-	const lastSpace  = truncated.lastIndexOf( ' ' );
-	return ( lastSpace > 30 ? truncated.slice( 0, lastSpace ) : truncated ) + '…';
+	const truncated = source.slice( 0, 55 );
+	const lastSpace = truncated.lastIndexOf( ' ' );
+	return (
+		( lastSpace > 30 ? truncated.slice( 0, lastSpace ) : truncated ) + '…'
+	);
 }

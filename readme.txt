@@ -2,13 +2,13 @@
 Contributors: philhoyt
 Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
-Tested up to: 6.7
+Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A front-end post composer for WordPress, delivered as a WordPress block. Logged-in users post status updates, photos, and links without visiting /wp-admin.
+Front-end post composer for WordPress. Logged-in users post status updates, photos, and links without visiting /wp-admin.
 
 == Description ==
 
@@ -27,8 +27,6 @@ Post titles are generated server-side from content. Titles are suppressed on the
 * **Edit Post** — loads a post into the Composer for editing. Place inside a Query Loop template.
 * **Delete Post** — trashes the current post. Place inside a Query Loop template.
 * **Share Post** — calls `navigator.share()`. Requires HTTPS; hides itself on HTTP or when the API is unavailable.
-* **Profile: Display Name** — inline-editable display name.
-* **Profile: Bio** — inline-editable user bio.
 
 **Requirements**
 
@@ -93,10 +91,16 @@ Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
 
+= 0.6.0 =
+* Link composer mode: paste a URL to post a rich link card via Better Bookmarks, or a plain linked paragraph as fallback.
+* Link post editing: pre-fills the composer with stored URL and Open Graph preview when editing a link-format post.
+* Plugin Update Checker: GitHub release-based automatic updates via plugin-update-checker.
+* Plugin Check compliance: prefixed render.php variables, shortened readme.txt short description, removed deprecated load_plugin_textdomain().
+
 = 0.5.0 =
 * Initial public release.
 * Status, Photo, and Link composer modes.
-* Edit Post, Delete Post, Share Post, Profile: Display Name, Profile: Bio blocks.
+* Edit Post, Delete Post, and Share Post blocks.
 * Better Bookmarks integration for rich link cards.
 * Tag and category typeahead with inline creation.
 * EXIF stripping for JPEG uploads.

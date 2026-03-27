@@ -8,11 +8,15 @@ const config = window.quickpostrConfig ?? {};
  * Serialize a Better Bookmarks link-card block.
  * Produces a self-closing dynamic block comment that render.php handles.
  *
- * @param {object} attrs — {url, title, description, image, domain}
- * @returns {string}
+ * @param {Object} attrs — {url, title, description, image, domain}
+ * @return {string} Serialized block comment string.
  */
 function serializeLinkCard( attrs ) {
-	return '<!-- wp:better-bookmarks/link-card ' + JSON.stringify( attrs ) + ' /-->';
+	return (
+		'<!-- wp:better-bookmarks/link-card ' +
+		JSON.stringify( attrs ) +
+		' /-->'
+	);
 }
 
 /**
@@ -26,11 +30,13 @@ function serializeLinkCard( attrs ) {
  * or null if nothing recognisable is found.
  *
  * @param {string} raw
- * @returns {{url: string, title?: string, description?: string, image?: string, domain?: string}|null}
+ * @return {{url: string, title?: string, description?: string, image?: string, domain?: string}|null} Parsed attrs or null.
  */
 function parsePostContent( raw ) {
 	// BB block comment
-	const bbMatch = raw.match( /<!-- wp:better-bookmarks\/link-card ({.*?}) \/-->/ );
+	const bbMatch = raw.match(
+		/<!-- wp:better-bookmarks\/link-card ({.*?}) \/-->/
+	);
 	if ( bbMatch ) {
 		try {
 			return JSON.parse( bbMatch[ 1 ] );
@@ -58,28 +64,35 @@ function parsePostContent( raw ) {
  * Props:
  *   onSuccess (wpPost) => void
  *   editPost  object|undefined — WP post object when in edit mode
+ * @param {Object}           root0
+ * @param {Function}         root0.onSuccess
+ * @param {object|undefined} root0.editPost
  */
 export default function LinkComposer( { onSuccess, editPost } ) {
-	const [ url,         setUrl ]         = useState( '' );
-	const [ preview,     setPreview ]     = useState( null );
-	const [ fetching,    setFetching ]    = useState( false );
-	const [ fetchError,  setFetchError ]  = useState( null );
-	const [ submitting,  setSubmitting ]  = useState( false );
-	const [ error,       setError ]       = useState( null );
-	const [ flash,       setFlash ]       = useState( false );
-	const [ selectedTags,       setSelectedTags ]       = useState( [] );
+	const [ url, setUrl ] = useState( '' );
+	const [ preview, setPreview ] = useState( null );
+	const [ fetching, setFetching ] = useState( false );
+	const [ fetchError, setFetchError ] = useState( null );
+	const [ submitting, setSubmitting ] = useState( false );
+	const [ error, setError ] = useState( null );
+	const [ flash, setFlash ] = useState( false );
+	const [ selectedTags, setSelectedTags ] = useState( [] );
 	const [ selectedCategories, setSelectedCategories ] = useState(
-		config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : []
+		config.settings?.defaultCategory
+			? [ config.settings.defaultCategory ]
+			: []
 	);
 
-	const bbAvailable   = config.betterBookmarks ?? false;
+	const bbAvailable = config.betterBookmarks ?? false;
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
 	// Pre-populate from editPost.
 	useEffect( () => {
-		if ( ! editPost ) return;
+		if ( ! editPost ) {
+			return;
+		}
 
-		const raw    = editPost.content?.raw ?? '';
+		const raw = editPost.content?.raw ?? '';
 		const parsed = parsePostContent( raw );
 
 		if ( parsed?.url ) {
@@ -98,7 +111,9 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 
 	async function handleFetch() {
 		const trimmed = url.trim();
-		if ( ! trimmed || fetching ) return;
+		if ( ! trimmed || fetching ) {
+			return;
+		}
 		setFetching( true );
 		setFetchError( null );
 		setPreview( null );
@@ -106,7 +121,9 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 			const data = await fetchLinkPreview( trimmed );
 			setPreview( data );
 		} catch {
-			setFetchError( 'Could not fetch preview. Check the URL and try again.' );
+			setFetchError(
+				'Could not fetch preview. Check the URL and try again.'
+			);
 		} finally {
 			setFetching( false );
 		}
@@ -129,7 +146,9 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 
 	const handleSubmit = useCallback( async () => {
 		const trimmed = url.trim();
-		if ( ! trimmed || submitting ) return;
+		if ( ! trimmed || submitting ) {
+			return;
+		}
 
 		setSubmitting( true );
 		setError( null );
@@ -145,14 +164,19 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 
 			const fields = {
 				content,
-				format:     'link',
-				tags:       selectedTags,
+				format: 'link',
+				tags: selectedTags,
 				categories: selectedCategories,
 			};
 
 			const wpPost = editPost
 				? await updatePost( editPost.id, fields )
-				: await createPost( { ...fields, title: '', status: defaultStatus, meta: { _quickpostr_post: '1' } } );
+				: await createPost( {
+						...fields,
+						title: '',
+						status: defaultStatus,
+						meta: { _quickpostr_post: '1' },
+				  } );
 
 			onSuccess?.( wpPost );
 
@@ -161,7 +185,9 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 				setPreview( null );
 				setSelectedTags( [] );
 				setSelectedCategories(
-					config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : []
+					config.settings?.defaultCategory
+						? [ config.settings.defaultCategory ]
+						: []
 				);
 				setFlash( true );
 				setTimeout( () => setFlash( false ), 2500 );
@@ -171,10 +197,27 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 		} finally {
 			setSubmitting( false );
 		}
-	}, [ url, preview, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess, bbAvailable, editPost ] );
+	}, [
+		url,
+		preview,
+		selectedTags,
+		selectedCategories,
+		submitting,
+		defaultStatus,
+		onSuccess,
+		bbAvailable,
+		editPost,
+	] );
 
-	const canSubmit   = url.trim() && ! submitting;
-	const submitLabel = editPost ? 'Update' : ( defaultStatus === 'draft' ? 'Save Draft' : 'Post' );
+	const canSubmit = url.trim() && ! submitting;
+	let submitLabel;
+	if ( editPost ) {
+		submitLabel = 'Update';
+	} else if ( defaultStatus === 'draft' ) {
+		submitLabel = 'Save Draft';
+	} else {
+		submitLabel = 'Post';
+	}
 
 	return (
 		<div className="qp-link-composer">
@@ -182,7 +225,11 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 				<input
 					type="url"
 					className="qp-link-composer__url-input"
-					placeholder={ bbAvailable ? 'Paste a URL and press Enter…' : 'Paste a URL…' }
+					placeholder={
+						bbAvailable
+							? 'Paste a URL and press Enter…'
+							: 'Paste a URL…'
+					}
 					value={ url }
 					onChange={ handleUrlChange }
 					onKeyDown={ handleUrlKeyDown }
@@ -202,7 +249,9 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 			</div>
 
 			{ fetchError && (
-				<p className="qp-composer-error" role="alert">{ fetchError }</p>
+				<p className="qp-composer-error" role="alert">
+					{ fetchError }
+				</p>
 			) }
 
 			{ preview && (
@@ -214,13 +263,19 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 					) }
 					<div className="qp-link-composer__preview-body">
 						{ preview.domain && (
-							<span className="qp-link-composer__preview-domain">{ preview.domain }</span>
+							<span className="qp-link-composer__preview-domain">
+								{ preview.domain }
+							</span>
 						) }
 						{ preview.title && (
-							<strong className="qp-link-composer__preview-title">{ preview.title }</strong>
+							<strong className="qp-link-composer__preview-title">
+								{ preview.title }
+							</strong>
 						) }
 						{ preview.description && (
-							<p className="qp-link-composer__preview-description">{ preview.description }</p>
+							<p className="qp-link-composer__preview-description">
+								{ preview.description }
+							</p>
 						) }
 					</div>
 				</div>
@@ -228,7 +283,8 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 
 			{ ! bbAvailable && (
 				<p className="qp-link-composer__no-bb">
-					Install <strong>Better Bookmarks</strong> to include a rich link card in the post.
+					Install <strong>Better Bookmarks</strong> to include a rich
+					link card in the post.
 				</p>
 			) }
 
@@ -240,7 +296,9 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 			/>
 
 			{ error && (
-				<p className="qp-composer-error" role="alert">{ error }</p>
+				<p className="qp-composer-error" role="alert">
+					{ error }
+				</p>
 			) }
 
 			<footer className="qp-link-composer__footer">
@@ -255,7 +313,11 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 			</footer>
 
 			{ flash && (
-				<div className="qp-composer-flash" role="status" aria-live="assertive">
+				<div
+					className="qp-composer-flash"
+					role="status"
+					aria-live="assertive"
+				>
 					Posted!
 				</div>
 			) }

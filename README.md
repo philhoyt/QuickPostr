@@ -17,8 +17,6 @@ A front-end post composer for WordPress, delivered as a WordPress block. Logged-
 | **Edit Post** | Loads a post into the Composer for editing. Place inside a Query Loop template. |
 | **Delete Post** | Trashes the current post. Place inside a Query Loop template. |
 | **Share Post** | Calls `navigator.share()`. Requires HTTPS; button is hidden on HTTP. |
-| **Profile: Display Name** | Inline-editable display name. |
-| **Profile: Bio** | Inline-editable user bio. |
 
 ## Installation
 

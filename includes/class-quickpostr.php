@@ -33,7 +33,6 @@ class QuickPostr {
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
 		add_filter( 'wp_handle_upload', array( $this, 'maybe_strip_exif' ), 10, 1 );
-		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 	}
 
 	/**
@@ -74,13 +73,6 @@ class QuickPostr {
 			array( 'in_footer' => true )
 		);
 		wp_register_script(
-			'quickpostr-profile-edit',
-			QUICKPOSTR_URL . 'build/shared/profile-edit.js',
-			array(),
-			QUICKPOSTR_VERSION,
-			array( 'in_footer' => true )
-		);
-		wp_register_script(
 			'quickpostr-share-post-view',
 			QUICKPOSTR_URL . 'build/blocks/share-post/view.js',
 			array(),
@@ -91,8 +83,6 @@ class QuickPostr {
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
-		register_block_type( QUICKPOSTR_PATH . 'build/blocks/profile-edit-name/' );
-		register_block_type( QUICKPOSTR_PATH . 'build/blocks/profile-edit-bio/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/share-post/' );
 	}
 
@@ -339,12 +329,5 @@ class QuickPostr {
 		}
 
 		return $upload;
-	}
-
-	/**
-	 * Load plugin text domain.
-	 */
-	public function load_textdomain(): void {
-		load_plugin_textdomain( 'quickpostr', false, dirname( plugin_basename( QUICKPOSTR_PATH . 'quickpostr.php' ) ) . '/languages' );
 	}
 }

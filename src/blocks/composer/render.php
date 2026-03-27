@@ -21,34 +21,34 @@ if ( ! is_user_logged_in() || ! current_user_can( 'edit_posts' ) ) {
 }
 
 // Optionally enforce allowed_roles from plugin settings.
-$settings        = QuickPostr_Settings::get();
-$allowed         = (array) $settings['allowed_roles'];
+$qp_settings     = QuickPostr_Settings::get();
+$qp_allowed      = (array) $qp_settings['allowed_roles'];
 $quickpostr_user = wp_get_current_user();
-$user_roles      = (array) $quickpostr_user->roles;
+$qp_user_roles   = (array) $quickpostr_user->roles;
 
-if ( ! array_intersect( $user_roles, $allowed ) ) {
+if ( ! array_intersect( $qp_user_roles, $qp_allowed ) ) {
 	return;
 }
 
 // Build the config object passed to the React app.
 // The view script and stylesheet are enqueued automatically via block.json.
-$avatar_urls  = rest_get_avatar_urls( $quickpostr_user->user_email );
-$actor_handle = '';
+$qp_avatar_urls  = rest_get_avatar_urls( $quickpostr_user->user_email );
+$qp_actor_handle = '';
 
-$config = array(
+$qp_config = array(
 	'restUrl'         => rest_url(),
 	'nonce'           => wp_create_nonce( 'wp_rest' ),
 	'currentUser'     => array(
 		'id'          => $quickpostr_user->ID,
 		'name'        => $quickpostr_user->display_name,
-		'avatarUrls'  => $avatar_urls,
-		'actorHandle' => $actor_handle,
+		'avatarUrls'  => $qp_avatar_urls,
+		'actorHandle' => $qp_actor_handle,
 	),
 	'settings'        => array(
-		'defaultStatus'   => $settings['default_status'],
-		'defaultCategory' => (int) $settings['default_category'],
-		'showSlugPreview' => (bool) $settings['show_slug_preview'],
-		'frontEndEdit'    => (bool) $settings['front_end_edit'],
+		'defaultStatus'   => $qp_settings['default_status'],
+		'defaultCategory' => (int) $qp_settings['default_category'],
+		'showSlugPreview' => (bool) $qp_settings['show_slug_preview'],
+		'frontEndEdit'    => (bool) $qp_settings['front_end_edit'],
 	),
 	'blockAttrs'      => array(
 		'defaultMode'     => $attributes['defaultMode'] ?? 'status',
@@ -64,14 +64,14 @@ wp_enqueue_media();
 
 wp_add_inline_script(
 	'quickpostr-composer-view',
-	'window.quickpostrConfig = ' . wp_json_encode( $config ) . ';',
+	'window.quickpostrConfig = ' . wp_json_encode( $qp_config ) . ';',
 	'before'
 );
 
 // Block wrapper attributes (handles align, color, spacing supports).
-$wrapper_attributes = get_block_wrapper_attributes(
+$qp_wrapper_attributes = get_block_wrapper_attributes(
 	array( 'id' => 'quickpostr-composer' )
 );
 ?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+<div <?php echo $qp_wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 </div>

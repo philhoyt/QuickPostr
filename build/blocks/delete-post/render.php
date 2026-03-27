@@ -36,8 +36,8 @@ if ( ! current_user_can( 'delete_post', $quickpostr_post_id ) ) {
 }
 
 // Plugin setting gate.
-$settings = QuickPostr_Settings::get();
-if ( empty( $settings['front_end_edit'] ) ) {
+$qp_settings = QuickPostr_Settings::get();
+if ( empty( $qp_settings['front_end_edit'] ) ) {
 	return;
 }
 
@@ -51,14 +51,14 @@ wp_localize_script(
 	)
 );
 
-$wrapper_attributes = get_block_wrapper_attributes(
+$qp_wrapper_attributes = get_block_wrapper_attributes(
 	array(
 		'class'        => 'qp-delete-post',
 		'data-post-id' => (string) $quickpostr_post_id,
 	)
 );
 ?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+<div <?php echo $qp_wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 	<button type="button" class="qp-delete-post__btn">
 		<?php esc_html_e( 'Delete', 'quickpostr' ); ?>
 	</button>

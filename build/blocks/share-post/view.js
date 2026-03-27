@@ -2,6 +2,8 @@
 /*!***************************************!*\
   !*** ./src/blocks/share-post/view.js ***!
   \***************************************/
+/* global navigator */
+
 /**
  * Share Post — front-end view script.
  *
@@ -16,17 +18,17 @@
   }
   function init() {
     document.querySelectorAll('.qp-share-post').forEach(function (el) {
-      var btn = el.querySelector('.qp-share-post__btn');
-      var title = el.dataset.title || '';
-      var url = el.dataset.url || window.location.href;
+      const btn = el.querySelector('.qp-share-post__btn');
+      const title = el.dataset.title || '';
+      const url = el.dataset.url || window.location.href;
       if (!btn) {
         return;
       }
       btn.hidden = false;
       btn.addEventListener('click', function () {
         navigator.share({
-          title: title,
-          url: url
+          title,
+          url
         }).catch(function () {
           // User cancelled or share failed — no action needed.
         });

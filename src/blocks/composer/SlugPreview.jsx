@@ -10,16 +10,23 @@ const config = window.quickpostrConfig ?? {};
  *
  * Props:
  *   title {string} — generated title to display
+ * @param {Object} root0
+ * @param {string} root0.title
  */
 export default function SlugPreview( { title } ) {
-	const showFromAttrs    = config.blockAttrs?.showSlugPreview;
+	const showFromAttrs = config.blockAttrs?.showSlugPreview;
 	const showFromSettings = config.settings?.showSlugPreview;
 	const show = showFromAttrs !== undefined ? showFromAttrs : showFromSettings;
 
-	if ( ! show || ! title ) return null;
+	if ( ! show || ! title ) {
+		return null;
+	}
 
 	return (
-		<p className="qp-slug-preview" aria-label="Auto-generated title preview">
+		<p
+			className="qp-slug-preview"
+			aria-label="Auto-generated title preview"
+		>
 			<span className="qp-slug-preview__label">Title</span>
 			<span className="qp-slug-preview__value">{ title }</span>
 		</p>

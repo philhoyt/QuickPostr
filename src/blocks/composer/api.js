@@ -8,10 +8,10 @@
 const config = window.quickpostrConfig ?? {};
 
 /**
- * @param {string} method
- * @param {string} path    — relative to restUrl, e.g. '/wp/v2/posts'
+ * @param {string}      method
+ * @param {string}      path   — relative to restUrl, e.g. '/wp/v2/posts'
  * @param {object|null} body
- * @returns {Promise<any>}
+ * @return {Promise<any>} Parsed JSON response.
  */
 async function request( method, path, body = null ) {
 	const url = ( config.restUrl ?? '' ).replace( /\/$/, '' ) + path;
@@ -44,8 +44,8 @@ async function request( method, path, body = null ) {
 /**
  * Create a new post.
  *
- * @param {object} fields — post fields matching the WP REST posts schema.
- * @returns {Promise<object>} The created post object.
+ * @param {Object} fields — post fields matching the WP REST posts schema.
+ * @return {Promise<object>} The created post object.
  */
 export function createPost( fields ) {
 	return request( 'POST', '/wp/v2/posts', fields );
@@ -55,7 +55,7 @@ export function createPost( fields ) {
  * Upload a media file.
  *
  * @param {File} file
- * @returns {Promise<object>} The created media object (includes source_url).
+ * @return {Promise<object>} The created media object (includes source_url).
  */
 export async function uploadMedia( file ) {
 	const url = ( config.restUrl ?? '' ).replace( /\/$/, '' ) + '/wp/v2/media';
@@ -63,9 +63,11 @@ export async function uploadMedia( file ) {
 	const res = await fetch( url, {
 		method: 'POST',
 		headers: {
-			'X-WP-Nonce':        config.nonce ?? '',
-			'Content-Disposition': `attachment; filename="${ encodeURIComponent( file.name ) }"`,
-			'Content-Type':      file.type,
+			'X-WP-Nonce': config.nonce ?? '',
+			'Content-Disposition': `attachment; filename="${ encodeURIComponent(
+				file.name
+			) }"`,
+			'Content-Type': file.type,
 		},
 		credentials: 'include',
 		body: file,
@@ -87,10 +89,14 @@ export async function uploadMedia( file ) {
  * Search tags by name.
  *
  * @param {string} search
- * @returns {Promise<Array>}
+ * @return {Promise<Array>} Matching tags.
  */
 export function searchTags( search ) {
-	const qs = new URLSearchParams( { search, per_page: '10', _fields: 'id,name' } );
+	const qs = new URLSearchParams( {
+		search,
+		per_page: '10',
+		_fields: 'id,name',
+	} );
 	return request( 'GET', `/wp/v2/tags?${ qs }` );
 }
 
@@ -98,7 +104,7 @@ export function searchTags( search ) {
  * Create a new tag.
  *
  * @param {string} name
- * @returns {Promise<{id: number, name: string}>}
+ * @return {Promise<{id: number, name: string}>} Created tag.
  */
 export function createTag( name ) {
 	return request( 'POST', '/wp/v2/tags', { name } );
@@ -109,10 +115,14 @@ export function createTag( name ) {
  *
  *
  * @param {string} search
- * @returns {Promise<Array>}
+ * @return {Promise<Array>} Matching categories.
  */
 export function searchCategories( search ) {
-	const qs = new URLSearchParams( { search, per_page: '10', _fields: 'id,name' } );
+	const qs = new URLSearchParams( {
+		search,
+		per_page: '10',
+		_fields: 'id,name',
+	} );
 	return request( 'GET', `/wp/v2/categories?${ qs }` );
 }
 
@@ -120,7 +130,7 @@ export function searchCategories( search ) {
  * Create a new category.
  *
  * @param {string} name
- * @returns {Promise<{id: number, name: string}>}
+ * @return {Promise<{id: number, name: string}>} Created category.
  */
 export function createCategory( name ) {
 	return request( 'POST', '/wp/v2/categories', { name } );
@@ -130,7 +140,7 @@ export function createCategory( name ) {
  * Fetch a single category by ID.
  *
  * @param {number} id
- * @returns {Promise<{id: number, name: string}>}
+ * @return {Promise<{id: number, name: string}>} Category object.
  */
 export function getCategory( id ) {
 	return request( 'GET', `/wp/v2/categories/${ id }?_fields=id,name` );
@@ -140,10 +150,14 @@ export function getCategory( id ) {
  * Fetch a single post in edit context (raw content).
  *
  * @param {number} id
- * @returns {Promise<object>}
+ * @return {Promise<object>} Post object in edit context.
  */
 export function getPost( id ) {
-	const qs = new URLSearchParams( { context: 'edit', _fields: 'id,title,content,format,status,featured_media,tags,categories' } );
+	const qs = new URLSearchParams( {
+		context: 'edit',
+		_fields:
+			'id,title,content,format,status,featured_media,tags,categories',
+	} );
 	return request( 'GET', `/wp/v2/posts/${ id }?${ qs }` );
 }
 
@@ -151,7 +165,7 @@ export function getPost( id ) {
  * Fetch a single tag by ID.
  *
  * @param {number} id
- * @returns {Promise<{id: number, name: string}>}
+ * @return {Promise<{id: number, name: string}>} Tag object.
  */
 export function getTag( id ) {
 	return request( 'GET', `/wp/v2/tags/${ id }?_fields=id,name` );
@@ -161,10 +175,13 @@ export function getTag( id ) {
  * Fetch the source URL for a media item.
  *
  * @param {number} id
- * @returns {Promise<string>}
+ * @return {Promise<string>} Source URL of the media item.
  */
 export async function getMediaUrl( id ) {
-	const data = await request( 'GET', `/wp/v2/media/${ id }?_fields=source_url` );
+	const data = await request(
+		'GET',
+		`/wp/v2/media/${ id }?_fields=source_url`
+	);
 	return data.source_url ?? '';
 }
 
@@ -172,8 +189,8 @@ export async function getMediaUrl( id ) {
  * Update an existing post.
  *
  * @param {number} id
- * @param {object} fields
- * @returns {Promise<object>}
+ * @param {Object} fields
+ * @return {Promise<object>} Updated post object.
  */
 export function updatePost( id, fields ) {
 	return request( 'PUT', `/wp/v2/posts/${ id }`, fields );
@@ -182,7 +199,7 @@ export function updatePost( id, fields ) {
 /**
  * Return the current user's latest QuickPostr draft, or null if none.
  *
- * @returns {Promise<object|null>}
+ * @return {Promise<object|null>} Draft post or null.
  */
 export function getDraft() {
 	return request( 'GET', '/quickpostr/v1/draft' );
@@ -192,7 +209,7 @@ export function getDraft() {
  * Permanently delete a draft post (move to trash).
  *
  * @param {number} id
- * @returns {Promise<object>}
+ * @return {Promise<object>} Trashed post object.
  */
 export function discardDraft( id ) {
 	return request( 'DELETE', `/wp/v2/posts/${ id }` );
@@ -203,10 +220,9 @@ export function discardDraft( id ) {
  * Requires Better Bookmarks to be installed and active.
  *
  * @param {string} url
- * @returns {Promise<{url, title, description, image, domain}>}
+ * @return {Promise<{url, title, description, image, domain}>} Open Graph preview data.
  */
 export function fetchLinkPreview( url ) {
 	const qs = new URLSearchParams( { url } );
 	return request( 'GET', `/better-bookmarks/v1/preview?${ qs }` );
 }
-

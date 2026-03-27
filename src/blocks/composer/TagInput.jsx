@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { searchTags, createTag, getTag, searchCategories, createCategory, getCategory } from './api.js';
-
-const config = window.quickpostrConfig ?? {};
+import {
+	searchTags,
+	createTag,
+	getTag,
+	searchCategories,
+	createCategory,
+	getCategory,
+} from './api.js';
 
 /**
  * Tag + category input with typeahead and inline creation.
@@ -11,6 +16,11 @@ const config = window.quickpostrConfig ?? {};
  *   selectedCategories {number[]}  — array of category IDs
  *   onTagsChange       (ids) => void
  *   onCategoriesChange (ids) => void
+ * @param {Object}   root0
+ * @param {number[]} root0.selectedTags
+ * @param {number[]} root0.selectedCategories
+ * @param {Function} root0.onTagsChange
+ * @param {Function} root0.onCategoriesChange
  */
 export default function TagInput( {
 	selectedTags,
@@ -19,21 +29,21 @@ export default function TagInput( {
 	onCategoriesChange,
 } ) {
 	// Tags state
-	const [ tagInput,       setTagInput ]       = useState( '' );
+	const [ tagInput, setTagInput ] = useState( '' );
 	const [ tagSuggestions, setTagSuggestions ] = useState( [] );
-	const [ tagNames,       setTagNames ]       = useState( {} ); // id → name
-	const [ tagOpen,        setTagOpen ]        = useState( false );
-	const [ creatingTag,    setCreatingTag ]    = useState( false );
+	const [ tagNames, setTagNames ] = useState( {} ); // id → name
+	const [ tagOpen, setTagOpen ] = useState( false );
+	const [ creatingTag, setCreatingTag ] = useState( false );
 
 	// Categories state
-	const [ catInput,       setCatInput ]       = useState( '' );
+	const [ catInput, setCatInput ] = useState( '' );
 	const [ catSuggestions, setCatSuggestions ] = useState( [] );
-	const [ catNames,       setCatNames ]       = useState( {} ); // id → name
-	const [ catOpen,        setCatOpen ]        = useState( false );
-	const [ creatingCat,    setCreatingCat ]    = useState( false );
+	const [ catNames, setCatNames ] = useState( {} ); // id → name
+	const [ catOpen, setCatOpen ] = useState( false );
+	const [ creatingCat, setCreatingCat ] = useState( false );
 
-	const tagTimer   = useRef( null );
-	const catTimer   = useRef( null );
+	const tagTimer = useRef( null );
+	const catTimer = useRef( null );
 	const wrapperRef = useRef( null );
 	const tagInputRef = useRef( null );
 	const catInputRef = useRef( null );
@@ -43,7 +53,12 @@ export default function TagInput( {
 		selectedTags.forEach( ( id ) => {
 			if ( ! tagNames[ id ] ) {
 				getTag( id )
-					.then( ( tag ) => setTagNames( ( prev ) => ( { ...prev, [ tag.id ]: tag.name } ) ) )
+					.then( ( tag ) =>
+						setTagNames( ( prev ) => ( {
+							...prev,
+							[ tag.id ]: tag.name,
+						} ) )
+					)
 					.catch( () => {} );
 			}
 		} );
@@ -54,7 +69,12 @@ export default function TagInput( {
 		selectedCategories.forEach( ( id ) => {
 			if ( ! catNames[ id ] ) {
 				getCategory( id )
-					.then( ( cat ) => setCatNames( ( prev ) => ( { ...prev, [ cat.id ]: cat.name } ) ) )
+					.then( ( cat ) =>
+						setCatNames( ( prev ) => ( {
+							...prev,
+							[ cat.id ]: cat.name,
+						} ) )
+					)
 					.catch( () => {} );
 			}
 		} );
@@ -63,7 +83,10 @@ export default function TagInput( {
 	// Close dropdowns on outside click.
 	useEffect( () => {
 		function handleClick( e ) {
-			if ( wrapperRef.current && ! wrapperRef.current.contains( e.target ) ) {
+			if (
+				wrapperRef.current &&
+				! wrapperRef.current.contains( e.target )
+			) {
 				setTagOpen( false );
 				setCatOpen( false );
 			}
@@ -106,20 +129,27 @@ export default function TagInput( {
 	}
 
 	async function handleCreateTag( name ) {
-		if ( creatingTag ) return;
+		if ( creatingTag ) {
+			return;
+		}
 		setCreatingTag( true );
 		try {
 			const tag = await createTag( name );
 			addTag( tag );
-		} catch ( _ ) {} finally {
+		} catch ( _ ) {
+		} finally {
 			setCreatingTag( false );
 		}
 	}
 
 	function handleTagKeyDown( e ) {
-		if ( e.key !== 'Enter' ) return;
+		if ( e.key !== 'Enter' ) {
+			return;
+		}
 		const trimmed = tagInput.trim();
-		if ( ! trimmed ) return;
+		if ( ! trimmed ) {
+			return;
+		}
 		e.preventDefault();
 		const exact = tagSuggestions.find(
 			( t ) => t.name.toLowerCase() === trimmed.toLowerCase()
@@ -169,20 +199,27 @@ export default function TagInput( {
 	}
 
 	async function handleCreateCategory( name ) {
-		if ( creatingCat ) return;
+		if ( creatingCat ) {
+			return;
+		}
 		setCreatingCat( true );
 		try {
 			const cat = await createCategory( name );
 			addCategory( cat );
-		} catch ( _ ) {} finally {
+		} catch ( _ ) {
+		} finally {
 			setCreatingCat( false );
 		}
 	}
 
 	function handleCatKeyDown( e ) {
-		if ( e.key !== 'Enter' ) return;
+		if ( e.key !== 'Enter' ) {
+			return;
+		}
 		const trimmed = catInput.trim();
-		if ( ! trimmed ) return;
+		if ( ! trimmed ) {
+			return;
+		}
 		e.preventDefault();
 		const exact = catSuggestions.find(
 			( c ) => c.name.toLowerCase() === trimmed.toLowerCase()
@@ -202,7 +239,6 @@ export default function TagInput( {
 
 	return (
 		<div className="qp-tag-input" ref={ wrapperRef }>
-
 			{ /* Tags */ }
 			<div className="qp-tag-input__tags">
 				{ selectedTags.map( ( id ) => (
@@ -211,7 +247,9 @@ export default function TagInput( {
 						<button
 							type="button"
 							className="qp-tag-input__tag-remove"
-							aria-label={ `Remove tag ${ tagNames[ id ] ?? id }` }
+							aria-label={ `Remove tag ${
+								tagNames[ id ] ?? id
+							}` }
 							onClick={ () => removeTag( id ) }
 						>
 							×
@@ -228,14 +266,20 @@ export default function TagInput( {
 						onKeyDown={ handleTagKeyDown }
 						placeholder="Add tags…"
 						aria-label="Search tags"
+						role="combobox"
 						aria-autocomplete="list"
 						aria-expanded={ tagOpen }
 						disabled={ creatingTag }
 					/>
 					{ tagOpen && (
-						<ul className="qp-tag-input__suggestions" role="listbox">
+						<ul
+							className="qp-tag-input__suggestions"
+							role="listbox"
+						>
 							{ tagSuggestions
-								.filter( ( tag ) => ! selectedTags.includes( tag.id ) )
+								.filter(
+									( tag ) => ! selectedTags.includes( tag.id )
+								)
 								.map( ( tag ) => (
 									<li
 										key={ tag.id }
@@ -248,14 +292,23 @@ export default function TagInput( {
 									</li>
 								) ) }
 							{ ( () => {
-								const lc      = tagInput.trim().toLowerCase();
-								const exact   = tagSuggestions.find( ( t ) => t.name.toLowerCase() === lc );
+								const lc = tagInput.trim().toLowerCase();
+								const exact = tagSuggestions.find(
+									( t ) => t.name.toLowerCase() === lc
+								);
 								const already = exact
 									? selectedTags.includes( exact.id )
-									: Object.entries( tagNames ).some( ( [ , n ] ) => n.toLowerCase() === lc );
+									: Object.entries( tagNames ).some(
+											( [ , n ] ) =>
+												n.toLowerCase() === lc
+									  );
 								if ( already ) {
 									return (
-										<li role="option" aria-selected={ false } className="qp-tag-input__suggestion qp-tag-input__suggestion--already">
+										<li
+											role="option"
+											aria-selected={ false }
+											className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
+										>
 											Already added
 										</li>
 									);
@@ -266,9 +319,15 @@ export default function TagInput( {
 											role="option"
 											aria-selected={ false }
 											className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
-											onMouseDown={ () => handleCreateTag( tagInput.trim() ) }
+											onMouseDown={ () =>
+												handleCreateTag(
+													tagInput.trim()
+												)
+											}
 										>
-											{ creatingTag ? 'Creating…' : `Create "${ tagInput.trim() }"` }
+											{ creatingTag
+												? 'Creating…'
+												: `Create "${ tagInput.trim() }"` }
 										</li>
 									);
 								}
@@ -282,12 +341,17 @@ export default function TagInput( {
 			{ /* Categories */ }
 			<div className="qp-tag-input__tags">
 				{ selectedCategories.map( ( id ) => (
-					<span key={ id } className="qp-tag-input__tag qp-tag-input__tag--cat">
+					<span
+						key={ id }
+						className="qp-tag-input__tag qp-tag-input__tag--cat"
+					>
 						{ catNames[ id ] ?? `#${ id }` }
 						<button
 							type="button"
 							className="qp-tag-input__tag-remove"
-							aria-label={ `Remove category ${ catNames[ id ] ?? id }` }
+							aria-label={ `Remove category ${
+								catNames[ id ] ?? id
+							}` }
 							onClick={ () => removeCategory( id ) }
 						>
 							×
@@ -304,14 +368,21 @@ export default function TagInput( {
 						onKeyDown={ handleCatKeyDown }
 						placeholder="Add categories…"
 						aria-label="Search categories"
+						role="combobox"
 						aria-autocomplete="list"
 						aria-expanded={ catOpen }
 						disabled={ creatingCat }
 					/>
 					{ catOpen && (
-						<ul className="qp-tag-input__suggestions" role="listbox">
+						<ul
+							className="qp-tag-input__suggestions"
+							role="listbox"
+						>
 							{ catSuggestions
-								.filter( ( cat ) => ! selectedCategories.includes( cat.id ) )
+								.filter(
+									( cat ) =>
+										! selectedCategories.includes( cat.id )
+								)
 								.map( ( cat ) => (
 									<li
 										key={ cat.id }
@@ -324,14 +395,23 @@ export default function TagInput( {
 									</li>
 								) ) }
 							{ ( () => {
-								const lc      = catInput.trim().toLowerCase();
-								const exact   = catSuggestions.find( ( c ) => c.name.toLowerCase() === lc );
+								const lc = catInput.trim().toLowerCase();
+								const exact = catSuggestions.find(
+									( c ) => c.name.toLowerCase() === lc
+								);
 								const already = exact
 									? selectedCategories.includes( exact.id )
-									: Object.entries( catNames ).some( ( [ , n ] ) => n.toLowerCase() === lc );
+									: Object.entries( catNames ).some(
+											( [ , n ] ) =>
+												n.toLowerCase() === lc
+									  );
 								if ( already ) {
 									return (
-										<li role="option" aria-selected={ false } className="qp-tag-input__suggestion qp-tag-input__suggestion--already">
+										<li
+											role="option"
+											aria-selected={ false }
+											className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
+										>
 											Already added
 										</li>
 									);
@@ -342,9 +422,15 @@ export default function TagInput( {
 											role="option"
 											aria-selected={ false }
 											className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
-											onMouseDown={ () => handleCreateCategory( catInput.trim() ) }
+											onMouseDown={ () =>
+												handleCreateCategory(
+													catInput.trim()
+												)
+											}
 										>
-											{ creatingCat ? 'Creating…' : `Create "${ catInput.trim() }"` }
+											{ creatingCat
+												? 'Creating…'
+												: `Create "${ catInput.trim() }"` }
 										</li>
 									);
 								}
@@ -354,7 +440,6 @@ export default function TagInput( {
 					) }
 				</div>
 			</div>
-
 		</div>
 	);
 }

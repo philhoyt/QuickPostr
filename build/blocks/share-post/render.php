@@ -21,22 +21,22 @@ if ( ! $quickpostr_post_id ) {
 	return;
 }
 
-$post_title = get_the_title( $quickpostr_post_id );
-$post_url   = get_permalink( $quickpostr_post_id );
+$qp_post_title = get_the_title( $quickpostr_post_id );
+$qp_post_url   = get_permalink( $quickpostr_post_id );
 
-if ( ! $post_url ) {
+if ( ! $qp_post_url ) {
 	return;
 }
 
-$wrapper_attributes = get_block_wrapper_attributes(
+$qp_wrapper_attributes = get_block_wrapper_attributes(
 	array(
 		'class'      => 'qp-share-post',
-		'data-title' => $post_title,
-		'data-url'   => $post_url,
+		'data-title' => $qp_post_title,
+		'data-url'   => $qp_post_url,
 	)
 );
 ?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+<div <?php echo $qp_wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 	<button type="button" class="qp-share-post__btn" hidden>
 		<svg class="qp-share-post__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
 			<circle cx="18" cy="5" r="3"/>

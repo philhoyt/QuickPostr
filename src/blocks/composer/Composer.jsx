@@ -17,8 +17,8 @@ const config = window.quickpostrConfig ?? {};
  */
 export default function Composer() {
 	const initialMode = config.blockAttrs?.defaultMode ?? 'status';
-	const [ mode,        setMode ]        = useState( initialMode );
-	const [ editPost,    setEditPost ]    = useState( null );
+	const [ mode, setMode ] = useState( initialMode );
+	const [ editPost, setEditPost ] = useState( null );
 	const [ editLoading, setEditLoading ] = useState( false );
 
 	// Listen for 'quickpostr:edit-post' from the Edit Post block view script.
@@ -30,11 +30,21 @@ export default function Composer() {
 				return;
 			}
 			setEditPost( post );
-			setMode( post.format === 'image' ? 'photo' : post.format === 'link' ? 'link' : 'status' );
+			let newMode = 'status';
+			if ( post.format === 'image' ) {
+				newMode = 'photo';
+			} else if ( post.format === 'link' ) {
+				newMode = 'link';
+			}
+			setMode( newMode );
 		}
 
 		document.addEventListener( 'quickpostr:edit-post', handleEditEvent );
-		return () => document.removeEventListener( 'quickpostr:edit-post', handleEditEvent );
+		return () =>
+			document.removeEventListener(
+				'quickpostr:edit-post',
+				handleEditEvent
+			);
 	}, [] );
 
 	// Detect ?qp-edit param and load the post into the composer (fallback path).
@@ -49,15 +59,21 @@ export default function Composer() {
 		getPost( editId )
 			.then( ( post ) => {
 				setEditPost( post );
-				setMode( post.format === 'image' ? 'photo' : post.format === 'link' ? 'link' : 'status' );
+				let editMode = 'status';
+				if ( post.format === 'image' ) {
+					editMode = 'photo';
+				} else if ( post.format === 'link' ) {
+					editMode = 'link';
+				}
+				setMode( editMode );
 			} )
 			.catch( () => {} )
 			.finally( () => setEditLoading( false ) );
 	}, [] );
 
-	const user      = config.currentUser ?? {};
+	const user = config.currentUser ?? {};
 	const avatarUrl = user.avatarUrls?.[ '48' ];
-	const initials  = ( user.name ?? '?' )
+	const initials = ( user.name ?? '?' )
 		.split( ' ' )
 		.map( ( w ) => w[ 0 ] )
 		.slice( 0, 2 )
@@ -93,12 +109,20 @@ export default function Composer() {
 			<header className="qp-composer__header">
 				<div className="qp-composer__identity">
 					<div className="qp-composer__avatar" aria-hidden="true">
-						{ avatarUrl
-							? <img src={ avatarUrl } alt="" width="32" height="32" />
-							: <span>{ initials }</span>
-						}
+						{ avatarUrl ? (
+							<img
+								src={ avatarUrl }
+								alt=""
+								width="32"
+								height="32"
+							/>
+						) : (
+							<span>{ initials }</span>
+						) }
 					</div>
-					<span className="qp-composer__user-name">{ user.name }</span>
+					<span className="qp-composer__user-name">
+						{ user.name }
+					</span>
 				</div>
 
 				{ editPost && (
@@ -113,17 +137,31 @@ export default function Composer() {
 			</header>
 
 			{ ! editPost && (
-				<div className="qp-composer__mode-bar" role="tablist" aria-label="Post type">
+				<div
+					className="qp-composer__mode-bar"
+					role="tablist"
+					aria-label="Post type"
+				>
 					{ [ 'status', 'photo', 'link' ].map( ( m ) => (
 						<button
 							key={ m }
 							role="tab"
 							aria-selected={ mode === m }
-							className={ `qp-composer__mode-btn${ mode === m ? ' qp-composer__mode-btn--active' : '' }` }
+							className={ `qp-composer__mode-btn${
+								mode === m
+									? ' qp-composer__mode-btn--active'
+									: ''
+							}` }
 							onClick={ () => setMode( m ) }
 							type="button"
 						>
-							{ { status: 'Status', photo: 'Photo', link: 'Link' }[ m ] }
+							{
+								{
+									status: 'Status',
+									photo: 'Photo',
+									link: 'Link',
+								}[ m ]
+							}
 						</button>
 					) ) }
 				</div>

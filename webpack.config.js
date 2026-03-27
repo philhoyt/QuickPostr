@@ -12,7 +12,6 @@ const CopyPlugin    = require( 'copy-webpack-plugin' );
  * We add entries that auto-discovery won't pick up:
  *   - composer/view.js  — the front-end React app (named handle, not file:)
  *   - delete-post/view.js, edit-post/view.js — vanilla JS view scripts (named handle)
- *   - shared/profile-edit.js — shared view script for both profile blocks (named handle)
  *
  * CSS files referenced as file: in block.json are copied via CopyPlugin (plain CSS,
  * no PostCSS transforms needed) so they land at build/blocks/<name>/<file>.css.
@@ -52,7 +51,6 @@ module.exports = {
 			'blocks/delete-post/view':  path.resolve( __dirname, 'src/blocks/delete-post/view.js' ),
 			'blocks/edit-post/view':    path.resolve( __dirname, 'src/blocks/edit-post/view.js' ),
 			'blocks/share-post/view':   path.resolve( __dirname, 'src/blocks/share-post/view.js' ),
-			'shared/profile-edit':     path.resolve( __dirname, 'src/shared/profile-edit.js' ),
 		};
 	},
 };

@@ -8,11 +8,7 @@ import { __ } from '@wordpress/i18n';
 export default function Edit() {
 	return (
 		<div { ...useBlockProps() }>
-			<button
-				type="button"
-				className="qp-edit-post__btn"
-				disabled
-			>
+			<button type="button" className="qp-edit-post__btn" disabled>
 				{ __( 'Edit', 'quickpostr' ) }
 			</button>
 		</div>

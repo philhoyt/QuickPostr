@@ -12,6 +12,10 @@ const DRAFT_SAVE_DELAY = 800;
 
 /**
  * Minimal rich-text toolbar button.
+ * @param {Object}   root0
+ * @param {string}   root0.label
+ * @param {Function} root0.onMouseDown
+ * @param {*}        root0.children
  */
 function ToolbarButton( { label, onMouseDown, children } ) {
 	return (
@@ -40,18 +44,25 @@ function ToolbarButton( { label, onMouseDown, children } ) {
  *   disabled    {boolean}
  *   editorRef   {React.RefObject} — forwarded ref to the contenteditable div
  *   onChange    (html: string) => void
+ * @param {Object}          root0
+ * @param {string}          root0.placeholder
+ * @param {boolean}         root0.disabled
+ * @param {React.RefObject} root0.editorRef
+ * @param {Function}        root0.onChange
  */
 function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 	const [ isEmpty, setIsEmpty ] = useState( true );
 
 	function handleInput() {
 		const el = editorRef.current;
-		if ( ! el ) return;
+		if ( ! el ) {
+			return;
+		}
 		const empty = el.innerText.trim() === '';
 		setIsEmpty( empty );
 		// Read normalized HTML via @wordpress/rich-text.
 		const rawHtml = empty ? '' : el.innerHTML;
-		const value   = create( { html: rawHtml } );
+		const value = create( { html: rawHtml } );
 		onChange( toHTMLString( { value } ) );
 	}
 
@@ -70,6 +81,7 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 	}
 
 	function handleLink() {
+		// eslint-disable-next-line no-alert
 		const url = window.prompt( 'Enter URL:' );
 		if ( url ) {
 			editorRef.current?.focus();
@@ -80,11 +92,21 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 
 	return (
 		<div className="qp-rich-editor">
-			<div className="qp-rich-editor__toolbar" role="toolbar" aria-label="Formatting">
-				<ToolbarButton label="Bold" onMouseDown={ () => execFormat( 'bold' ) }>
+			<div
+				className="qp-rich-editor__toolbar"
+				role="toolbar"
+				aria-label="Formatting"
+			>
+				<ToolbarButton
+					label="Bold"
+					onMouseDown={ () => execFormat( 'bold' ) }
+				>
 					<strong>B</strong>
 				</ToolbarButton>
-				<ToolbarButton label="Italic" onMouseDown={ () => execFormat( 'italic' ) }>
+				<ToolbarButton
+					label="Italic"
+					onMouseDown={ () => execFormat( 'italic' ) }
+				>
 					<em>I</em>
 				</ToolbarButton>
 				<ToolbarButton label="Link" onMouseDown={ handleLink }>
@@ -101,6 +123,7 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 				className="qp-rich-editor__content"
 				data-placeholder={ isEmpty ? placeholder : undefined }
 				role="textbox"
+				tabIndex={ 0 }
 				aria-multiline="true"
 				aria-label="Post content"
 				aria-placeholder={ placeholder }
@@ -115,30 +138,36 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  * Props:
  *   onSuccess (wpPost) => void
  *   editPost  {object|undefined} — when set, the composer is in edit mode
+ * @param {Object}           root0
+ * @param {Function}         root0.onSuccess
+ * @param {object|undefined} root0.editPost
  */
 export default function TextComposer( { onSuccess, editPost } ) {
-	const editorRef      = useRef( null );
-	const draftTimer     = useRef( null );
-	const wasEditingRef  = useRef( false );
+	const editorRef = useRef( null );
+	const draftTimer = useRef( null );
+	const wasEditingRef = useRef( false );
 
-	const [ html,               setHtml ]               = useState( '' );
-	const [ selectedTags,       setSelectedTags ]       = useState( [] );
+	const [ html, setHtml ] = useState( '' );
+	const [ selectedTags, setSelectedTags ] = useState( [] );
 	const [ selectedCategories, setSelectedCategories ] = useState(
-		config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : []
+		config.settings?.defaultCategory
+			? [ config.settings.defaultCategory ]
+			: []
 	);
-	const [ submitting,  setSubmitting ]  = useState( false );
-	const [ error,       setError ]       = useState( null );
-	const [ flash,       setFlash ]       = useState( false );
-	const [ draftId,     setDraftId ]     = useState( null );
+	const [ submitting, setSubmitting ] = useState( false );
+	const [ error, setError ] = useState( null );
+	const [ flash, setFlash ] = useState( false );
+	const [ draftId, setDraftId ] = useState( null );
 	const [ draftBanner, setDraftBanner ] = useState( false );
-	const [ draftPost,   setDraftPost ]   = useState( null );
+	const [ draftPost, setDraftPost ] = useState( null );
 
-	const placeholder   = config.blockAttrs?.placeholderText ?? "What's on your mind?";
+	const placeholder =
+		config.blockAttrs?.placeholderText ?? "What's on your mind?";
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
 	// Plain-text content for title preview and character count.
 	const plainText = editorRef.current?.innerText?.trim() ?? '';
-	const title     = generateTitle( 'text', plainText, '' );
+	const title = generateTitle( 'text', plainText, '' );
 
 	// On mount: check for an existing draft.
 	useEffect( () => {
@@ -165,10 +194,16 @@ export default function TextComposer( { onSuccess, editPost } ) {
 				setDraftId( null );
 				setHtml( '' );
 				setSelectedTags( [] );
-				setSelectedCategories( config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : [] );
+				setSelectedCategories(
+					config.settings?.defaultCategory
+						? [ config.settings.defaultCategory ]
+						: []
+				);
 				if ( editorRef.current ) {
 					editorRef.current.innerHTML = '';
-					editorRef.current.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+					editorRef.current.dispatchEvent(
+						new Event( 'input', { bubbles: true } )
+					);
 				}
 			}
 			return;
@@ -178,35 +213,47 @@ export default function TextComposer( { onSuccess, editPost } ) {
 		setDraftId( editPost.id );
 		setHtml( raw );
 		setSelectedTags( editPost.tags ?? [] );
-		setSelectedCategories(
-			editPost.categories?.length
-				? editPost.categories
-				: ( config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : [] )
-		);
+		let defaultCats;
+		if ( editPost.categories?.length ) {
+			defaultCats = editPost.categories;
+		} else if ( config.settings?.defaultCategory ) {
+			defaultCats = [ config.settings.defaultCategory ];
+		} else {
+			defaultCats = [];
+		}
+		setSelectedCategories( defaultCats );
 		if ( editorRef.current ) {
 			editorRef.current.innerHTML = raw;
 			// Trigger RichEditor's handleInput so isEmpty state clears the placeholder.
-			editorRef.current.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+			editorRef.current.dispatchEvent(
+				new Event( 'input', { bubbles: true } )
+			);
 		}
 	}, [ editPost ] );
 
-
-	/** Schedule a debounced draft save whenever content changes. */
+	/**
+	 * Schedule a debounced draft save whenever content changes.
+	 * @param {string} content
+	 */
 	function scheduleDraftSave( content ) {
-		if ( editPost ) return; // Edit mode: no auto-save as draft.
+		if ( editPost ) {
+			return;
+		} // Edit mode: no auto-save as draft.
 		clearTimeout( draftTimer.current );
 		draftTimer.current = setTimeout( async () => {
-			if ( ! content ) return;
+			if ( ! content ) {
+				return;
+			}
 			try {
 				if ( draftId ) {
 					await updatePost( draftId, { content, status: 'draft' } );
 				} else {
 					const newDraft = await createPost( {
-						title:   '',
+						title: '',
 						content,
-						status:  'draft',
-						format:  'status',
-						meta:    { _quickpostr_post: '1' },
+						status: 'draft',
+						format: 'status',
+						meta: { _quickpostr_post: '1' },
 					} );
 					setDraftId( newDraft.id );
 				}
@@ -245,7 +292,9 @@ export default function TextComposer( { onSuccess, editPost } ) {
 
 	const handleSubmit = useCallback( async () => {
 		const plain = editorRef.current?.innerText?.trim() ?? '';
-		if ( ! plain || submitting ) return;
+		if ( ! plain || submitting ) {
+			return;
+		}
 
 		setSubmitting( true );
 		setError( null );
@@ -256,31 +305,31 @@ export default function TextComposer( { onSuccess, editPost } ) {
 			if ( editPost ) {
 				// Edit mode: update the existing post.
 				wpPost = await updatePost( editPost.id, {
-					content:    html,
-					status:     defaultStatus,
-					tags:       selectedTags,
+					content: html,
+					status: defaultStatus,
+					tags: selectedTags,
 					categories: selectedCategories,
 				} );
 			} else if ( draftId ) {
 				// Publish the auto-saved draft.
 				wpPost = await updatePost( draftId, {
-					title:      '',
-					content:    html,
-					status:     defaultStatus,
-					format:     'status',
-					tags:       selectedTags,
+					title: '',
+					content: html,
+					status: defaultStatus,
+					format: 'status',
+					tags: selectedTags,
 					categories: selectedCategories,
 				} );
 			} else {
 				// No draft: create a new post.
 				wpPost = await createPost( {
-					title:      '',
-					content:    html,
-					status:     defaultStatus,
-					format:     'status',
-					tags:       selectedTags,
+					title: '',
+					content: html,
+					status: defaultStatus,
+					format: 'status',
+					tags: selectedTags,
 					categories: selectedCategories,
-					meta:       { _quickpostr_post: '1' },
+					meta: { _quickpostr_post: '1' },
 				} );
 			}
 
@@ -295,7 +344,9 @@ export default function TextComposer( { onSuccess, editPost } ) {
 			setDraftId( null );
 			setSelectedTags( [] );
 			setSelectedCategories(
-				config.settings?.defaultCategory ? [ config.settings.defaultCategory ] : []
+				config.settings?.defaultCategory
+					? [ config.settings.defaultCategory ]
+					: []
 			);
 			setFlash( true );
 			setTimeout( () => setFlash( false ), 2500 );
@@ -304,7 +355,16 @@ export default function TextComposer( { onSuccess, editPost } ) {
 		} finally {
 			setSubmitting( false );
 		}
-	}, [ html, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess, editPost, draftId ] );
+	}, [
+		html,
+		selectedTags,
+		selectedCategories,
+		submitting,
+		defaultStatus,
+		onSuccess,
+		editPost,
+		draftId,
+	] );
 
 	function handleKeyDown( e ) {
 		if ( ( e.ctrlKey || e.metaKey ) && e.key === 'Enter' ) {
@@ -312,19 +372,36 @@ export default function TextComposer( { onSuccess, editPost } ) {
 		}
 	}
 
-	const hasContent = ( editorRef.current?.innerText?.trim() ?? '' ).length > 0;
-	const submitLabel = editPost ? 'Update' : ( defaultStatus === 'draft' ? 'Save Draft' : 'Post' );
+	const hasContent =
+		( editorRef.current?.innerText?.trim() ?? '' ).length > 0;
+	let submitLabel;
+	if ( editPost ) {
+		submitLabel = 'Update';
+	} else if ( defaultStatus === 'draft' ) {
+		submitLabel = 'Save Draft';
+	} else {
+		submitLabel = 'Post';
+	}
 
 	return (
+		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
 		<div className="qp-text-composer" onKeyDown={ handleKeyDown }>
 			{ draftBanner && (
 				<div className="qp-draft-banner" role="status">
 					<span>Resume your saved draft?</span>
 					<div className="qp-draft-banner__actions">
-						<button type="button" className="qp-draft-banner__resume" onClick={ resumeDraft }>
+						<button
+							type="button"
+							className="qp-draft-banner__resume"
+							onClick={ resumeDraft }
+						>
 							Resume
 						</button>
-						<button type="button" className="qp-draft-banner__discard" onClick={ handleDiscardDraft }>
+						<button
+							type="button"
+							className="qp-draft-banner__discard"
+							onClick={ handleDiscardDraft }
+						>
 							Discard
 						</button>
 					</div>
@@ -348,11 +425,16 @@ export default function TextComposer( { onSuccess, editPost } ) {
 			/>
 
 			{ error && (
-				<p className="qp-composer-error" role="alert">{ error }</p>
+				<p className="qp-composer-error" role="alert">
+					{ error }
+				</p>
 			) }
 
 			<footer className="qp-text-composer__footer">
-				<span className="qp-text-composer__char-count" aria-live="polite">
+				<span
+					className="qp-text-composer__char-count"
+					aria-live="polite"
+				>
 					{ editorRef.current?.innerText?.length ?? 0 }
 				</span>
 				<button
@@ -367,7 +449,11 @@ export default function TextComposer( { onSuccess, editPost } ) {
 			</footer>
 
 			{ flash && (
-				<div className="qp-composer-flash" role="status" aria-live="assertive">
+				<div
+					className="qp-composer-flash"
+					role="status"
+					aria-live="assertive"
+				>
 					{ editPost ? 'Updated!' : 'Posted!' }
 				</div>
 			) }
