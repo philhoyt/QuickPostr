@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName -- short name intentional; class is QuickPostr_Rest.
 /**
  * Custom REST API endpoints for QuickPostr.
  *
@@ -44,29 +44,11 @@ class QuickPostr_Rest {
 
 		register_rest_route(
 			self::NAMESPACE,
-			'/feed',
+			'/draft',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_feed' ),
+				'callback'            => array( $this, 'get_draft' ),
 				'permission_callback' => array( $this, 'check_permission' ),
-				'args'                => array(
-					'format'   => array(
-						'type'              => 'string',
-						'enum'              => array( 'status', 'photo' ),
-						'sanitize_callback' => 'sanitize_key',
-					),
-					'per_page' => array(
-						'type'    => 'integer',
-						'default' => 20,
-						'minimum' => 1,
-						'maximum' => 50,
-					),
-					'page'     => array(
-						'type'    => 'integer',
-						'default' => 1,
-						'minimum' => 1,
-					),
-				),
 			)
 		);
 	}
@@ -88,82 +70,60 @@ class QuickPostr_Rest {
 	}
 
 	/**
+	 * Return the current user's latest QuickPostr draft, if one exists.
+	 *
+	 * The composer uses this on mount to offer a "Resume draft?" banner.
+	 * Returns null (HTTP 200) when no draft is found.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function get_draft(): \WP_REST_Response {
+		$query = new \WP_Query(
+			array(
+				'post_type'      => 'post',
+				'post_status'    => 'draft',
+				'author'         => get_current_user_id(),
+				'posts_per_page' => 1,
+				'orderby'        => 'modified',
+				'order'          => 'DESC',
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- _quickpostr_post is an indexed flag on QuickPostr posts only.
+				'meta_query'     => array(
+					array(
+						'key'   => '_quickpostr_post',
+						'value' => '1',
+					),
+				),
+			)
+		);
+
+		if ( empty( $query->posts ) ) {
+			return rest_ensure_response( null );
+		}
+
+		$post_id       = $query->posts[0]->ID;
+		$inner_request = new \WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id );
+		$inner_request->set_query_params(
+			array(
+				'context' => 'edit',
+				'_fields' => 'id,title,content,format,status',
+			)
+		);
+		$inner_response = rest_do_request( $inner_request );
+
+		return rest_ensure_response( $inner_response->get_data() );
+	}
+
+	/**
 	 * Return sanitized plugin settings for the app to consume.
 	 *
-	 * @return WP_REST_Response
+	 * @return \WP_REST_Response
 	 */
 	public function get_settings(): \WP_REST_Response {
 		$settings = QuickPostr_Settings::get();
 
-		// Strip any data the client doesn't need.
-		unset( $settings['allowed_roles'] );
+		// Strip server-only settings the client does not need.
+		unset( $settings['allowed_roles'], $settings['hide_admin_bar'], $settings['front_end_edit'] );
 
 		return rest_ensure_response( $settings );
-	}
-
-	/**
-	 * Return the current user's QuickPostr posts, optionally filtered by format.
-	 *
-	 * @param \WP_REST_Request $request The REST request.
-	 * @return \WP_REST_Response
-	 */
-	public function get_feed( \WP_REST_Request $request ): \WP_REST_Response {
-		$tax_query = array(
-			'relation' => 'AND',
-			array(
-				'taxonomy' => 'quickpostr_source',
-				'field'    => 'slug',
-				'terms'    => array( 'app' ),
-			),
-		);
-
-		$format = $request->get_param( 'format' );
-		if ( $format ) {
-			$tax_query[] = array(
-				'taxonomy' => 'quickpostr_source',
-				'field'    => 'slug',
-				'terms'    => array( sanitize_key( $format ) ),
-			);
-		}
-
-		$query = new \WP_Query(
-			array(
-				'post_type'      => 'post',
-				'post_status'    => array( 'publish', 'draft' ),
-				'author'         => get_current_user_id(),
-				'posts_per_page' => (int) $request->get_param( 'per_page' ),
-				'paged'          => (int) $request->get_param( 'page' ),
-				'tax_query'      => $tax_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
-				'no_found_rows'  => false,
-			)
-		);
-
-		$posts = array();
-		foreach ( $query->posts as $post ) {
-			$featured_media_url = '';
-			if ( has_post_thumbnail( $post ) ) {
-				$thumb = wp_get_attachment_image_src( get_post_thumbnail_id( $post ), 'large' );
-				if ( $thumb ) {
-					$featured_media_url = $thumb[0];
-				}
-			}
-
-			$posts[] = array(
-				'id'                  => $post->ID,
-				'title'               => $post->post_title,
-				'content'             => wpautop( $post->post_content ),
-				'date'                => $post->post_date_gmt,
-				'status'              => $post->post_status,
-				'format'              => get_post_format( $post ) ?: 'standard',
-				'link'                => get_permalink( $post ),
-				'featured_media_url'  => $featured_media_url,
-			);
-		}
-
-		$response = rest_ensure_response( $posts );
-		$response->header( 'X-WP-Total', (int) $query->found_posts );
-		$response->header( 'X-WP-TotalPages', (int) $query->max_num_pages );
-
-		return $response;
 	}
 }
