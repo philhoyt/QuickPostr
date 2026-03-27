@@ -1,5 +1,7 @@
 # QuickPostr
 
+![QuickPostr Composer](assets/screenshot-1.png)
+
 A front-end post composer for WordPress, delivered as a WordPress block. Logged-in users post status updates, photos, and links without visiting `/wp-admin`.
 
 ## Requirements
