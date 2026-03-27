@@ -295,8 +295,11 @@ class QuickPostr {
 	/**
 	 * Strip EXIF metadata from uploaded JPEG images when the setting is enabled.
 	 *
-	 * Uses Imagick::stripImage() which removes all profiles and comments
-	 * (including GPS coordinates and camera info) without re-encoding the image.
+	 * Calls autoOrient() before stripImage() so that the EXIF orientation is
+	 * baked into the pixel data before the tag is removed. Without this step,
+	 * stripping the orientation tag leaves the pixels in the camera's raw
+	 * orientation, causing images to appear rotated on display.
+	 *
 	 * Fails silently so uploads are never blocked if stripping is unavailable.
 	 *
 	 * @param array $upload Upload data from wp_handle_upload.
@@ -321,6 +324,7 @@ class QuickPostr {
 
 		try {
 			$image = new Imagick( $file );
+			$image->autoOrient();
 			$image->stripImage();
 			$image->writeImage( $file );
 			$image->destroy();
