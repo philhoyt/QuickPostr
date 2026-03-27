@@ -52,7 +52,7 @@ function Composer() {
         return;
       }
       setEditPost(post);
-      setMode(post.format === 'image' ? 'photo' : 'status'); // link posts fall back to status edit
+      setMode(post.format === 'image' ? 'photo' : post.format === 'link' ? 'link' : 'status');
     }
     document.addEventListener('quickpostr:edit-post', handleEditEvent);
     return () => document.removeEventListener('quickpostr:edit-post', handleEditEvent);
@@ -68,7 +68,7 @@ function Composer() {
     setEditLoading(true);
     (0,_api_js__WEBPACK_IMPORTED_MODULE_4__.getPost)(editId).then(post => {
       setEditPost(post);
-      setMode(post.format === 'image' ? 'photo' : 'status'); // link posts fall back to status edit
+      setMode(post.format === 'image' ? 'photo' : post.format === 'link' ? 'link' : 'status');
     }).catch(() => {}).finally(() => setEditLoading(false));
   }, []);
   const user = config.currentUser ?? {};
@@ -153,7 +153,8 @@ function Composer() {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
       }), mode === 'link' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_LinkComposer_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
-        onSuccess: handleSuccess
+        onSuccess: handleSuccess,
+        editPost: editPost ?? undefined
       })]
     })]
   });
@@ -195,6 +196,40 @@ function serializeLinkCard(attrs) {
 }
 
 /**
+ * Extract URL and OG attributes from stored post content.
+ *
+ * Handles two formats:
+ *   1. BB block:  <!-- wp:better-bookmarks/link-card {...} /-->
+ *   2. Plain link: <p><a href="url">...</a></p>
+ *
+ * Returns an attrs object suitable for pre-filling the composer,
+ * or null if nothing recognisable is found.
+ *
+ * @param {string} raw
+ * @returns {{url: string, title?: string, description?: string, image?: string, domain?: string}|null}
+ */
+function parsePostContent(raw) {
+  // BB block comment
+  const bbMatch = raw.match(/<!-- wp:better-bookmarks\/link-card ({.*?}) \/-->/);
+  if (bbMatch) {
+    try {
+      return JSON.parse(bbMatch[1]);
+    } catch {
+      // fall through
+    }
+  }
+
+  // Plain <a> fallback
+  const aMatch = raw.match(/<a\s[^>]*href="([^"]+)"/);
+  if (aMatch) {
+    return {
+      url: aMatch[1]
+    };
+  }
+  return null;
+}
+
+/**
  * Link / bookmark composer.
  *
  * If Better Bookmarks is installed, fetches OG preview data and serializes a
@@ -203,9 +238,11 @@ function serializeLinkCard(attrs) {
  *
  * Props:
  *   onSuccess (wpPost) => void
+ *   editPost  object|undefined — WP post object when in edit mode
  */
 function LinkComposer({
-  onSuccess
+  onSuccess,
+  editPost
 }) {
   const [url, setUrl] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)('');
   const [preview, setPreview] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
@@ -218,6 +255,24 @@ function LinkComposer({
   const [selectedCategories, setSelectedCategories] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
   const bbAvailable = config.betterBookmarks ?? false;
   const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+  // Pre-populate from editPost.
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!editPost) return;
+    const raw = editPost.content?.raw ?? '';
+    const parsed = parsePostContent(raw);
+    if (parsed?.url) {
+      setUrl(parsed.url);
+      // Use the stored attrs directly as preview — no re-fetch needed.
+      setPreview(parsed);
+    }
+    if (editPost.tags?.length) {
+      setSelectedTags(editPost.tags);
+    }
+    if (editPost.categories?.length) {
+      setSelectedCategories(editPost.categories);
+    }
+  }, [editPost]);
   async function handleFetch() {
     const trimmed = url.trim();
     if (!trimmed || fetching) return;
@@ -259,32 +314,37 @@ function LinkComposer({
         const label = preview?.title || trimmed;
         content = `<p><a href="${trimmed}">${label}</a></p>`;
       }
-      const wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createPost)({
-        title: '',
+      const fields = {
         content,
-        status: defaultStatus,
         format: 'link',
         tags: selectedTags,
-        categories: selectedCategories,
+        categories: selectedCategories
+      };
+      const wpPost = editPost ? await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.updatePost)(editPost.id, fields) : await (0,_api_js__WEBPACK_IMPORTED_MODULE_1__.createPost)({
+        ...fields,
+        title: '',
+        status: defaultStatus,
         meta: {
           _quickpostr_post: '1'
         }
       });
       onSuccess?.(wpPost);
-      setUrl('');
-      setPreview(null);
-      setSelectedTags([]);
-      setSelectedCategories(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
-      setFlash(true);
-      setTimeout(() => setFlash(false), 2500);
+      if (!editPost) {
+        setUrl('');
+        setPreview(null);
+        setSelectedTags([]);
+        setSelectedCategories(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 2500);
+      }
     } catch (err) {
       setError(err.message ?? 'Failed to publish. Please try again.');
     } finally {
       setSubmitting(false);
     }
-  }, [url, preview, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess, bbAvailable]);
+  }, [url, preview, selectedTags, selectedCategories, submitting, defaultStatus, onSuccess, bbAvailable, editPost]);
   const canSubmit = url.trim() && !submitting;
-  const submitLabel = defaultStatus === 'draft' ? 'Save Draft' : 'Post';
+  const submitLabel = editPost ? 'Update' : defaultStatus === 'draft' ? 'Save Draft' : 'Post';
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
     className: "qp-link-composer",
     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
@@ -352,7 +412,7 @@ function LinkComposer({
         type: "button",
         onClick: handleSubmit,
         disabled: !canSubmit,
-        children: submitting ? 'Publishing…' : submitLabel
+        children: submitting ? 'Saving…' : submitLabel
       })
     }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
       className: "qp-composer-flash",

@@ -30,7 +30,7 @@ export default function Composer() {
 				return;
 			}
 			setEditPost( post );
-			setMode( post.format === 'image' ? 'photo' : 'status' ); // link posts fall back to status edit
+			setMode( post.format === 'image' ? 'photo' : post.format === 'link' ? 'link' : 'status' );
 		}
 
 		document.addEventListener( 'quickpostr:edit-post', handleEditEvent );
@@ -49,7 +49,7 @@ export default function Composer() {
 		getPost( editId )
 			.then( ( post ) => {
 				setEditPost( post );
-				setMode( post.format === 'image' ? 'photo' : 'status' ); // link posts fall back to status edit
+				setMode( post.format === 'image' ? 'photo' : post.format === 'link' ? 'link' : 'status' );
 			} )
 			.catch( () => {} )
 			.finally( () => setEditLoading( false ) );
@@ -151,6 +151,7 @@ export default function Composer() {
 				{ mode === 'link' && (
 					<LinkComposer
 						onSuccess={ handleSuccess }
+						editPost={ editPost ?? undefined }
 					/>
 				) }
 			</div>
