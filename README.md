@@ -1,6 +1,6 @@
 # QuickPostr
 
-A front-end post composer for WordPress, delivered as a Gutenberg block. Logged-in users post status updates, photos, and links without visiting `/wp-admin`.
+A front-end post composer for WordPress, delivered as a WordPress block. Logged-in users post status updates, photos, and links without visiting `/wp-admin`.
 
 ## Requirements
 
