@@ -27,6 +27,18 @@ require_once QUICKPOSTR_PATH . 'includes/class-quickpostr.php';
 require_once QUICKPOSTR_PATH . 'includes/class-settings.php';
 require_once QUICKPOSTR_PATH . 'includes/class-rest.php';
 
+// Plugin Update Checker — GitHub release-based updates.
+$quickpostr_puc = QUICKPOSTR_PATH . 'lib/plugin-update-checker/plugin-update-checker.php';
+if ( file_exists( $quickpostr_puc ) ) {
+	require_once $quickpostr_puc;
+	$quickpostr_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+		'https://github.com/philhoyt/QuickPostr/',
+		__FILE__,
+		'quickpostr'
+	);
+	$quickpostr_update_checker->getVcsApi()->enableReleaseAssets();
+}
+
 register_activation_hook( __FILE__, 'quickpostr_activate' );
 register_deactivation_hook( __FILE__, 'quickpostr_deactivate' );
 

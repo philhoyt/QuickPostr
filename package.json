@@ -13,8 +13,10 @@
     "build",
     "includes",
     "languages",
+    "lib",
     "patterns",
-    "quickpostr.php"
+    "quickpostr.php",
+    "readme.txt"
   ],
   "devDependencies": {
     "@wordpress/rich-text": "*",
