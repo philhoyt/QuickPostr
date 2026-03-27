@@ -120,7 +120,7 @@ module.exports = window["wp"]["i18n"];
   \******************************************/
 (module) {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/share-post","version":"1.0.0","title":"Share Post","category":"quickpostr","description":"Share button using the Web Share API. Place inside a Query Loop post template.","keywords":["share","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false,"lock":false},"usesContext":["postId","postType"],"editorScript":"file:./index.js","viewScript":"quickpostr-share-post-view","style":"file:./style.css","render":"file:./render.php"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/share-post","version":"0.5.0","title":"Share Post","category":"quickpostr","description":"Share button using the Web Share API. Place inside a Query Loop post template.","keywords":["share","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false,"lock":false},"usesContext":["postId","postType"],"editorScript":"file:./index.js","viewScript":"quickpostr-share-post-view","style":"file:./style.css","render":"file:./render.php"}');
 
 /***/ }
 

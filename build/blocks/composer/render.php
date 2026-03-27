@@ -36,21 +36,21 @@ $avatar_urls  = rest_get_avatar_urls( $quickpostr_user->user_email );
 $actor_handle = '';
 
 $config = array(
-	'restUrl'       => rest_url(),
-	'nonce'         => wp_create_nonce( 'wp_rest' ),
-	'currentUser'   => array(
+	'restUrl'         => rest_url(),
+	'nonce'           => wp_create_nonce( 'wp_rest' ),
+	'currentUser'     => array(
 		'id'          => $quickpostr_user->ID,
 		'name'        => $quickpostr_user->display_name,
 		'avatarUrls'  => $avatar_urls,
 		'actorHandle' => $actor_handle,
 	),
-	'settings'      => array(
+	'settings'        => array(
 		'defaultStatus'   => $settings['default_status'],
 		'defaultCategory' => (int) $settings['default_category'],
 		'showSlugPreview' => (bool) $settings['show_slug_preview'],
 		'frontEndEdit'    => (bool) $settings['front_end_edit'],
 	),
-	'blockAttrs'    => array(
+	'blockAttrs'      => array(
 		'defaultMode'     => $attributes['defaultMode'] ?? 'status',
 		'showSlugPreview' => $attributes['showSlugPreview'] ?? true,
 		'placeholderText' => $attributes['placeholderText'] ?? __( "What's on your mind?", 'quickpostr' ),

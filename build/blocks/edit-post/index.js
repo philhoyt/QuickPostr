@@ -86,7 +86,7 @@ module.exports = window["wp"]["i18n"];
   \*****************************************/
 (module) {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/edit-post","version":"1.0.0","title":"Edit Post","category":"quickpostr","description":"Edit link for the current post. Loads the post into the Composer block for editing. Place inside a Query Loop post template.","keywords":["edit","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false,"lock":false},"usesContext":["postId","postType"],"editorScript":"file:./index.js","viewScript":"quickpostr-edit-post-view","style":"file:./style.css","render":"file:./render.php"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/edit-post","version":"0.5.0","title":"Edit Post","category":"quickpostr","description":"Edit link for the current post. Loads the post into the Composer block for editing. Place inside a Query Loop post template.","keywords":["edit","quickpostr"],"textdomain":"quickpostr","supports":{"html":false,"reusable":false,"lock":false},"usesContext":["postId","postType"],"editorScript":"file:./index.js","viewScript":"quickpostr-edit-post-view","style":"file:./style.css","render":"file:./render.php"}');
 
 /***/ }
 
