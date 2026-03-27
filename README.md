@@ -22,9 +22,15 @@ A front-end post composer for WordPress, delivered as a WordPress block. Logged-
 
 ## Installation
 
-Upload the plugin directory to `wp-content/plugins/` and activate. The `build/` directory is committed and ready to use — no build step required for deployment.
+1. Go to the [Releases](https://github.com/philhoyt/QuickPostr/releases) page and download the `.zip` from the latest release.
+2. In WordPress, go to **Plugins → Add New → Upload Plugin**, choose the zip, and click **Install Now**.
+3. Click **Activate Plugin**.
+4. Place the **QuickPostr Composer** block on any page using the block editor.
+5. Configure access and behaviour at **Settings → QuickPostr**.
 
-For development:
+The `build/` directory is included in the release zip — no build step required.
+
+## Development
 
 ```bash
 npm install
@@ -105,10 +111,3 @@ When active: the Link composer fetches OG metadata from `GET /better-bookmarks/v
 
 When not active: the same Link tab posts `<p><a href="url">title</a></p>` with post format `link`. The tab is always visible regardless of whether Better Bookmarks is installed.
 
-## Known Limitations
-
-- Link posts cannot be edited via the front-end Composer. Clicking Edit on a `link` format post loads the status composer instead.
-- EXIF stripping only applies to JPEG uploads. PNGs and WebP are not processed.
-- `navigator.share()` is not available on desktop browsers in most cases. The Share Post block hides itself when the API is absent.
-- The Composer block renders nothing for logged-out visitors — there is no fallback UI or login prompt.
-- Draft auto-save runs in `TextComposer` only. Photo and Link composers do not auto-save.
