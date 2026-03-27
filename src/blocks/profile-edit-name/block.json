@@ -2,7 +2,7 @@
     "$schema": "https://schemas.wp.org/trunk/block.json",
     "apiVersion": 3,
     "name": "quickpostr/profile-edit-name",
-    "version": "1.0.0",
+    "version": "0.5.0",
     "title": "Profile: Display Name",
     "category": "quickpostr",
     "description": "Shows the current user's display name with an inline edit control. For use on profile pages.",

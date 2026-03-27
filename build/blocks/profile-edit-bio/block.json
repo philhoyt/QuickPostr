@@ -2,7 +2,7 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "quickpostr/profile-edit-bio",
-  "version": "1.0.0",
+  "version": "0.5.0",
   "title": "Profile: Bio",
   "category": "quickpostr",
   "description": "Shows the current user's bio with an inline edit control. For use on profile pages.",
