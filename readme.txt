@@ -51,7 +51,7 @@ All settings are at **Settings → QuickPostr**.
 * **Hide Admin Bar** — hides the WordPress admin bar for non-administrator roles.
 * **Hide Admin Bar (Administrators)** — separate toggle for the administrator role.
 * **Front-End Post Management** — enables the Edit Post and Delete Post blocks.
-* **Strip Photo Metadata** — strips EXIF data (GPS, camera info) from JPEG uploads via `Imagick::stripImage()`. Silently skipped if Imagick is unavailable.
+* **Strip Photo Metadata** — strips EXIF data (GPS, camera info) from JPEG uploads. Applies EXIF orientation to pixel data before stripping so images display correctly. Silently skipped if Imagick is unavailable.
 
 Settings are stored in a single `wp_options` row under `quickpostr_settings`.
 
@@ -63,7 +63,7 @@ No. The block renders nothing for logged-out visitors. There is no fallback UI o
 
 = How are post titles generated? =
 
-PHP generates the canonical title in `rest_after_insert_post`. The composer sends an empty title and the server overwrites it. Content under 55 characters becomes the title as-is. Longer content is truncated at the last word break before 55 characters and suffixed with an ellipsis. Posts with no text content (photo or link without a caption) get a dated fallback: "Photo — Mar 27, 2026".
+PHP generates the canonical title in `rest_after_insert_post`. The composer sends an empty title and the server overwrites it. Content under 55 characters becomes the title as-is. Longer content is truncated at the last word break before 55 characters and suffixed with an ellipsis. Posts with no text content (photo or link without a caption) get a dated fallback: "Photo — Jan 15, 2026".
 
 = What authentication method is used? =
 
@@ -94,6 +94,7 @@ Only JPEG. PNG and WebP uploads are not processed.
 = 0.6.0 =
 * Link composer mode: paste a URL to post a rich link card via Better Bookmarks, or a plain linked paragraph as fallback.
 * Link post editing: pre-fills the composer with stored URL and Open Graph preview when editing a link-format post.
+* Fix EXIF stripping rotating photos incorrectly: autoOrient() now bakes EXIF orientation into pixel data before stripping the tag.
 * Plugin Update Checker: GitHub release-based automatic updates via plugin-update-checker.
 * Plugin Check compliance: prefixed render.php variables, shortened readme.txt short description, removed deprecated load_plugin_textdomain().
 
