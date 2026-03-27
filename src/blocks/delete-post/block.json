@@ -3,6 +3,7 @@
     "apiVersion": 3,
     "name": "quickpostr/delete-post",
     "version": "0.5.0",
+    "icon": "trash",
     "title": "Delete Post",
     "category": "quickpostr",
     "description": "Delete button for the current post. Place inside a Query Loop post template.",

@@ -3,6 +3,7 @@
   "apiVersion": 3,
   "name": "quickpostr/profile-edit-name",
   "version": "0.5.0",
+  "icon": "nametag",
   "title": "Profile: Display Name",
   "category": "quickpostr",
   "description": "Shows the current user's display name with an inline edit control. For use on profile pages.",

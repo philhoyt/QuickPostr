@@ -3,6 +3,7 @@
     "apiVersion": 3,
     "name": "quickpostr/edit-post",
     "version": "0.5.0",
+    "icon": "edit",
     "title": "Edit Post",
     "category": "quickpostr",
     "description": "Edit link for the current post. Loads the post into the Composer block for editing. Place inside a Query Loop post template.",

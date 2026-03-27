@@ -3,6 +3,7 @@
   "apiVersion": 3,
   "name": "quickpostr/profile-edit-bio",
   "version": "0.5.0",
+  "icon": "text-page",
   "title": "Profile: Bio",
   "category": "quickpostr",
   "description": "Shows the current user's bio with an inline edit control. For use on profile pages.",

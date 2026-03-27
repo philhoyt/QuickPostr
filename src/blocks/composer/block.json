@@ -6,6 +6,7 @@
 	"title": "QuickPostr Composer",
 	"category": "quickpostr",
 	"description": "Social-style post composer. Visible only to logged-in users with posting capability.",
+	"icon": "format-status",
 	"keywords": [ "composer", "post", "social" ],
 	"textdomain": "quickpostr",
 	"supports": {

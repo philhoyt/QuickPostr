@@ -3,6 +3,7 @@
     "apiVersion": 3,
     "name": "quickpostr/share-post",
     "version": "0.5.0",
+    "icon": "share",
     "title": "Share Post",
     "category": "quickpostr",
     "description": "Share button using the Web Share API. Place inside a Query Loop post template.",
