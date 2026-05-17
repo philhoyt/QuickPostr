@@ -115,6 +115,7 @@ class QuickPostr {
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/share-post/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/media-gallery/' );
 	}
 
 	/**
@@ -196,7 +197,7 @@ class QuickPostr {
 	 * Uses wp_insert_term which is a no-op if the term already exists.
 	 */
 	public function seed_terms(): void {
-		$terms = array( 'app', 'status', 'photo', 'link', 'video' );
+		$terms = array( 'app', 'status', 'photo', 'link', 'video', 'gallery' );
 		foreach ( $terms as $slug ) {
 			if ( ! term_exists( $slug, 'quickpostr_source' ) ) {
 				wp_insert_term( $slug, 'quickpostr_source', array( 'slug' => $slug ) );
@@ -226,6 +227,8 @@ class QuickPostr {
 			$format_term = 'link';
 		} elseif ( 'video' === $format ) {
 			$format_term = 'video';
+		} elseif ( 'gallery' === $format ) {
+			$format_term = 'gallery';
 		} else {
 			$format_term = 'status';
 		}
@@ -268,6 +271,8 @@ class QuickPostr {
 				$label = __( 'Link', 'quickpostr' );
 			} elseif ( 'video' === $format ) {
 				$label = __( 'Video', 'quickpostr' );
+			} elseif ( 'gallery' === $format ) {
+				$label = __( 'Gallery', 'quickpostr' );
 			} else {
 				$label = __( 'Status', 'quickpostr' );
 			}
