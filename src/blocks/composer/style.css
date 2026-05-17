@@ -478,6 +478,130 @@
 	margin-top: 0.75rem;
 }
 
+/* ── Video composer ─────────────────────────────────────────────────────── */
+.wp-block-quickpostr-composer .qp-video-dropzone {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.625rem;
+	padding: 2.5rem 1rem;
+	border: 2px dashed var(--qp-border);
+	border-radius: var(--qp-radius-md);
+	background: var(--qp-bg);
+	color: var(--qp-text-muted);
+	cursor: pointer;
+	transition: border-color var(--qp-transition), background var(--qp-transition);
+	text-align: center;
+}
+
+.wp-block-quickpostr-composer .qp-video-dropzone:hover,
+.wp-block-quickpostr-composer .qp-video-dropzone:focus-visible {
+	border-color: var(--qp-accent);
+	background: var(--qp-surface);
+	outline: none;
+}
+
+.wp-block-quickpostr-composer .qp-video-dropzone--active {
+	border-color: var(--qp-accent);
+	background: var(--qp-surface);
+}
+
+.wp-block-quickpostr-composer .qp-video-dropzone__icon {
+	width: 40px;
+	height: 40px;
+	color: var(--qp-text-muted);
+}
+
+.wp-block-quickpostr-composer .qp-video-dropzone__label {
+	font-size: 0.875rem;
+}
+
+.wp-block-quickpostr-composer .qp-video-dropzone__browse {
+	color: var(--qp-accent);
+	text-decoration: underline;
+}
+
+.wp-block-quickpostr-composer .qp-video-dropzone__input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	border: 0;
+}
+
+.wp-block-quickpostr-composer .qp-video-preview {
+	position: relative;
+	border-radius: var(--qp-radius-sm);
+	overflow: hidden;
+	background: var(--qp-surface);
+}
+
+.wp-block-quickpostr-composer .qp-video-preview__video {
+	display: block;
+	width: 100%;
+	max-height: 360px;
+}
+
+.wp-block-quickpostr-composer .qp-video-preview__remove {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	background: rgba(0, 0, 0, 0.55);
+	color: #fff;
+	border: none;
+	border-radius: 50%;
+	font-size: 0.75rem;
+	cursor: pointer;
+	line-height: 1;
+	transition: background var(--qp-transition);
+}
+
+.wp-block-quickpostr-composer .qp-video-preview__remove:hover:not(:disabled) {
+	background: rgba(0, 0, 0, 0.8);
+}
+
+.wp-block-quickpostr-composer .qp-video-caption {
+	display: block;
+	width: 100%;
+	margin-top: 0.75rem;
+	padding: 0.625rem 0.75rem;
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-sm);
+	background: var(--qp-bg);
+	color: var(--qp-text);
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	resize: vertical;
+	outline: none;
+	box-sizing: border-box;
+	transition: border-color var(--qp-transition);
+}
+
+.wp-block-quickpostr-composer .qp-video-caption:focus {
+	border-color: var(--qp-accent);
+}
+
+.wp-block-quickpostr-composer .qp-video-caption::placeholder {
+	color: var(--qp-text-muted);
+}
+
+.wp-block-quickpostr-composer .qp-video-composer__footer {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 0.75rem;
+}
+
 /* ── Edit mode ──────────────────────────────────────────────────────────── */
 .wp-block-quickpostr-composer .qp-composer__edit-bar {
 	padding: 0.4rem 1rem;
