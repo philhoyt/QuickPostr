@@ -143,9 +143,12 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 			let wpPost;
 
 			if ( editPost && ! file ) {
-				// Edit mode: update caption/tags only, keep existing featured media.
+				// Edit mode, no new file — rebuild content from existing video + updated caption.
+				const existingContent = existingVideoUrl
+					? buildVideoContent( editPost.featured_media, existingVideoUrl, caption )
+					: caption;
 				wpPost = await updatePost( editPost.id, {
-					content: caption,
+					content: existingContent,
 					status: defaultStatus,
 					tags: selectedTags,
 					categories: selectedCategories,
@@ -158,7 +161,7 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 
 				if ( editPost ) {
 					wpPost = await updatePost( editPost.id, {
-						content: caption,
+						content: buildVideoContent( mediaId, mediaUrl, caption ),
 						status: defaultStatus,
 						featured_media: mediaId,
 						tags: selectedTags,
@@ -167,7 +170,7 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 				} else {
 					wpPost = await createPost( {
 						title: generateTitle( 'photo', '', caption ),
-						content: caption,
+						content: buildVideoContent( mediaId, mediaUrl, caption ),
 						status: defaultStatus,
 						format: 'video',
 						featured_media: mediaId,
@@ -203,6 +206,14 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 		} finally {
 			setSubmitting( false );
 		}
+	}
+
+	function buildVideoContent( mediaId, mediaUrl, captionText ) {
+		const videoBlock = `<!-- wp:video {"id":${ mediaId }} --><figure class="wp-block-video"><video controls src="${ mediaUrl }"></video></figure><!-- /wp:video -->`;
+		if ( ! captionText.trim() ) {
+			return videoBlock;
+		}
+		return `${ videoBlock }\n\n<!-- wp:paragraph --><p>${ captionText }</p><!-- /wp:paragraph -->`;
 	}
 
 	function handleDropzoneKeyDown( e ) {

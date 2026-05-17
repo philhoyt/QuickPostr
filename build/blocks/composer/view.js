@@ -1824,9 +1824,10 @@ function VideoComposer({
     try {
       let wpPost;
       if (editPost && !file) {
-        // Edit mode: update caption/tags only, keep existing featured media.
+        // Edit mode, no new file — rebuild content from existing video + updated caption.
+        const existingContent = existingVideoUrl ? buildVideoContent(editPost.featured_media, existingVideoUrl, caption) : caption;
         wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.updatePost)(editPost.id, {
-          content: caption,
+          content: existingContent,
           status: defaultStatus,
           tags: selectedTags,
           categories: selectedCategories
@@ -1838,7 +1839,7 @@ function VideoComposer({
         const mediaUrl = media.source_url;
         if (editPost) {
           wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.updatePost)(editPost.id, {
-            content: caption,
+            content: buildVideoContent(mediaId, mediaUrl, caption),
             status: defaultStatus,
             featured_media: mediaId,
             tags: selectedTags,
@@ -1847,7 +1848,7 @@ function VideoComposer({
         } else {
           wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.createPost)({
             title: (0,_useAutoTitle_js__WEBPACK_IMPORTED_MODULE_4__.generateTitle)('photo', '', caption),
-            content: caption,
+            content: buildVideoContent(mediaId, mediaUrl, caption),
             status: defaultStatus,
             format: 'video',
             featured_media: mediaId,
@@ -1880,6 +1881,13 @@ function VideoComposer({
     } finally {
       setSubmitting(false);
     }
+  }
+  function buildVideoContent(mediaId, mediaUrl, captionText) {
+    const videoBlock = `<!-- wp:video {"id":${mediaId}} --><figure class="wp-block-video"><video controls src="${mediaUrl}"></video></figure><!-- /wp:video -->`;
+    if (!captionText.trim()) {
+      return videoBlock;
+    }
+    return `${videoBlock}\n\n<!-- wp:paragraph --><p>${captionText}</p><!-- /wp:paragraph -->`;
   }
   function handleDropzoneKeyDown(e) {
     if (e.key === 'Enter' || e.key === ' ') {
