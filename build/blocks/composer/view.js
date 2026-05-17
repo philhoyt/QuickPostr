@@ -18,10 +18,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _TextComposer_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TextComposer.jsx */ "./src/blocks/composer/TextComposer.jsx");
 /* harmony import */ var _PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./PhotoComposer.jsx */ "./src/blocks/composer/PhotoComposer.jsx");
-/* harmony import */ var _LinkComposer_jsx__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./LinkComposer.jsx */ "./src/blocks/composer/LinkComposer.jsx");
-/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var _VideoComposer_jsx__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VideoComposer.jsx */ "./src/blocks/composer/VideoComposer.jsx");
+/* harmony import */ var _LinkComposer_jsx__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./LinkComposer.jsx */ "./src/blocks/composer/LinkComposer.jsx");
+/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__);
+
 
 
 
@@ -58,6 +60,8 @@ function Composer() {
       let newMode = 'status';
       if (post.format === 'image') {
         newMode = 'photo';
+      } else if (post.format === 'video') {
+        newMode = 'video';
       } else if (post.format === 'link') {
         newMode = 'link';
       }
@@ -75,11 +79,13 @@ function Composer() {
       return;
     }
     setEditLoading(true);
-    (0,_api_js__WEBPACK_IMPORTED_MODULE_5__.getPost)(editId).then(post => {
+    (0,_api_js__WEBPACK_IMPORTED_MODULE_6__.getPost)(editId).then(post => {
       setEditPost(post);
       let editMode = 'status';
       if (post.format === 'image') {
         editMode = 'photo';
+      } else if (post.format === 'video') {
+        editMode = 'video';
       } else if (post.format === 'link') {
         editMode = 'link';
       }
@@ -104,46 +110,46 @@ function Composer() {
     setMode(initialMode);
   }
   if (editLoading) {
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
       className: "qp-composer",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("p", {
         className: "qp-composer__loading",
         children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Loading…', 'quickpostr')
       })
     });
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
     className: "qp-composer",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("header", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("header", {
       className: "qp-composer__header",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
         className: "qp-composer__identity",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
           className: "qp-composer__avatar",
           "aria-hidden": "true",
-          children: avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("img", {
+          children: avatarUrl ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("img", {
             src: avatarUrl,
             alt: "",
             width: "32",
             height: "32"
-          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
             children: initials
           })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "qp-composer__user-name",
           children: user.name
         })]
-      }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+      }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("button", {
         type: "button",
         className: "qp-composer__cancel-edit",
         onClick: handleCancelEdit,
         children: ["\u2715 ", (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Cancel edit', 'quickpostr')]
       })]
-    }), !editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+    }), !editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
       className: "qp-composer__mode-bar",
       role: "tablist",
       "aria-label": (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Post type', 'quickpostr'),
-      children: ['status', 'photo', 'link'].map(m => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+      children: ['status', 'photo', 'video', 'link'].map(m => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
         role: "tab",
         "aria-selected": mode === m,
         className: `qp-composer__mode-btn${mode === m ? ' qp-composer__mode-btn--active' : ''}`,
@@ -152,22 +158,26 @@ function Composer() {
         children: {
           status: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Status', 'quickpostr'),
           photo: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Photo', 'quickpostr'),
+          video: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Video', 'quickpostr'),
           link: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Link', 'quickpostr')
         }[m]
       }, m))
-    }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+    }), editPost && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
       className: "qp-composer__edit-bar",
       role: "status",
       children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Editing post', 'quickpostr')
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
       className: "qp-composer__body",
-      children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
+      children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
-      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
+      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
-      }), mode === 'link' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_LinkComposer_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
+      }), mode === 'video' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_VideoComposer_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
+        onSuccess: handleSuccess,
+        editPost: editPost ?? undefined
+      }), mode === 'link' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_LinkComposer_jsx__WEBPACK_IMPORTED_MODULE_5__["default"], {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
       })]
@@ -1667,6 +1677,320 @@ function TextComposer({
       })]
     })
   );
+}
+
+/***/ },
+
+/***/ "./src/blocks/composer/VideoComposer.jsx"
+/*!***********************************************!*\
+  !*** ./src/blocks/composer/VideoComposer.jsx ***!
+  \***********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ VideoComposer)
+/* harmony export */ });
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _api_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./api.js */ "./src/blocks/composer/api.js");
+/* harmony import */ var _TagInput_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./TagInput.jsx */ "./src/blocks/composer/TagInput.jsx");
+/* harmony import */ var _useAutoTitle_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./useAutoTitle.js */ "./src/blocks/composer/useAutoTitle.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "react/jsx-runtime");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__);
+
+
+
+
+
+
+const config = window.quickpostrConfig ?? {};
+const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
+
+/**
+ * Video post composer.
+ *
+ * Flow: pick/drop video → optional caption → upload media → create post.
+ *
+ * Props:
+ *   onSuccess (wpPost, mediaUrl) => void
+ *   editPost  {object|undefined} — when set, the composer is in edit mode
+ * @param {Object}           root0
+ * @param {Function}         root0.onSuccess
+ * @param {object|undefined} root0.editPost
+ */
+function VideoComposer({
+  onSuccess,
+  editPost
+}) {
+  const [file, setFile] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [preview, setPreview] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [existingVideoUrl, setExistingVideoUrl] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [caption, setCaption] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)('');
+  const [dragging, setDragging] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [selectedTags, setSelectedTags] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+  const [selectedCategories, setSelectedCategories] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+  const [submitting, setSubmitting] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [error, setError] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [flash, setFlash] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const fileInputRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+  // Revoke the object URL on unmount to avoid memory leaks.
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
+  // Pre-fill caption, terms, and load existing video from editPost.
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!editPost) {
+      return;
+    }
+    setCaption(editPost.content?.raw ?? '');
+    setSelectedTags(editPost.tags ?? []);
+    let defaultCats;
+    if (editPost.categories?.length) {
+      defaultCats = editPost.categories;
+    } else if (config.settings?.defaultCategory) {
+      defaultCats = [config.settings.defaultCategory];
+    } else {
+      defaultCats = [];
+    }
+    setSelectedCategories(defaultCats);
+    if (editPost.featured_media) {
+      (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.getMediaUrl)(editPost.featured_media).then(url => setExistingVideoUrl(url)).catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function pickFile(f) {
+    if (!f) {
+      return;
+    }
+    if (!f.type.startsWith('video/')) {
+      setError((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Please select a video file.', 'quickpostr'));
+      return;
+    }
+    if (f.size > MAX_BYTES) {
+      const mb = Math.round(MAX_BYTES / 1024 / 1024);
+      setError((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.sprintf)(/* translators: %d: maximum file size in MB */
+      (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('File too large — maximum size is %d MB.', 'quickpostr'), mb));
+      return;
+    }
+    setError(null);
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+  }
+  function handleInputChange(e) {
+    pickFile(e.target.files?.[0] ?? null);
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    pickFile(e.dataTransfer.files?.[0] ?? null);
+  }
+  function handleDragOver(e) {
+    e.preventDefault();
+    setDragging(true);
+  }
+  function handleDragLeave() {
+    setDragging(false);
+  }
+  function clearFile() {
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+    setFile(null);
+    setPreview(null);
+    setExistingVideoUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }
+  async function handleSubmit() {
+    if (!editPost && !file) {
+      return;
+    }
+    if (submitting) {
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      let wpPost;
+      if (editPost && !file) {
+        // Edit mode: update caption/tags only, keep existing featured media.
+        wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.updatePost)(editPost.id, {
+          content: caption,
+          status: defaultStatus,
+          tags: selectedTags,
+          categories: selectedCategories
+        });
+        onSuccess?.(wpPost, '');
+      } else {
+        const media = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.uploadMedia)(file);
+        const mediaId = media.id;
+        const mediaUrl = media.source_url;
+        if (editPost) {
+          wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.updatePost)(editPost.id, {
+            content: caption,
+            status: defaultStatus,
+            featured_media: mediaId,
+            tags: selectedTags,
+            categories: selectedCategories
+          });
+        } else {
+          wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.createPost)({
+            title: (0,_useAutoTitle_js__WEBPACK_IMPORTED_MODULE_4__.generateTitle)('photo', '', caption),
+            content: caption,
+            status: defaultStatus,
+            format: 'video',
+            featured_media: mediaId,
+            tags: selectedTags,
+            categories: selectedCategories,
+            meta: {
+              _quickpostr_post: '1'
+            }
+          });
+        }
+        onSuccess?.(wpPost, mediaUrl);
+      }
+
+      // Reset form.
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+      setFile(null);
+      setPreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setCaption('');
+      setSelectedTags([]);
+      setSelectedCategories(config.settings?.defaultCategory ? [config.settings.defaultCategory] : []);
+      setFlash(true);
+      setTimeout(() => setFlash(false), 2500);
+    } catch (err) {
+      setError(err.message ?? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Failed to publish. Please try again.', 'quickpostr'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  function handleDropzoneKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInputRef.current?.click();
+    }
+  }
+  const dropzoneClass = ['qp-video-dropzone', dragging ? 'qp-video-dropzone--active' : ''].filter(Boolean).join(' ');
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+    className: "qp-video-composer",
+    children: [!file && !preview && !existingVideoUrl && !(editPost && editPost.featured_media) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      className: dropzoneClass,
+      onDrop: handleDrop,
+      onDragOver: handleDragOver,
+      onDragLeave: handleDragLeave,
+      onClick: () => fileInputRef.current?.click(),
+      onKeyDown: handleDropzoneKeyDown,
+      role: "button",
+      tabIndex: 0,
+      "aria-label": (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Choose a video to upload', 'quickpostr'),
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("svg", {
+        className: "qp-video-dropzone__icon",
+        "aria-hidden": "true",
+        xmlns: "http://www.w3.org/2000/svg",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "1.5",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("rect", {
+          x: "2",
+          y: "6",
+          width: "15",
+          height: "12",
+          rx: "2",
+          ry: "2"
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("polyline", {
+          points: "22 8 17 12 22 16 22 8"
+        })]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+        className: "qp-video-dropzone__label",
+        children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Drop a video here, or', 'quickpostr'), ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+          className: "qp-video-dropzone__browse",
+          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('browse', 'quickpostr')
+        })]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
+        ref: fileInputRef,
+        type: "file",
+        accept: "video/*",
+        className: "qp-video-dropzone__input",
+        onChange: handleInputChange,
+        "aria-hidden": "true",
+        tabIndex: -1
+      })]
+    }), (file || preview || existingVideoUrl) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      className: "qp-video-preview",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("video", {
+        src: preview ?? existingVideoUrl,
+        className: "qp-video-preview__video",
+        controls: true
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+        type: "button",
+        className: "qp-video-preview__remove",
+        onClick: clearFile,
+        "aria-label": (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Remove video', 'quickpostr'),
+        disabled: submitting,
+        children: "\u2715"
+      })]
+    }), (file || editPost) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("textarea", {
+        className: "qp-video-caption",
+        placeholder: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Add a caption… (optional)', 'quickpostr'),
+        value: caption,
+        onChange: e => setCaption(e.target.value),
+        disabled: submitting,
+        rows: 3,
+        "aria-label": (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Video caption', 'quickpostr')
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_TagInput_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
+        selectedTags: selectedTags,
+        selectedCategories: selectedCategories,
+        onTagsChange: setSelectedTags,
+        onCategoriesChange: setSelectedCategories
+      })]
+    }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+      className: "qp-composer-error",
+      role: "alert",
+      children: error
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("footer", {
+      className: "qp-video-composer__footer",
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+        className: "qp-composer-submit",
+        onClick: handleSubmit,
+        disabled: !editPost && !file || submitting,
+        "aria-label": submitting ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Publishing…', 'quickpostr') : (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Submit', 'quickpostr'),
+        type: "button",
+        children: (() => {
+          if (submitting) {
+            return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Publishing…', 'quickpostr');
+          }
+          if (editPost) {
+            return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Update', 'quickpostr');
+          }
+          return defaultStatus === 'draft' ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Save Draft', 'quickpostr') : (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Post', 'quickpostr');
+        })()
+      })
+    }), flash && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+      className: "qp-composer-flash",
+      role: "status",
+      "aria-live": "assertive",
+      children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Posted!', 'quickpostr')
+    })]
+  });
 }
 
 /***/ },

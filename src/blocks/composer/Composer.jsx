@@ -2,6 +2,7 @@ import { useState, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
+import VideoComposer from './VideoComposer.jsx';
 import LinkComposer from './LinkComposer.jsx';
 import { getPost } from './api.js';
 
@@ -34,6 +35,8 @@ export default function Composer() {
 			let newMode = 'status';
 			if ( post.format === 'image' ) {
 				newMode = 'photo';
+			} else if ( post.format === 'video' ) {
+				newMode = 'video';
 			} else if ( post.format === 'link' ) {
 				newMode = 'link';
 			}
@@ -63,6 +66,8 @@ export default function Composer() {
 				let editMode = 'status';
 				if ( post.format === 'image' ) {
 					editMode = 'photo';
+				} else if ( post.format === 'video' ) {
+					editMode = 'video';
 				} else if ( post.format === 'link' ) {
 					editMode = 'link';
 				}
@@ -143,7 +148,7 @@ export default function Composer() {
 					role="tablist"
 					aria-label={ __( 'Post type', 'quickpostr' ) }
 				>
-					{ [ 'status', 'photo', 'link' ].map( ( m ) => (
+					{ [ 'status', 'photo', 'video', 'link' ].map( ( m ) => (
 						<button
 							key={ m }
 							role="tab"
@@ -160,6 +165,7 @@ export default function Composer() {
 								{
 									status: __( 'Status', 'quickpostr' ),
 									photo: __( 'Photo', 'quickpostr' ),
+									video: __( 'Video', 'quickpostr' ),
 									link: __( 'Link', 'quickpostr' ),
 								}[ m ]
 							}
@@ -183,6 +189,12 @@ export default function Composer() {
 				) }
 				{ mode === 'photo' && (
 					<PhotoComposer
+						onSuccess={ handleSuccess }
+						editPost={ editPost ?? undefined }
+					/>
+				) }
+				{ mode === 'video' && (
+					<VideoComposer
 						onSuccess={ handleSuccess }
 						editPost={ editPost ?? undefined }
 					/>
