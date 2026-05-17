@@ -2,8 +2,6 @@
 /*!***************************************!*\
   !*** ./src/blocks/share-post/view.js ***!
   \***************************************/
-/* global navigator */
-
 /**
  * Share Post — front-end view script.
  *

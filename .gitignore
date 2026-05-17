@@ -29,5 +29,8 @@ wp-content/
 /docs
 *.zip
 
+# Implementation plans — local working notes, not versioned
+/plans
+
 # Claude Code — machine-specific session permissions, not shared
 .claude/settings.local.json
