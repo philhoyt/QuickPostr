@@ -11,11 +11,11 @@
 
 /* ── Custom property fallbacks ──────────────────────────────────────────── */
 .wp-block-quickpostr-composer {
-	--qp-bg:           var(--wp--preset--color--base,           #ffffff);
+	--qp-bg:           var(--wp--preset--color--base,           #fff);
 	--qp-surface:      var(--wp--preset--color--base-2,         #f8f8f8);
 	--qp-border:       var(--wp--preset--color--contrast-3,     #e0e0e0);
-	--qp-text:         var(--wp--preset--color--contrast,       #111111);
-	--qp-text-muted:   var(--wp--preset--color--contrast-2,     #666666);
+	--qp-text:         var(--wp--preset--color--contrast,       #111);
+	--qp-text-muted:   var(--wp--preset--color--contrast-2,     #666);
 	--qp-accent:       var(--wp--preset--color--accent,         #0073aa);
 	--qp-accent-hover: var(--wp--preset--color--accent-2,       #005177);
 	--qp-radius-sm:    var(--wp--custom--border-radius--sm,     6px);
@@ -706,7 +706,9 @@
 }
 
 @keyframes qp-flash-in {
+
 	from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+
 	to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
@@ -829,6 +831,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
 	.wp-block-quickpostr-composer .qp-composer-flash,
 	.wp-block-quickpostr-composer .qp-composer__mode-btn,
 	.wp-block-quickpostr-composer .qp-rich-editor__toolbar-btn,
