@@ -196,7 +196,7 @@ class QuickPostr {
 	 * Uses wp_insert_term which is a no-op if the term already exists.
 	 */
 	public function seed_terms(): void {
-		$terms = array( 'app', 'status', 'photo', 'link' );
+		$terms = array( 'app', 'status', 'photo', 'link', 'video' );
 		foreach ( $terms as $slug ) {
 			if ( ! term_exists( $slug, 'quickpostr_source' ) ) {
 				wp_insert_term( $slug, 'quickpostr_source', array( 'slug' => $slug ) );
@@ -224,6 +224,8 @@ class QuickPostr {
 			$format_term = 'photo';
 		} elseif ( 'link' === $format ) {
 			$format_term = 'link';
+		} elseif ( 'video' === $format ) {
+			$format_term = 'video';
 		} else {
 			$format_term = 'status';
 		}
@@ -264,6 +266,8 @@ class QuickPostr {
 				$label = __( 'Photo', 'quickpostr' );
 			} elseif ( 'link' === $format ) {
 				$label = __( 'Link', 'quickpostr' );
+			} elseif ( 'video' === $format ) {
+				$label = __( 'Video', 'quickpostr' );
 			} else {
 				$label = __( 'Status', 'quickpostr' );
 			}
