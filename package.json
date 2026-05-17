@@ -1,6 +1,6 @@
 {
   "name": "quickpostr",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "scripts": {
     "build": "webpack --config webpack.config.js",
@@ -16,7 +16,6 @@
     "includes",
     "languages",
     "lib",
-    "patterns",
     "quickpostr.php",
     "readme.txt"
   ],

@@ -4,18 +4,19 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.6.0
+Stable tag: 0.7.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Front-end post composer for WordPress. Logged-in users post status updates, photos, and links without visiting /wp-admin.
+Front-end post composer for WordPress. Logged-in users post status updates, photos, videos, and links without visiting /wp-admin.
 
 == Description ==
 
-Place the QuickPostr Composer block on any page. Logged-in users with the appropriate role see a composer with three modes:
+Place the QuickPostr Composer block on any page. Logged-in users with the appropriate role see a composer with four modes:
 
 * **Status** — Rich text editor with bold, italic, and inline links. Drafts auto-save every 800 ms.
 * **Photo** — Drag-and-drop upload or WordPress media library picker. Optional caption.
+* **Video** — Drag-and-drop video upload. Embeds the uploaded video as a WordPress video block in the post content.
 * **Link** — Paste a URL to fetch Open Graph metadata and post a rich link card. Requires the [Better Bookmarks](https://github.com/philhoyt/BetterBookmarks) plugin for card display; falls back to a plain linked paragraph without it.
 
 The composer is auth-gated server-side. Logged-out visitors see nothing.
@@ -71,7 +72,7 @@ Cookie authentication with an `X-WP-Nonce` header. No Application Passwords. The
 
 = How do I query only QuickPostr posts? =
 
-QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives the terms `app` and one of `status`, `photo`, or `link`. Use `tax_query` to filter:
+QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives the terms `app` and one of `status`, `photo`, `video`, or `link`. Use `tax_query` to filter:
 
     $query = new WP_Query( [
         'tax_query' => [ [
@@ -90,6 +91,10 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.7.0 =
+* Add: Video tab in the post composer -- drag-and-drop video upload with optional caption, using the WordPress video post format.
+* Fix: Video posts now embed the uploaded video as a WordPress video block in the post content.
 
 = 0.6.0 =
 * Link composer mode: paste a URL to post a rich link card via Better Bookmarks, or a plain linked paragraph as fallback.
