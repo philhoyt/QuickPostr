@@ -58,7 +58,7 @@ function Composer() {
       }
       setEditPost(post);
       let newMode = 'status';
-      if (post.format === 'image') {
+      if (post.format === 'image' || post.format === 'gallery') {
         newMode = 'photo';
       } else if (post.format === 'video') {
         newMode = 'video';
@@ -82,7 +82,7 @@ function Composer() {
     (0,_api_js__WEBPACK_IMPORTED_MODULE_6__.getPost)(editId).then(post => {
       setEditPost(post);
       let editMode = 'status';
-      if (post.format === 'image') {
+      if (post.format === 'image' || post.format === 'gallery') {
         editMode = 'photo';
       } else if (post.format === 'video') {
         editMode = 'video';
@@ -171,10 +171,13 @@ function Composer() {
       children: [mode === 'status' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_TextComposer_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
-      }), mode === 'photo' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
+      }), mode === 'photo' && (editPost?.format === 'gallery' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("p", {
+        className: "qp-composer-notice",
+        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Gallery posts cannot be edited in the composer.', 'quickpostr')
+      }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_PhotoComposer_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
-      }), mode === 'video' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_VideoComposer_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
+      })), mode === 'video' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_VideoComposer_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
         onSuccess: handleSuccess,
         editPost: editPost ?? undefined
       }), mode === 'link' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_LinkComposer_jsx__WEBPACK_IMPORTED_MODULE_5__["default"], {
@@ -497,9 +500,44 @@ const config = window.quickpostrConfig ?? {};
 const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
 
 /**
+ * Build serialized gallery block content wrapping inner core/image blocks.
+ * @param {Array<{id: number, source_url: string}>} mediaItems
+ * @param {string} captionText
+ * @returns {string}
+ */
+function buildGalleryContent(mediaItems, captionText) {
+  const innerBlocks = mediaItems.map(m => `<!-- wp:image {"id":${m.id}} -->` + `<figure class="wp-block-image"><img src="${m.source_url}" alt="" class="wp-image-${m.id}"/></figure>` + `<!-- /wp:image -->`).join('\n');
+  const gallery = `<!-- wp:quickpostr/media-gallery -->\n` + innerBlocks + `\n<!-- /wp:quickpostr/media-gallery -->`;
+  if (captionText.trim()) {
+    return gallery + `\n<!-- wp:paragraph --><p>${captionText}</p><!-- /wp:paragraph -->`;
+  }
+  return gallery;
+}
+
+/**
+ * Validate a file: must be image/*, under MAX_BYTES.
+ * Returns an error string or null.
+ * @param {File} f
+ * @returns {string|null}
+ */
+function validateImageFile(f) {
+  if (!f.type.startsWith('image/')) {
+    return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Please select image files only.', 'quickpostr');
+  }
+  if (f.size > MAX_BYTES) {
+    const mb = Math.round(MAX_BYTES / 1024 / 1024);
+    return (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.sprintf)(/* translators: %d: maximum file size in MB */
+    (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('File too large — maximum size is %d MB.', 'quickpostr'), mb);
+  }
+  return null;
+}
+
+/**
  * Photo post composer.
  *
- * Flow: pick/drop image → optional caption → upload media → create post.
+ * Flow: pick/drop one or more images → optional caption → upload → create post.
+ * Single image → format:image + featured_media.
+ * Multiple images (2+) → format:gallery + quickpostr/media-gallery block content.
  *
  * Props:
  *   onSuccess (wpPost, mediaUrl) => void
@@ -512,8 +550,8 @@ function PhotoComposer({
   onSuccess,
   editPost
 }) {
-  const [file, setFile] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
-  const [preview, setPreview] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [files, setFiles] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
+  const [previews, setPreviews] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)([]);
   const [existingPhotoUrl, setExistingPhotoUrl] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [libraryMediaId, setLibraryMediaId] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [caption, setCaption] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)('');
@@ -525,6 +563,17 @@ function PhotoComposer({
   const [flash, setFlash] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const fileInputRef = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+  // Revoke blob object URLs when previews change or component unmounts.
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    return () => {
+      previews.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [previews]);
 
   // Pre-fill caption, terms, and load existing photo from editPost.
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
@@ -547,31 +596,32 @@ function PhotoComposer({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function pickFile(f) {
-    if (!f) {
+  function pickFiles(fileList) {
+    if (!fileList || fileList.length === 0) {
       return;
     }
-    if (!f.type.startsWith('image/')) {
-      setError((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Please select an image file.', 'quickpostr'));
-      return;
-    }
-    if (f.size > MAX_BYTES) {
-      const mb = Math.round(MAX_BYTES / 1024 / 1024);
-      setError((0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.sprintf)(/* translators: %d: maximum file size in MB */
-      (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('File too large — maximum size is %d MB.', 'quickpostr'), mb));
-      return;
+    const incoming = Array.from(fileList);
+    for (const f of incoming) {
+      const validationError = validateImageFile(f);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
     }
     setError(null);
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    setExistingPhotoUrl(null);
+    setLibraryMediaId(null);
+    setFiles(incoming);
+    setPreviews(incoming.map(f => URL.createObjectURL(f)));
   }
   function handleInputChange(e) {
-    pickFile(e.target.files?.[0] ?? null);
+    pickFiles(e.target.files);
   }
   function handleDrop(e) {
     e.preventDefault();
     setDragging(false);
-    pickFile(e.dataTransfer.files?.[0] ?? null);
+    const imageFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    pickFiles(imageFiles);
   }
   function handleDragOver(e) {
     e.preventDefault();
@@ -580,12 +630,9 @@ function PhotoComposer({
   function handleDragLeave() {
     setDragging(false);
   }
-  function clearFile() {
-    if (file && preview) {
-      URL.revokeObjectURL(preview);
-    }
-    setFile(null);
-    setPreview(null);
+  function clearFiles() {
+    setFiles([]);
+    setPreviews([]);
     setExistingPhotoUrl(null);
     setLibraryMediaId(null);
     if (fileInputRef.current) {
@@ -609,15 +656,15 @@ function PhotoComposer({
     frame.on('select', () => {
       const attachment = frame.state().get('selection').first().toJSON();
       setError(null);
-      setFile(null);
+      setFiles([]);
+      setExistingPhotoUrl(null);
       setLibraryMediaId(attachment.id);
-      setPreview(attachment.sizes?.large?.url ?? attachment.url);
+      setPreviews([attachment.sizes?.large?.url ?? attachment.url]);
     });
     frame.open();
   }
   async function handleSubmit() {
-    // In edit mode without a new file or library pick, we can still update the caption.
-    if (!editPost && !file && !libraryMediaId) {
+    if (!editPost && files.length === 0 && !libraryMediaId) {
       return;
     }
     if (submitting) {
@@ -627,7 +674,7 @@ function PhotoComposer({
     setError(null);
     try {
       let wpPost;
-      if (editPost && !file && !libraryMediaId) {
+      if (editPost && files.length === 0 && !libraryMediaId) {
         // Edit mode: update caption/tags only, keep existing featured media.
         wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.updatePost)(editPost.id, {
           content: caption,
@@ -636,15 +683,30 @@ function PhotoComposer({
           categories: selectedCategories
         });
         onSuccess?.(wpPost, '');
+      } else if (files.length >= 2) {
+        // Gallery: upload all files in parallel, create a gallery post.
+        const mediaItems = await Promise.all(files.map(f => (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.uploadMedia)(f)));
+        wpPost = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.createPost)({
+          title: (0,_useAutoTitle_js__WEBPACK_IMPORTED_MODULE_4__.generateTitle)('gallery', '', caption),
+          content: buildGalleryContent(mediaItems, caption),
+          status: defaultStatus,
+          format: 'gallery',
+          tags: selectedTags,
+          categories: selectedCategories,
+          meta: {
+            _quickpostr_post: '1'
+          }
+        });
+        onSuccess?.(wpPost, mediaItems[0]?.source_url ?? '');
       } else {
-        // Resolve the media ID — either from library pick or a fresh upload.
+        // Single image: library pick or file upload.
         let mediaId;
         let mediaUrl;
         if (libraryMediaId) {
           mediaId = libraryMediaId;
-          mediaUrl = preview;
+          mediaUrl = previews[0] ?? '';
         } else {
-          const media = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.uploadMedia)(file);
+          const media = await (0,_api_js__WEBPACK_IMPORTED_MODULE_2__.uploadMedia)(files[0]);
           mediaId = media.id;
           mediaUrl = media.source_url;
         }
@@ -674,8 +736,8 @@ function PhotoComposer({
       }
 
       // Reset form.
-      setFile(null);
-      setPreview(null);
+      setFiles([]);
+      setPreviews([]); // useEffect cleanup revokes blob URLs
       setLibraryMediaId(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -698,9 +760,12 @@ function PhotoComposer({
     }
   }
   const dropzoneClass = ['qp-photo-dropzone', dragging ? 'qp-photo-dropzone--active' : ''].filter(Boolean).join(' ');
+  const showDropzone = files.length === 0 && previews.length === 0 && !existingPhotoUrl && !(editPost && editPost.featured_media);
+  const showSinglePreview = previews.length === 1 || previews.length === 0 && !!existingPhotoUrl;
+  const showStrip = files.length >= 2;
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "qp-photo-composer",
-    children: [!file && !preview && !existingPhotoUrl && !(editPost && editPost.featured_media) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+    children: [showDropzone && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: dropzoneClass,
       onDrop: handleDrop,
       onDragOver: handleDragOver,
@@ -709,7 +774,7 @@ function PhotoComposer({
       onKeyDown: handleDropzoneKeyDown,
       role: "button",
       tabIndex: 0,
-      "aria-label": (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Choose a photo to upload', 'quickpostr'),
+      "aria-label": (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Choose photos to upload', 'quickpostr'),
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("svg", {
         className: "qp-photo-dropzone__icon",
         "aria-hidden": "true",
@@ -734,7 +799,7 @@ function PhotoComposer({
         })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
         className: "qp-photo-dropzone__label",
-        children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Drop a photo here,', 'quickpostr'), ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+        children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Drop photos here,', 'quickpostr'), ' ', /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
           className: "qp-photo-dropzone__browse",
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('browse', 'quickpostr')
         }), window.wp?.media && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
@@ -752,26 +817,41 @@ function PhotoComposer({
         ref: fileInputRef,
         type: "file",
         accept: "image/*",
+        multiple: true,
         className: "qp-photo-dropzone__input",
         onChange: handleInputChange,
         "aria-hidden": "true",
         tabIndex: -1
       })]
-    }), (file || preview || existingPhotoUrl) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+    }), showSinglePreview && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "qp-photo-preview",
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("img", {
-        src: preview ?? existingPhotoUrl,
+        src: previews[0] ?? existingPhotoUrl,
         alt: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Preview', 'quickpostr'),
         className: "qp-photo-preview__img"
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
         type: "button",
         className: "qp-photo-preview__remove",
-        onClick: clearFile,
+        onClick: clearFiles,
         "aria-label": (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Remove photo', 'quickpostr'),
         disabled: submitting,
         children: "\u2715"
       })]
-    }), (file || libraryMediaId || editPost) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+    }), showStrip && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      className: "qp-photo-strip",
+      children: [previews.map((src, i) => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("img", {
+        src: src,
+        alt: "",
+        className: "qp-photo-strip__thumb"
+      }, i)), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+        type: "button",
+        className: "qp-photo-strip__clear",
+        onClick: clearFiles,
+        "aria-label": (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Clear all photos', 'quickpostr'),
+        disabled: submitting,
+        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Clear', 'quickpostr')
+      })]
+    }), (files.length > 0 || libraryMediaId || editPost) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("textarea", {
         className: "qp-photo-caption",
         placeholder: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Add a caption… (optional)', 'quickpostr'),
@@ -795,7 +875,7 @@ function PhotoComposer({
       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
         className: "qp-composer-submit",
         onClick: handleSubmit,
-        disabled: !editPost && !file && !libraryMediaId || submitting,
+        disabled: !editPost && files.length === 0 && !libraryMediaId || submitting,
         "aria-label": submitting ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Publishing…', 'quickpostr') : (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__.__)('Submit', 'quickpostr'),
         type: "button",
         children: (() => {

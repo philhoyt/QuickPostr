@@ -17,9 +17,7 @@
 			return;
 		}
 
-		const items = Array.from(
-			track.querySelectorAll( ':scope > figure' )
-		);
+		const items = Array.from( track.querySelectorAll( ':scope > figure' ) );
 		const total = items.length;
 
 		if ( total <= 1 ) {
@@ -99,8 +97,7 @@
 
 		function goTo( index ) {
 			current = Math.max( 0, Math.min( index, total - 1 ) );
-			track.style.transform =
-				'translateX(-' + current * 100 + '%)';
+			track.style.transform = 'translateX(-' + current * 100 + '%)';
 
 			const dots = dotsContainer.querySelectorAll(
 				'.qp-media-gallery__dot'
@@ -116,9 +113,7 @@
 			pill.classList.add( 'qp-media-gallery__pill--visible' );
 			clearTimeout( pillTimer );
 			pillTimer = setTimeout( function () {
-				pill.classList.remove(
-					'qp-media-gallery__pill--visible'
-				);
+				pill.classList.remove( 'qp-media-gallery__pill--visible' );
 			}, 1500 );
 		}
 
@@ -136,9 +131,7 @@
 	}
 
 	function init() {
-		document
-			.querySelectorAll( '.qp-media-gallery' )
-			.forEach( initGallery );
+		document.querySelectorAll( '.qp-media-gallery' ).forEach( initGallery );
 	}
 
 	if ( document.readyState === 'loading' ) {

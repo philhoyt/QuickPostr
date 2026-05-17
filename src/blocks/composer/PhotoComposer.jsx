@@ -8,9 +8,62 @@ const config = window.quickpostrConfig ?? {};
 const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
 
 /**
+ * Build serialized gallery block content wrapping inner core/image blocks.
+ * @param {Array<{id: number, source_url: string}>} mediaItems
+ * @param {string} captionText
+ * @returns {string}
+ */
+function buildGalleryContent( mediaItems, captionText ) {
+	const innerBlocks = mediaItems
+		.map(
+			( m ) =>
+				`<!-- wp:image {"id":${ m.id }} -->` +
+				`<figure class="wp-block-image"><img src="${ m.source_url }" alt="" class="wp-image-${ m.id }"/></figure>` +
+				`<!-- /wp:image -->`
+		)
+		.join( '\n' );
+
+	const gallery =
+		`<!-- wp:quickpostr/media-gallery -->\n` +
+		innerBlocks +
+		`\n<!-- /wp:quickpostr/media-gallery -->`;
+
+	if ( captionText.trim() ) {
+		return (
+			gallery +
+			`\n<!-- wp:paragraph --><p>${ captionText }</p><!-- /wp:paragraph -->`
+		);
+	}
+	return gallery;
+}
+
+/**
+ * Validate a file: must be image/*, under MAX_BYTES.
+ * Returns an error string or null.
+ * @param {File} f
+ * @returns {string|null}
+ */
+function validateImageFile( f ) {
+	if ( ! f.type.startsWith( 'image/' ) ) {
+		return __( 'Please select image files only.', 'quickpostr' );
+	}
+	if ( f.size > MAX_BYTES ) {
+		const mb = Math.round( MAX_BYTES / 1024 / 1024 );
+		return sprintf(
+			/* translators: %d: maximum file size in MB */
+			__( 'File too large — maximum size is %d MB.', 'quickpostr' ),
+			mb
+		);
+	}
+	return null;
+}
+
+/**
  * Photo post composer.
  *
- * Flow: pick/drop image → optional caption → upload media → create post.
+ * Flow: pick/drop one or more images → optional caption → upload → create post.
+ * Single image → format:image + featured_media.
+ * Multiple images (2+) → format:gallery + quickpostr/media-gallery block content.
  *
  * Props:
  *   onSuccess (wpPost, mediaUrl) => void
@@ -20,8 +73,8 @@ const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
  * @param {object|undefined} root0.editPost
  */
 export default function PhotoComposer( { onSuccess, editPost } ) {
-	const [ file, setFile ] = useState( null );
-	const [ preview, setPreview ] = useState( null );
+	const [ files, setFiles ] = useState( [] );
+	const [ previews, setPreviews ] = useState( [] );
 	const [ existingPhotoUrl, setExistingPhotoUrl ] = useState( null );
 	const [ libraryMediaId, setLibraryMediaId ] = useState( null );
 	const [ caption, setCaption ] = useState( '' );
@@ -38,6 +91,17 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 	const fileInputRef = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+	// Revoke blob object URLs when previews change or component unmounts.
+	useEffect( () => {
+		return () => {
+			previews.forEach( ( url ) => {
+				if ( url.startsWith( 'blob:' ) ) {
+					URL.revokeObjectURL( url );
+				}
+			} );
+		};
+	}, [ previews ] );
 
 	// Pre-fill caption, terms, and load existing photo from editPost.
 	useEffect( () => {
@@ -62,41 +126,38 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
-	function pickFile( f ) {
-		if ( ! f ) {
+	function pickFiles( fileList ) {
+		if ( ! fileList || fileList.length === 0 ) {
 			return;
 		}
+		const incoming = Array.from( fileList );
 
-		if ( ! f.type.startsWith( 'image/' ) ) {
-			setError( __( 'Please select an image file.', 'quickpostr' ) );
-			return;
-		}
-
-		if ( f.size > MAX_BYTES ) {
-			const mb = Math.round( MAX_BYTES / 1024 / 1024 );
-			setError(
-				sprintf(
-					/* translators: %d: maximum file size in MB */
-					__( 'File too large — maximum size is %d MB.', 'quickpostr' ),
-					mb
-				)
-			);
-			return;
+		for ( const f of incoming ) {
+			const validationError = validateImageFile( f );
+			if ( validationError ) {
+				setError( validationError );
+				return;
+			}
 		}
 
 		setError( null );
-		setFile( f );
-		setPreview( URL.createObjectURL( f ) );
+		setExistingPhotoUrl( null );
+		setLibraryMediaId( null );
+		setFiles( incoming );
+		setPreviews( incoming.map( ( f ) => URL.createObjectURL( f ) ) );
 	}
 
 	function handleInputChange( e ) {
-		pickFile( e.target.files?.[ 0 ] ?? null );
+		pickFiles( e.target.files );
 	}
 
 	function handleDrop( e ) {
 		e.preventDefault();
 		setDragging( false );
-		pickFile( e.dataTransfer.files?.[ 0 ] ?? null );
+		const imageFiles = Array.from( e.dataTransfer.files ).filter( ( f ) =>
+			f.type.startsWith( 'image/' )
+		);
+		pickFiles( imageFiles );
 	}
 
 	function handleDragOver( e ) {
@@ -108,12 +169,9 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		setDragging( false );
 	}
 
-	function clearFile() {
-		if ( file && preview ) {
-			URL.revokeObjectURL( preview );
-		}
-		setFile( null );
-		setPreview( null );
+	function clearFiles() {
+		setFiles( [] );
+		setPreviews( [] );
 		setExistingPhotoUrl( null );
 		setLibraryMediaId( null );
 		if ( fileInputRef.current ) {
@@ -140,17 +198,17 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				.first()
 				.toJSON();
 			setError( null );
-			setFile( null );
+			setFiles( [] );
+			setExistingPhotoUrl( null );
 			setLibraryMediaId( attachment.id );
-			setPreview( attachment.sizes?.large?.url ?? attachment.url );
+			setPreviews( [ attachment.sizes?.large?.url ?? attachment.url ] );
 		} );
 
 		frame.open();
 	}
 
 	async function handleSubmit() {
-		// In edit mode without a new file or library pick, we can still update the caption.
-		if ( ! editPost && ! file && ! libraryMediaId ) {
+		if ( ! editPost && files.length === 0 && ! libraryMediaId ) {
 			return;
 		}
 		if ( submitting ) {
@@ -163,7 +221,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		try {
 			let wpPost;
 
-			if ( editPost && ! file && ! libraryMediaId ) {
+			if ( editPost && files.length === 0 && ! libraryMediaId ) {
 				// Edit mode: update caption/tags only, keep existing featured media.
 				wpPost = await updatePost( editPost.id, {
 					content: caption,
@@ -172,16 +230,31 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 					categories: selectedCategories,
 				} );
 				onSuccess?.( wpPost, '' );
+			} else if ( files.length >= 2 ) {
+				// Gallery: upload all files in parallel, create a gallery post.
+				const mediaItems = await Promise.all(
+					files.map( ( f ) => uploadMedia( f ) )
+				);
+				wpPost = await createPost( {
+					title: generateTitle( 'gallery', '', caption ),
+					content: buildGalleryContent( mediaItems, caption ),
+					status: defaultStatus,
+					format: 'gallery',
+					tags: selectedTags,
+					categories: selectedCategories,
+					meta: { _quickpostr_post: '1' },
+				} );
+				onSuccess?.( wpPost, mediaItems[ 0 ]?.source_url ?? '' );
 			} else {
-				// Resolve the media ID — either from library pick or a fresh upload.
+				// Single image: library pick or file upload.
 				let mediaId;
 				let mediaUrl;
 
 				if ( libraryMediaId ) {
 					mediaId = libraryMediaId;
-					mediaUrl = preview;
+					mediaUrl = previews[ 0 ] ?? '';
 				} else {
-					const media = await uploadMedia( file );
+					const media = await uploadMedia( files[ 0 ] );
 					mediaId = media.id;
 					mediaUrl = media.source_url;
 				}
@@ -211,8 +284,8 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 			}
 
 			// Reset form.
-			setFile( null );
-			setPreview( null );
+			setFiles( [] );
+			setPreviews( [] ); // useEffect cleanup revokes blob URLs
 			setLibraryMediaId( null );
 			if ( fileInputRef.current ) {
 				fileInputRef.current.value = '';
@@ -227,7 +300,10 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 			setFlash( true );
 			setTimeout( () => setFlash( false ), 2500 );
 		} catch ( err ) {
-			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
+			setError(
+				err.message ??
+					__( 'Failed to publish. Please try again.', 'quickpostr' )
+			);
 		} finally {
 			setSubmitting( false );
 		}
@@ -247,87 +323,97 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		.filter( Boolean )
 		.join( ' ' );
 
+	const showDropzone =
+		files.length === 0 &&
+		previews.length === 0 &&
+		! existingPhotoUrl &&
+		! ( editPost && editPost.featured_media );
+
+	const showSinglePreview =
+		previews.length === 1 ||
+		( previews.length === 0 && !! existingPhotoUrl );
+
+	const showStrip = files.length >= 2;
+
 	return (
 		<div className="qp-photo-composer">
-			{ ! file &&
-				! preview &&
-				! existingPhotoUrl &&
-				! ( editPost && editPost.featured_media ) && (
-					<div
-						className={ dropzoneClass }
-						onDrop={ handleDrop }
-						onDragOver={ handleDragOver }
-						onDragLeave={ handleDragLeave }
-						onClick={ () => fileInputRef.current?.click() }
-						onKeyDown={ handleDropzoneKeyDown }
-						role="button"
-						tabIndex={ 0 }
-						aria-label={ __( 'Choose a photo to upload', 'quickpostr' ) }
+			{ showDropzone && (
+				<div
+					className={ dropzoneClass }
+					onDrop={ handleDrop }
+					onDragOver={ handleDragOver }
+					onDragLeave={ handleDragLeave }
+					onClick={ () => fileInputRef.current?.click() }
+					onKeyDown={ handleDropzoneKeyDown }
+					role="button"
+					tabIndex={ 0 }
+					aria-label={ __( 'Choose photos to upload', 'quickpostr' ) }
+				>
+					<svg
+						className="qp-photo-dropzone__icon"
+						aria-hidden="true"
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="1.5"
 					>
-						<svg
-							className="qp-photo-dropzone__icon"
-							aria-hidden="true"
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="1.5"
-						>
-							<rect
-								x="3"
-								y="3"
-								width="18"
-								height="18"
-								rx="3"
-								ry="3"
-							/>
-							<circle cx="8.5" cy="8.5" r="1.5" />
-							<polyline points="21 15 16 10 5 21" />
-						</svg>
-						<span className="qp-photo-dropzone__label">
-							{ __( 'Drop a photo here,', 'quickpostr' ) }{ ' ' }
-							<span className="qp-photo-dropzone__browse">
-								{ __( 'browse', 'quickpostr' ) }
-							</span>
-							{ window.wp?.media && (
-								<>
-									{ __( ', or', 'quickpostr' ) }{ ' ' }
-									<button
-										type="button"
-										className="qp-photo-dropzone__library"
-										onClick={ ( e ) => {
-											e.stopPropagation();
-											openMediaLibrary();
-										} }
-									>
-										{ __( 'choose from library', 'quickpostr' ) }
-									</button>
-								</>
-							) }
-						</span>
-						<input
-							ref={ fileInputRef }
-							type="file"
-							accept="image/*"
-							className="qp-photo-dropzone__input"
-							onChange={ handleInputChange }
-							aria-hidden="true"
-							tabIndex={ -1 }
+						<rect
+							x="3"
+							y="3"
+							width="18"
+							height="18"
+							rx="3"
+							ry="3"
 						/>
-					</div>
-				) }
+						<circle cx="8.5" cy="8.5" r="1.5" />
+						<polyline points="21 15 16 10 5 21" />
+					</svg>
+					<span className="qp-photo-dropzone__label">
+						{ __( 'Drop photos here,', 'quickpostr' ) }{ ' ' }
+						<span className="qp-photo-dropzone__browse">
+							{ __( 'browse', 'quickpostr' ) }
+						</span>
+						{ window.wp?.media && (
+							<>
+								{ __( ', or', 'quickpostr' ) }{ ' ' }
+								<button
+									type="button"
+									className="qp-photo-dropzone__library"
+									onClick={ ( e ) => {
+										e.stopPropagation();
+										openMediaLibrary();
+									} }
+								>
+									{ __( 'choose from library', 'quickpostr' ) }
+								</button>
+							</>
+						) }
+					</span>
+					<input
+						ref={ fileInputRef }
+						type="file"
+						accept="image/*"
+						multiple
+						className="qp-photo-dropzone__input"
+						onChange={ handleInputChange }
+						aria-hidden="true"
+						tabIndex={ -1 }
+					/>
+				</div>
+			) }
 
-			{ ( file || preview || existingPhotoUrl ) && (
+			{ showSinglePreview && (
 				<div className="qp-photo-preview">
 					<img
-						src={ preview ?? existingPhotoUrl }
+						src={ previews[ 0 ] ?? existingPhotoUrl }
 						alt={ __( 'Preview', 'quickpostr' ) }
 						className="qp-photo-preview__img"
 					/>
 					<button
 						type="button"
 						className="qp-photo-preview__remove"
-						onClick={ clearFile }
+						onClick={ clearFiles }
 						aria-label={ __( 'Remove photo', 'quickpostr' ) }
 						disabled={ submitting }
 					>
@@ -336,11 +422,36 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( file || libraryMediaId || editPost ) && (
+			{ showStrip && (
+				<div className="qp-photo-strip">
+					{ previews.map( ( src, i ) => (
+						<img
+							key={ i }
+							src={ src }
+							alt=""
+							className="qp-photo-strip__thumb"
+						/>
+					) ) }
+					<button
+						type="button"
+						className="qp-photo-strip__clear"
+						onClick={ clearFiles }
+						aria-label={ __( 'Clear all photos', 'quickpostr' ) }
+						disabled={ submitting }
+					>
+						{ __( 'Clear', 'quickpostr' ) }
+					</button>
+				</div>
+			) }
+
+			{ ( files.length > 0 || libraryMediaId || editPost ) && (
 				<>
 					<textarea
 						className="qp-photo-caption"
-						placeholder={ __( 'Add a caption… (optional)', 'quickpostr' ) }
+						placeholder={ __(
+							'Add a caption… (optional)',
+							'quickpostr'
+						) }
 						value={ caption }
 						onChange={ ( e ) => setCaption( e.target.value ) }
 						disabled={ submitting }
@@ -368,10 +479,16 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 					className="qp-composer-submit"
 					onClick={ handleSubmit }
 					disabled={
-						( ! editPost && ! file && ! libraryMediaId ) ||
+						( ! editPost &&
+							files.length === 0 &&
+							! libraryMediaId ) ||
 						submitting
 					}
-					aria-label={ submitting ? __( 'Publishing…', 'quickpostr' ) : __( 'Submit', 'quickpostr' ) }
+					aria-label={
+						submitting
+							? __( 'Publishing…', 'quickpostr' )
+							: __( 'Submit', 'quickpostr' )
+					}
 					type="button"
 				>
 					{ ( () => {

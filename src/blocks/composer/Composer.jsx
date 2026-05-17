@@ -33,7 +33,7 @@ export default function Composer() {
 			}
 			setEditPost( post );
 			let newMode = 'status';
-			if ( post.format === 'image' ) {
+			if ( post.format === 'image' || post.format === 'gallery' ) {
 				newMode = 'photo';
 			} else if ( post.format === 'video' ) {
 				newMode = 'video';
@@ -64,7 +64,7 @@ export default function Composer() {
 			.then( ( post ) => {
 				setEditPost( post );
 				let editMode = 'status';
-				if ( post.format === 'image' ) {
+				if ( post.format === 'image' || post.format === 'gallery' ) {
 					editMode = 'photo';
 				} else if ( post.format === 'video' ) {
 					editMode = 'video';
@@ -187,12 +187,20 @@ export default function Composer() {
 						editPost={ editPost ?? undefined }
 					/>
 				) }
-				{ mode === 'photo' && (
-					<PhotoComposer
-						onSuccess={ handleSuccess }
-						editPost={ editPost ?? undefined }
-					/>
-				) }
+				{ mode === 'photo' &&
+					( editPost?.format === 'gallery' ? (
+						<p className="qp-composer-notice">
+							{ __(
+								'Gallery posts cannot be edited in the composer.',
+								'quickpostr'
+							) }
+						</p>
+					) : (
+						<PhotoComposer
+							onSuccess={ handleSuccess }
+							editPost={ editPost ?? undefined }
+						/>
+					) ) }
 				{ mode === 'video' && (
 					<VideoComposer
 						onSuccess={ handleSuccess }

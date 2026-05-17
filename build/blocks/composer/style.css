@@ -446,6 +446,41 @@
 	background: rgba(0, 0, 0, 0.8);
 }
 
+/* Multi-photo thumbnail strip */
+.wp-block-quickpostr-composer .qp-photo-strip {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	padding-bottom: 4px;
+}
+
+.wp-block-quickpostr-composer .qp-photo-strip__thumb {
+	flex: 0 0 auto;
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+	border-radius: var(--qp-radius-sm);
+}
+
+.wp-block-quickpostr-composer .qp-photo-strip__clear {
+	flex: 0 0 auto;
+	margin-left: auto;
+	padding: 4px 10px;
+	background: none;
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-sm);
+	color: var(--qp-text-muted);
+	font-size: 0.75rem;
+	cursor: pointer;
+	transition: color var(--qp-transition), border-color var(--qp-transition);
+}
+
+.wp-block-quickpostr-composer .qp-photo-strip__clear:hover:not(:disabled) {
+	color: var(--qp-text);
+	border-color: var(--qp-text-muted);
+}
+
 .wp-block-quickpostr-composer .qp-photo-caption {
 	display: block;
 	width: 100%;
