@@ -1,5 +1,6 @@
 .distignore
 .gitignore
+.claude
 CLAUDE.md
 composer.json
 composer.lock

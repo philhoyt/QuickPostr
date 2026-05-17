@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import { createPost, updatePost, fetchLinkPreview } from './api.js';
 import TagInput from './TagInput.jsx';
 
@@ -122,7 +123,7 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 			setPreview( data );
 		} catch {
 			setFetchError(
-				'Could not fetch preview. Check the URL and try again.'
+				__( 'Could not fetch preview. Check the URL and try again.', 'quickpostr' )
 			);
 		} finally {
 			setFetching( false );
@@ -193,7 +194,7 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 				setTimeout( () => setFlash( false ), 2500 );
 			}
 		} catch ( err ) {
-			setError( err.message ?? 'Failed to publish. Please try again.' );
+			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
 		} finally {
 			setSubmitting( false );
 		}
@@ -212,11 +213,11 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 	const canSubmit = url.trim() && ! submitting;
 	let submitLabel;
 	if ( editPost ) {
-		submitLabel = 'Update';
+		submitLabel = __( 'Update', 'quickpostr' );
 	} else if ( defaultStatus === 'draft' ) {
-		submitLabel = 'Save Draft';
+		submitLabel = __( 'Save Draft', 'quickpostr' );
 	} else {
-		submitLabel = 'Post';
+		submitLabel = __( 'Post', 'quickpostr' );
 	}
 
 	return (
@@ -227,14 +228,14 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 					className="qp-link-composer__url-input"
 					placeholder={
 						bbAvailable
-							? 'Paste a URL and press Enter…'
-							: 'Paste a URL…'
+							? __( 'Paste a URL and press Enter…', 'quickpostr' )
+							: __( 'Paste a URL…', 'quickpostr' )
 					}
 					value={ url }
 					onChange={ handleUrlChange }
 					onKeyDown={ handleUrlKeyDown }
 					disabled={ submitting }
-					aria-label="URL"
+					aria-label={ __( 'URL', 'quickpostr' ) }
 				/>
 				{ bbAvailable && (
 					<button
@@ -243,7 +244,7 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 						onClick={ handleFetch }
 						disabled={ ! url.trim() || fetching }
 					>
-						{ fetching ? '…' : 'Preview' }
+						{ fetching ? '…' : __( 'Preview', 'quickpostr' ) }
 					</button>
 				) }
 			</div>
@@ -283,8 +284,11 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 
 			{ ! bbAvailable && (
 				<p className="qp-link-composer__no-bb">
-					Install <strong>Better Bookmarks</strong> to include a rich
-					link card in the post.
+					{ sprintf(
+						/* translators: %s: plugin name */
+						__( 'Install %s to include a rich link card in the post.', 'quickpostr' ),
+						'Better Bookmarks'
+					) }
 				</p>
 			) }
 
@@ -308,7 +312,7 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 					onClick={ handleSubmit }
 					disabled={ ! canSubmit }
 				>
-					{ submitting ? 'Saving…' : submitLabel }
+					{ submitting ? __( 'Saving…', 'quickpostr' ) : submitLabel }
 				</button>
 			</footer>
 
@@ -318,7 +322,7 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 					role="status"
 					aria-live="assertive"
 				>
-					Posted!
+					{ __( 'Posted!', 'quickpostr' ) }
 				</div>
 			) }
 		</div>

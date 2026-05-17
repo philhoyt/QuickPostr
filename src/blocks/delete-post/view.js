@@ -1,12 +1,11 @@
+import { __ } from '@wordpress/i18n';
+
 /**
  * Delete Post — front-end view script.
  *
  * Handles the inline confirmation UI and REST API delete call.
- * No build step — plain ES5-compatible JavaScript.
  */
 ( function () {
-	'use strict';
-
 	const cfg = window.quickpostrDeletePost || {};
 
 	function init() {
@@ -35,7 +34,7 @@
 
 				yes.addEventListener( 'click', function () {
 					yes.disabled = true;
-					yes.textContent = 'Deleting\u2026';
+					yes.textContent = __( 'Deleting…', 'quickpostr' );
 
 					const url =
 						( cfg.restUrl || '' ).replace( /\/$/, '' ) +
@@ -70,7 +69,7 @@
 
 					function resetUI() {
 						yes.disabled = false;
-						yes.textContent = 'Yes, delete';
+						yes.textContent = __( 'Yes, delete', 'quickpostr' );
 						confirm.hidden = true;
 						btn.hidden = false;
 					}

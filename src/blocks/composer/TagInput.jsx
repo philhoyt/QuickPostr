@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	searchTags,
 	createTag,
@@ -247,9 +248,11 @@ export default function TagInput( {
 						<button
 							type="button"
 							className="qp-tag-input__tag-remove"
-							aria-label={ `Remove tag ${
+							aria-label={ sprintf(
+								/* translators: %s: tag name */
+								__( 'Remove tag %s', 'quickpostr' ),
 								tagNames[ id ] ?? id
-							}` }
+							) }
 							onClick={ () => removeTag( id ) }
 						>
 							×
@@ -264,8 +267,8 @@ export default function TagInput( {
 						value={ tagInput }
 						onChange={ handleTagInput }
 						onKeyDown={ handleTagKeyDown }
-						placeholder="Add tags…"
-						aria-label="Search tags"
+						placeholder={ __( 'Add tags…', 'quickpostr' ) }
+						aria-label={ __( 'Search tags', 'quickpostr' ) }
 						role="combobox"
 						aria-autocomplete="list"
 						aria-expanded={ tagOpen }
@@ -309,7 +312,7 @@ export default function TagInput( {
 											aria-selected={ false }
 											className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
 										>
-											Already added
+											{ __( 'Already added', 'quickpostr' ) }
 										</li>
 									);
 								}
@@ -326,8 +329,12 @@ export default function TagInput( {
 											}
 										>
 											{ creatingTag
-												? 'Creating…'
-												: `Create "${ tagInput.trim() }"` }
+												? __( 'Creating…', 'quickpostr' )
+												: sprintf(
+													/* translators: %s: tag name */
+													__( 'Create "%s"', 'quickpostr' ),
+													tagInput.trim()
+												) }
 										</li>
 									);
 								}
@@ -349,9 +356,11 @@ export default function TagInput( {
 						<button
 							type="button"
 							className="qp-tag-input__tag-remove"
-							aria-label={ `Remove category ${
+							aria-label={ sprintf(
+								/* translators: %s: category name */
+								__( 'Remove category %s', 'quickpostr' ),
 								catNames[ id ] ?? id
-							}` }
+							) }
 							onClick={ () => removeCategory( id ) }
 						>
 							×
@@ -366,8 +375,8 @@ export default function TagInput( {
 						value={ catInput }
 						onChange={ handleCatInput }
 						onKeyDown={ handleCatKeyDown }
-						placeholder="Add categories…"
-						aria-label="Search categories"
+						placeholder={ __( 'Add categories…', 'quickpostr' ) }
+						aria-label={ __( 'Search categories', 'quickpostr' ) }
 						role="combobox"
 						aria-autocomplete="list"
 						aria-expanded={ catOpen }
@@ -412,7 +421,7 @@ export default function TagInput( {
 											aria-selected={ false }
 											className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
 										>
-											Already added
+											{ __( 'Already added', 'quickpostr' ) }
 										</li>
 									);
 								}
@@ -429,8 +438,12 @@ export default function TagInput( {
 											}
 										>
 											{ creatingCat
-												? 'Creating…'
-												: `Create "${ catInput.trim() }"` }
+												? __( 'Creating…', 'quickpostr' )
+												: sprintf(
+													/* translators: %s: category name */
+													__( 'Create "%s"', 'quickpostr' ),
+													catInput.trim()
+												) }
 										</li>
 									);
 								}

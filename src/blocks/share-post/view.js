@@ -1,5 +1,3 @@
-/* global navigator */
-
 /**
  * Share Post — front-end view script.
  *

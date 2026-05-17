@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
 import LinkComposer from './LinkComposer.jsx';
@@ -99,7 +100,7 @@ export default function Composer() {
 	if ( editLoading ) {
 		return (
 			<div className="qp-composer">
-				<p className="qp-composer__loading">Loading…</p>
+				<p className="qp-composer__loading">{ __( 'Loading…', 'quickpostr' ) }</p>
 			</div>
 		);
 	}
@@ -131,7 +132,7 @@ export default function Composer() {
 						className="qp-composer__cancel-edit"
 						onClick={ handleCancelEdit }
 					>
-						&#x2715; Cancel edit
+						&#x2715; { __( 'Cancel edit', 'quickpostr' ) }
 					</button>
 				) }
 			</header>
@@ -140,7 +141,7 @@ export default function Composer() {
 				<div
 					className="qp-composer__mode-bar"
 					role="tablist"
-					aria-label="Post type"
+					aria-label={ __( 'Post type', 'quickpostr' ) }
 				>
 					{ [ 'status', 'photo', 'link' ].map( ( m ) => (
 						<button
@@ -157,9 +158,9 @@ export default function Composer() {
 						>
 							{
 								{
-									status: 'Status',
-									photo: 'Photo',
-									link: 'Link',
+									status: __( 'Status', 'quickpostr' ),
+									photo: __( 'Photo', 'quickpostr' ),
+									link: __( 'Link', 'quickpostr' ),
 								}[ m ]
 							}
 						</button>
@@ -169,7 +170,7 @@ export default function Composer() {
 
 			{ editPost && (
 				<div className="qp-composer__edit-bar" role="status">
-					Editing post
+					{ __( 'Editing post', 'quickpostr' ) }
 				</div>
 			) }
 

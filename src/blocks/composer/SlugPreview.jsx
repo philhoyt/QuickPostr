@@ -1,4 +1,4 @@
-import React from 'react';
+import { __ } from '@wordpress/i18n';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -25,9 +25,9 @@ export default function SlugPreview( { title } ) {
 	return (
 		<p
 			className="qp-slug-preview"
-			aria-label="Auto-generated title preview"
+			aria-label={ __( 'Auto-generated title preview', 'quickpostr' ) }
 		>
-			<span className="qp-slug-preview__label">Title</span>
+			<span className="qp-slug-preview__label">{ __( 'Title', 'quickpostr' ) }</span>
 			<span className="qp-slug-preview__value">{ title }</span>
 		</p>
 	);

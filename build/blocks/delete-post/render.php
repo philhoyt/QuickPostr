@@ -42,13 +42,15 @@ if ( empty( $qp_settings['front_end_edit'] ) ) {
 }
 
 // Pass REST config to the view script (registered via viewScript in block.json).
-wp_localize_script(
+wp_add_inline_script(
 	'quickpostr-delete-post-view',
-	'quickpostrDeletePost',
-	array(
-		'restUrl' => rest_url(),
-		'nonce'   => wp_create_nonce( 'wp_rest' ),
-	)
+	'window.quickpostrDeletePost = ' . wp_json_encode(
+		array(
+			'restUrl' => rest_url(),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+		)
+	) . ';',
+	'before'
 );
 
 $qp_wrapper_attributes = get_block_wrapper_attributes(

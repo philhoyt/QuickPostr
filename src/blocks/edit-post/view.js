@@ -1,3 +1,5 @@
+import { __ } from '@wordpress/i18n';
+
 /**
  * Edit Post block — view script.
  *
@@ -23,7 +25,7 @@
 
 		btn.addEventListener( 'click', function () {
 			btn.disabled = true;
-			btn.textContent = 'Loading…';
+			btn.textContent = __( 'Loading…', 'quickpostr' );
 
 			const url =
 				cfg.restUrl +
@@ -59,12 +61,12 @@
 						// Composer handled it — scroll to top of page.
 						window.scrollTo( { top: 0, behavior: 'smooth' } );
 						btn.disabled = false;
-						btn.textContent = 'Edit';
+						btn.textContent = __( 'Edit', 'quickpostr' );
 					}
 				} )
 				.catch( function () {
 					btn.disabled = false;
-					btn.textContent = 'Edit';
+					btn.textContent = __( 'Edit', 'quickpostr' );
 				} );
 		} );
 	} );

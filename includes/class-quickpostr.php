@@ -40,12 +40,36 @@ class QuickPostr {
 	 *
 	 * View scripts are referenced by handle (not file:) in block.json so they
 	 * must be registered here before register_block_type processes the metadata.
-	 * The composer view script reads its asset manifest for React dependencies.
+	 * All view scripts read their asset manifest for dependencies (including wp-i18n).
 	 */
 	public function register_block(): void {
 		$composer_asset_file = QUICKPOSTR_PATH . 'build/blocks/composer/view.asset.php';
 		$composer_asset      = file_exists( $composer_asset_file )
 			? require $composer_asset_file
+			: array(
+				'dependencies' => array(),
+				'version'      => QUICKPOSTR_VERSION,
+			);
+
+		$delete_asset_file = QUICKPOSTR_PATH . 'build/blocks/delete-post/view.asset.php';
+		$delete_asset      = file_exists( $delete_asset_file )
+			? require $delete_asset_file
+			: array(
+				'dependencies' => array(),
+				'version'      => QUICKPOSTR_VERSION,
+			);
+
+		$edit_asset_file = QUICKPOSTR_PATH . 'build/blocks/edit-post/view.asset.php';
+		$edit_asset      = file_exists( $edit_asset_file )
+			? require $edit_asset_file
+			: array(
+				'dependencies' => array(),
+				'version'      => QUICKPOSTR_VERSION,
+			);
+
+		$share_asset_file = QUICKPOSTR_PATH . 'build/blocks/share-post/view.asset.php';
+		$share_asset      = file_exists( $share_asset_file )
+			? require $share_asset_file
 			: array(
 				'dependencies' => array(),
 				'version'      => QUICKPOSTR_VERSION,
@@ -58,27 +82,34 @@ class QuickPostr {
 			$composer_asset['version'],
 			array( 'in_footer' => true )
 		);
+		wp_set_script_translations( 'quickpostr-composer-view', 'quickpostr' );
+
 		wp_register_script(
 			'quickpostr-delete-post-view',
 			QUICKPOSTR_URL . 'build/blocks/delete-post/view.js',
-			array(),
-			QUICKPOSTR_VERSION,
+			$delete_asset['dependencies'],
+			$delete_asset['version'],
 			array( 'in_footer' => true )
 		);
+		wp_set_script_translations( 'quickpostr-delete-post-view', 'quickpostr' );
+
 		wp_register_script(
 			'quickpostr-edit-post-view',
 			QUICKPOSTR_URL . 'build/blocks/edit-post/view.js',
-			array(),
-			QUICKPOSTR_VERSION,
+			$edit_asset['dependencies'],
+			$edit_asset['version'],
 			array( 'in_footer' => true )
 		);
+		wp_set_script_translations( 'quickpostr-edit-post-view', 'quickpostr' );
+
 		wp_register_script(
 			'quickpostr-share-post-view',
 			QUICKPOSTR_URL . 'build/blocks/share-post/view.js',
-			array(),
-			QUICKPOSTR_VERSION,
+			$share_asset['dependencies'],
+			$share_asset['version'],
 			array( 'in_footer' => true )
 		);
+		wp_set_script_translations( 'quickpostr-share-post-view', 'quickpostr' );
 
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );

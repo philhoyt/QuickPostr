@@ -44,14 +44,16 @@ if ( empty( $qp_settings['front_end_edit'] ) ) {
 }
 
 // Pass REST config to the view script (registered via viewScript in block.json).
-wp_localize_script(
+wp_add_inline_script(
 	'quickpostr-edit-post-view',
-	'quickpostrEditPost',
-	array(
-		'restUrl' => rest_url(),
-		'nonce'   => wp_create_nonce( 'wp_rest' ),
-		'homeUrl' => home_url( '/' ),
-	)
+	'window.quickpostrEditPost = ' . wp_json_encode(
+		array(
+			'restUrl' => rest_url(),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+			'homeUrl' => home_url( '/' ),
+		)
+	) . ';',
+	'before'
 );
 
 $qp_wrapper_attributes = get_block_wrapper_attributes(

@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import { createPost, updatePost, uploadMedia, getMediaUrl } from './api.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
@@ -67,13 +68,19 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		}
 
 		if ( ! f.type.startsWith( 'image/' ) ) {
-			setError( 'Please select an image file.' );
+			setError( __( 'Please select an image file.', 'quickpostr' ) );
 			return;
 		}
 
 		if ( f.size > MAX_BYTES ) {
 			const mb = Math.round( MAX_BYTES / 1024 / 1024 );
-			setError( `File too large — maximum size is ${ mb } MB.` );
+			setError(
+				sprintf(
+					/* translators: %d: maximum file size in MB */
+					__( 'File too large — maximum size is %d MB.', 'quickpostr' ),
+					mb
+				)
+			);
 			return;
 		}
 
@@ -116,8 +123,8 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 	function openMediaLibrary() {
 		const frame = window.wp?.media( {
-			title: 'Select a Photo',
-			button: { text: 'Use this photo' },
+			title: __( 'Select a Photo', 'quickpostr' ),
+			button: { text: __( 'Use this photo', 'quickpostr' ) },
 			multiple: false,
 			library: { type: 'image' },
 		} );
@@ -220,7 +227,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 			setFlash( true );
 			setTimeout( () => setFlash( false ), 2500 );
 		} catch ( err ) {
-			setError( err.message ?? 'Failed to publish. Please try again.' );
+			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
 		} finally {
 			setSubmitting( false );
 		}
@@ -255,7 +262,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 						onKeyDown={ handleDropzoneKeyDown }
 						role="button"
 						tabIndex={ 0 }
-						aria-label="Choose a photo to upload"
+						aria-label={ __( 'Choose a photo to upload', 'quickpostr' ) }
 					>
 						<svg
 							className="qp-photo-dropzone__icon"
@@ -278,13 +285,13 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 							<polyline points="21 15 16 10 5 21" />
 						</svg>
 						<span className="qp-photo-dropzone__label">
-							Drop a photo here,{ ' ' }
+							{ __( 'Drop a photo here,', 'quickpostr' ) }{ ' ' }
 							<span className="qp-photo-dropzone__browse">
-								browse
+								{ __( 'browse', 'quickpostr' ) }
 							</span>
 							{ window.wp?.media && (
 								<>
-									, or{ ' ' }
+									{ __( ', or', 'quickpostr' ) }{ ' ' }
 									<button
 										type="button"
 										className="qp-photo-dropzone__library"
@@ -293,7 +300,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 											openMediaLibrary();
 										} }
 									>
-										choose from library
+										{ __( 'choose from library', 'quickpostr' ) }
 									</button>
 								</>
 							) }
@@ -314,14 +321,14 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				<div className="qp-photo-preview">
 					<img
 						src={ preview ?? existingPhotoUrl }
-						alt="Preview"
+						alt={ __( 'Preview', 'quickpostr' ) }
 						className="qp-photo-preview__img"
 					/>
 					<button
 						type="button"
 						className="qp-photo-preview__remove"
 						onClick={ clearFile }
-						aria-label="Remove photo"
+						aria-label={ __( 'Remove photo', 'quickpostr' ) }
 						disabled={ submitting }
 					>
 						&#x2715;
@@ -333,12 +340,12 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				<>
 					<textarea
 						className="qp-photo-caption"
-						placeholder="Add a caption… (optional)"
+						placeholder={ __( 'Add a caption… (optional)', 'quickpostr' ) }
 						value={ caption }
 						onChange={ ( e ) => setCaption( e.target.value ) }
 						disabled={ submitting }
 						rows={ 3 }
-						aria-label="Photo caption"
+						aria-label={ __( 'Photo caption', 'quickpostr' ) }
 					/>
 
 					<TagInput
@@ -364,19 +371,19 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 						( ! editPost && ! file && ! libraryMediaId ) ||
 						submitting
 					}
-					aria-label={ submitting ? 'Publishing…' : 'Submit' }
+					aria-label={ submitting ? __( 'Publishing…', 'quickpostr' ) : __( 'Submit', 'quickpostr' ) }
 					type="button"
 				>
 					{ ( () => {
 						if ( submitting ) {
-							return 'Publishing…';
+							return __( 'Publishing…', 'quickpostr' );
 						}
 						if ( editPost ) {
-							return 'Update';
+							return __( 'Update', 'quickpostr' );
 						}
 						return defaultStatus === 'draft'
-							? 'Save Draft'
-							: 'Post';
+							? __( 'Save Draft', 'quickpostr' )
+							: __( 'Post', 'quickpostr' );
 					} )() }
 				</button>
 			</footer>
@@ -387,7 +394,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 					role="status"
 					aria-live="assertive"
 				>
-					Posted!
+					{ __( 'Posted!', 'quickpostr' ) }
 				</div>
 			) }
 		</div>

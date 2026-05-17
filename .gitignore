@@ -28,3 +28,6 @@ wp-content/
 # Project docs (internal planning only)
 /docs
 *.zip
+
+# Claude Code — machine-specific session permissions, not shared
+.claude/settings.local.json

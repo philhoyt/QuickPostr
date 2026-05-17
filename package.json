@@ -7,7 +7,9 @@
     "start": "webpack --watch --config webpack.config.js",
     "lint:js": "wp-scripts lint-js src/blocks",
     "lint:css": "wp-scripts lint-style src/blocks/**/*.css",
-    "plugin-zip": "wp-scripts plugin-zip"
+    "plugin-zip": "wp-scripts plugin-zip",
+    "test:unit": "wp-scripts test-unit-js",
+    "test:e2e": "wp-scripts test-playwright"
   },
   "files": [
     "build",
@@ -18,9 +20,17 @@
     "quickpostr.php",
     "readme.txt"
   ],
+  "peerDependencies": {
+    "@wordpress/blocks": "*",
+    "@wordpress/element": "*",
+    "@wordpress/i18n": "*"
+  },
   "devDependencies": {
     "@types/react": "^18.3.28",
+    "@wordpress/eslint-plugin": "^25.2.0",
     "@wordpress/rich-text": "*",
-    "@wordpress/scripts": "^30.0.0"
+    "@wordpress/scripts": "^32.2.0",
+    "@wordpress/stylelint-config": "^23.38.0",
+    "eslint": "^10.4.0"
   }
 }

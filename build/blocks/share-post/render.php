@@ -21,8 +21,8 @@ if ( ! $quickpostr_post_id ) {
 	return;
 }
 
-$qp_post_title = get_the_title( $quickpostr_post_id );
-$qp_post_url   = get_permalink( $quickpostr_post_id );
+$qp_post_title = wp_strip_all_tags( get_the_title( $quickpostr_post_id ) );
+$qp_post_url   = esc_url( get_permalink( $quickpostr_post_id ) );
 
 if ( ! $qp_post_url ) {
 	return;

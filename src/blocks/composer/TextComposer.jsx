@@ -1,4 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
 import { createPost, updatePost, getDraft, discardDraft } from './api.js';
@@ -82,7 +83,7 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 
 	function handleLink() {
 		// eslint-disable-next-line no-alert
-		const url = window.prompt( 'Enter URL:' );
+		const url = window.prompt( __( 'Enter URL:', 'quickpostr' ) );
 		if ( url ) {
 			editorRef.current?.focus();
 			document.execCommand( 'createLink', false, url );
@@ -95,21 +96,21 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 			<div
 				className="qp-rich-editor__toolbar"
 				role="toolbar"
-				aria-label="Formatting"
+				aria-label={ __( 'Formatting', 'quickpostr' ) }
 			>
 				<ToolbarButton
-					label="Bold"
+					label={ __( 'Bold', 'quickpostr' ) }
 					onMouseDown={ () => execFormat( 'bold' ) }
 				>
 					<strong>B</strong>
 				</ToolbarButton>
 				<ToolbarButton
-					label="Italic"
+					label={ __( 'Italic', 'quickpostr' ) }
 					onMouseDown={ () => execFormat( 'italic' ) }
 				>
 					<em>I</em>
 				</ToolbarButton>
-				<ToolbarButton label="Link" onMouseDown={ handleLink }>
+				<ToolbarButton label={ __( 'Link', 'quickpostr' ) } onMouseDown={ handleLink }>
 					&#128279;
 				</ToolbarButton>
 			</div>
@@ -125,7 +126,7 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 				role="textbox"
 				tabIndex={ 0 }
 				aria-multiline="true"
-				aria-label="Post content"
+				aria-label={ __( 'Post content', 'quickpostr' ) }
 				aria-placeholder={ placeholder }
 			/>
 		</div>
@@ -351,7 +352,7 @@ export default function TextComposer( { onSuccess, editPost } ) {
 			setFlash( true );
 			setTimeout( () => setFlash( false ), 2500 );
 		} catch ( err ) {
-			setError( err.message ?? 'Failed to publish. Please try again.' );
+			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
 		} finally {
 			setSubmitting( false );
 		}
@@ -376,11 +377,11 @@ export default function TextComposer( { onSuccess, editPost } ) {
 		( editorRef.current?.innerText?.trim() ?? '' ).length > 0;
 	let submitLabel;
 	if ( editPost ) {
-		submitLabel = 'Update';
+		submitLabel = __( 'Update', 'quickpostr' );
 	} else if ( defaultStatus === 'draft' ) {
-		submitLabel = 'Save Draft';
+		submitLabel = __( 'Save Draft', 'quickpostr' );
 	} else {
-		submitLabel = 'Post';
+		submitLabel = __( 'Post', 'quickpostr' );
 	}
 
 	return (
@@ -388,21 +389,21 @@ export default function TextComposer( { onSuccess, editPost } ) {
 		<div className="qp-text-composer" onKeyDown={ handleKeyDown }>
 			{ draftBanner && (
 				<div className="qp-draft-banner" role="status">
-					<span>Resume your saved draft?</span>
+					<span>{ __( 'Resume your saved draft?', 'quickpostr' ) }</span>
 					<div className="qp-draft-banner__actions">
 						<button
 							type="button"
 							className="qp-draft-banner__resume"
 							onClick={ resumeDraft }
 						>
-							Resume
+							{ __( 'Resume', 'quickpostr' ) }
 						</button>
 						<button
 							type="button"
 							className="qp-draft-banner__discard"
 							onClick={ handleDiscardDraft }
 						>
-							Discard
+							{ __( 'Discard', 'quickpostr' ) }
 						</button>
 					</div>
 				</div>
@@ -441,10 +442,10 @@ export default function TextComposer( { onSuccess, editPost } ) {
 					className="qp-composer-submit"
 					onClick={ handleSubmit }
 					disabled={ ! hasContent || submitting }
-					aria-label={ submitting ? 'Publishing…' : submitLabel }
+					aria-label={ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
 					type="button"
 				>
-					{ submitting ? 'Publishing…' : submitLabel }
+					{ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
 				</button>
 			</footer>
 
@@ -454,7 +455,7 @@ export default function TextComposer( { onSuccess, editPost } ) {
 					role="status"
 					aria-live="assertive"
 				>
-					{ editPost ? 'Updated!' : 'Posted!' }
+					{ editPost ? __( 'Updated!', 'quickpostr' ) : __( 'Posted!', 'quickpostr' ) }
 				</div>
 			) }
 		</div>
