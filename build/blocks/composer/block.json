@@ -34,7 +34,8 @@
       "default": "status",
       "enum": [
         "status",
-        "photo"
+        "photo",
+        "video"
       ]
     },
     "showSlugPreview": {
