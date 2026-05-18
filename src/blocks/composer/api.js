@@ -86,6 +86,36 @@ export async function uploadMedia( file ) {
 }
 
 /**
+ * Fetch the most-used tags, ordered by post count descending.
+ *
+ * @return {Promise<Array>} Popular tags.
+ */
+export function getPopularTags() {
+	const qs = new URLSearchParams( {
+		orderby: 'count',
+		order: 'desc',
+		per_page: '8',
+		_fields: 'id,name',
+	} );
+	return request( 'GET', `/wp/v2/tags?${ qs }` );
+}
+
+/**
+ * Fetch the most-used categories, ordered by post count descending.
+ *
+ * @return {Promise<Array>} Popular categories.
+ */
+export function getPopularCategories() {
+	const qs = new URLSearchParams( {
+		orderby: 'count',
+		order: 'desc',
+		per_page: '8',
+		_fields: 'id,name',
+	} );
+	return request( 'GET', `/wp/v2/categories?${ qs }` );
+}
+
+/**
  * Search tags by name.
  *
  * @param {string} search
