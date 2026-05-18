@@ -37,11 +37,14 @@
 	border-radius: var(--wp--custom--border-radius--sm, 6px);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 	padding: 0.25rem;
-	display: flex;
 	flex-direction: column;
 	gap: 1px;
 	z-index: 100;
 	min-width: 150px;
+}
+
+.qp-share-post__popover:not([hidden]) {
+	display: flex;
 }
 
 .qp-share-post__social-link {
