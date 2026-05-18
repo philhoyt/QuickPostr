@@ -4,9 +4,11 @@ import {
 	searchTags,
 	createTag,
 	getTag,
+	getPopularTags,
 	searchCategories,
 	createCategory,
 	getCategory,
+	getPopularCategories,
 } from './api.js';
 
 /**
@@ -35,6 +37,7 @@ export default function TagInput( {
 	const [ tagNames, setTagNames ] = useState( {} ); // id → name
 	const [ tagOpen, setTagOpen ] = useState( false );
 	const [ creatingTag, setCreatingTag ] = useState( false );
+	const [ popularTags, setPopularTags ] = useState( [] );
 
 	// Categories state
 	const [ catInput, setCatInput ] = useState( '' );
@@ -42,12 +45,23 @@ export default function TagInput( {
 	const [ catNames, setCatNames ] = useState( {} ); // id → name
 	const [ catOpen, setCatOpen ] = useState( false );
 	const [ creatingCat, setCreatingCat ] = useState( false );
+	const [ popularCats, setPopularCats ] = useState( [] );
 
 	const tagTimer = useRef( null );
 	const catTimer = useRef( null );
 	const wrapperRef = useRef( null );
 	const tagInputRef = useRef( null );
 	const catInputRef = useRef( null );
+
+	// Fetch popular tags and categories once on mount.
+	useEffect( () => {
+		getPopularTags()
+			.then( ( results ) => setPopularTags( results ) )
+			.catch( () => {} );
+		getPopularCategories()
+			.then( ( results ) => setPopularCats( results ) )
+			.catch( () => {} );
+	}, [] );
 
 	// Resolve names for any pre-selected tags (e.g. when editing a post).
 	useEffect( () => {
@@ -98,6 +112,12 @@ export default function TagInput( {
 
 	// ── Tags ──────────────────────────────────────────────────────────────────
 
+	function handleTagFocus() {
+		if ( tagInput.trim().length < 2 && popularTags.length > 0 ) {
+			setTagOpen( true );
+		}
+	}
+
 	const handleTagInput = useCallback( ( e ) => {
 		const value = e.target.value;
 		setTagInput( value );
@@ -105,7 +125,7 @@ export default function TagInput( {
 
 		if ( value.trim().length < 2 ) {
 			setTagSuggestions( [] );
-			setTagOpen( false );
+			setTagOpen( popularTags.length > 0 );
 			return;
 		}
 
@@ -116,7 +136,7 @@ export default function TagInput( {
 				setTagSuggestions( results );
 			} catch ( _ ) {}
 		}, 250 );
-	}, [] );
+	}, [ popularTags ] );
 
 	function addTag( tag ) {
 		if ( ! selectedTags.includes( tag.id ) ) {
@@ -168,6 +188,12 @@ export default function TagInput( {
 
 	// ── Categories ────────────────────────────────────────────────────────────
 
+	function handleCatFocus() {
+		if ( catInput.trim().length < 2 && popularCats.length > 0 ) {
+			setCatOpen( true );
+		}
+	}
+
 	const handleCatInput = useCallback( ( e ) => {
 		const value = e.target.value;
 		setCatInput( value );
@@ -175,7 +201,7 @@ export default function TagInput( {
 
 		if ( value.trim().length < 2 ) {
 			setCatSuggestions( [] );
-			setCatOpen( false );
+			setCatOpen( popularCats.length > 0 );
 			return;
 		}
 
@@ -186,7 +212,7 @@ export default function TagInput( {
 				setCatSuggestions( results );
 			} catch ( _ ) {}
 		}, 250 );
-	}, [] );
+	}, [ popularCats ] );
 
 	function addCategory( cat ) {
 		if ( ! selectedCategories.includes( cat.id ) ) {
@@ -267,6 +293,7 @@ export default function TagInput( {
 						value={ tagInput }
 						onChange={ handleTagInput }
 						onKeyDown={ handleTagKeyDown }
+						onFocus={ handleTagFocus }
 						placeholder={ __( 'Add tags…', 'quickpostr' ) }
 						aria-label={ __( 'Search tags', 'quickpostr' ) }
 						role="combobox"
@@ -279,67 +306,117 @@ export default function TagInput( {
 							className="qp-tag-input__suggestions"
 							role="listbox"
 						>
-							{ tagSuggestions
-								.filter(
-									( tag ) => ! selectedTags.includes( tag.id )
-								)
-								.map( ( tag ) => (
+							{ tagInput.trim().length < 2 ? (
+								<>
 									<li
-										key={ tag.id }
-										role="option"
-										aria-selected={ false }
-										className="qp-tag-input__suggestion"
-										onMouseDown={ () => addTag( tag ) }
+										className="qp-tag-input__suggestion-header"
+										role="presentation"
 									>
-										{ tag.name }
+										{ __( 'Popular', 'quickpostr' ) }
 									</li>
-								) ) }
-							{ ( () => {
-								const lc = tagInput.trim().toLowerCase();
-								const exact = tagSuggestions.find(
-									( t ) => t.name.toLowerCase() === lc
-								);
-								const already = exact
-									? selectedTags.includes( exact.id )
-									: Object.entries( tagNames ).some(
-											( [ , n ] ) =>
-												n.toLowerCase() === lc
-									  );
-								if ( already ) {
-									return (
-										<li
-											role="option"
-											aria-selected={ false }
-											className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
-										>
-											{ __( 'Already added', 'quickpostr' ) }
-										</li>
-									);
-								}
-								if ( ! exact ) {
-									return (
-										<li
-											role="option"
-											aria-selected={ false }
-											className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
-											onMouseDown={ () =>
-												handleCreateTag(
-													tagInput.trim()
+									{ popularTags
+										.filter(
+											( tag ) =>
+												! selectedTags.includes(
+													tag.id
 												)
-											}
-										>
-											{ creatingTag
-												? __( 'Creating…', 'quickpostr' )
-												: sprintf(
-													/* translators: %s: tag name */
-													__( 'Create "%s"', 'quickpostr' ),
-													tagInput.trim()
-												) }
-										</li>
-									);
-								}
-								return null;
-							} )() }
+										)
+										.map( ( tag ) => (
+											<li
+												key={ tag.id }
+												role="option"
+												aria-selected={ false }
+												className="qp-tag-input__suggestion"
+												onMouseDown={ () =>
+													addTag( tag )
+												}
+											>
+												{ tag.name }
+											</li>
+										) ) }
+								</>
+							) : (
+								<>
+									{ tagSuggestions
+										.filter(
+											( tag ) =>
+												! selectedTags.includes(
+													tag.id
+												)
+										)
+										.map( ( tag ) => (
+											<li
+												key={ tag.id }
+												role="option"
+												aria-selected={ false }
+												className="qp-tag-input__suggestion"
+												onMouseDown={ () =>
+													addTag( tag )
+												}
+											>
+												{ tag.name }
+											</li>
+										) ) }
+									{ ( () => {
+										const lc = tagInput
+											.trim()
+											.toLowerCase();
+										const exact = tagSuggestions.find(
+											( t ) =>
+												t.name.toLowerCase() === lc
+										);
+										const already = exact
+											? selectedTags.includes( exact.id )
+											: Object.entries( tagNames ).some(
+													( [ , n ] ) =>
+														n.toLowerCase() === lc
+											  );
+										if ( already ) {
+											return (
+												<li
+													role="option"
+													aria-selected={ false }
+													className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
+												>
+													{ __(
+														'Already added',
+														'quickpostr'
+													) }
+												</li>
+											);
+										}
+										if ( ! exact ) {
+											return (
+												<li
+													role="option"
+													aria-selected={ false }
+													className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
+													onMouseDown={ () =>
+														handleCreateTag(
+															tagInput.trim()
+														)
+													}
+												>
+													{ creatingTag
+														? __(
+																'Creating…',
+																'quickpostr'
+														  )
+														: sprintf(
+																/* translators: %s: tag name */
+																__(
+																	'Create "%s"',
+																	'quickpostr'
+																),
+																tagInput.trim()
+														  ) }
+												</li>
+											);
+										}
+										return null;
+									} )() }
+								</>
+							) }
 						</ul>
 					) }
 				</div>
@@ -375,6 +452,7 @@ export default function TagInput( {
 						value={ catInput }
 						onChange={ handleCatInput }
 						onKeyDown={ handleCatKeyDown }
+						onFocus={ handleCatFocus }
 						placeholder={ __( 'Add categories…', 'quickpostr' ) }
 						aria-label={ __( 'Search categories', 'quickpostr' ) }
 						role="combobox"
@@ -387,68 +465,119 @@ export default function TagInput( {
 							className="qp-tag-input__suggestions"
 							role="listbox"
 						>
-							{ catSuggestions
-								.filter(
-									( cat ) =>
-										! selectedCategories.includes( cat.id )
-								)
-								.map( ( cat ) => (
+							{ catInput.trim().length < 2 ? (
+								<>
 									<li
-										key={ cat.id }
-										role="option"
-										aria-selected={ false }
-										className="qp-tag-input__suggestion"
-										onMouseDown={ () => addCategory( cat ) }
+										className="qp-tag-input__suggestion-header"
+										role="presentation"
 									>
-										{ cat.name }
+										{ __( 'Popular', 'quickpostr' ) }
 									</li>
-								) ) }
-							{ ( () => {
-								const lc = catInput.trim().toLowerCase();
-								const exact = catSuggestions.find(
-									( c ) => c.name.toLowerCase() === lc
-								);
-								const already = exact
-									? selectedCategories.includes( exact.id )
-									: Object.entries( catNames ).some(
-											( [ , n ] ) =>
-												n.toLowerCase() === lc
-									  );
-								if ( already ) {
-									return (
-										<li
-											role="option"
-											aria-selected={ false }
-											className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
-										>
-											{ __( 'Already added', 'quickpostr' ) }
-										</li>
-									);
-								}
-								if ( ! exact ) {
-									return (
-										<li
-											role="option"
-											aria-selected={ false }
-											className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
-											onMouseDown={ () =>
-												handleCreateCategory(
-													catInput.trim()
+									{ popularCats
+										.filter(
+											( cat ) =>
+												! selectedCategories.includes(
+													cat.id
 												)
-											}
-										>
-											{ creatingCat
-												? __( 'Creating…', 'quickpostr' )
-												: sprintf(
-													/* translators: %s: category name */
-													__( 'Create "%s"', 'quickpostr' ),
-													catInput.trim()
-												) }
-										</li>
-									);
-								}
-								return null;
-							} )() }
+										)
+										.map( ( cat ) => (
+											<li
+												key={ cat.id }
+												role="option"
+												aria-selected={ false }
+												className="qp-tag-input__suggestion"
+												onMouseDown={ () =>
+													addCategory( cat )
+												}
+											>
+												{ cat.name }
+											</li>
+										) ) }
+								</>
+							) : (
+								<>
+									{ catSuggestions
+										.filter(
+											( cat ) =>
+												! selectedCategories.includes(
+													cat.id
+												)
+										)
+										.map( ( cat ) => (
+											<li
+												key={ cat.id }
+												role="option"
+												aria-selected={ false }
+												className="qp-tag-input__suggestion"
+												onMouseDown={ () =>
+													addCategory( cat )
+												}
+											>
+												{ cat.name }
+											</li>
+										) ) }
+									{ ( () => {
+										const lc = catInput
+											.trim()
+											.toLowerCase();
+										const exact = catSuggestions.find(
+											( c ) =>
+												c.name.toLowerCase() === lc
+										);
+										const already = exact
+											? selectedCategories.includes(
+													exact.id
+											  )
+											: Object.entries( catNames ).some(
+													( [ , n ] ) =>
+														n.toLowerCase() === lc
+											  );
+										if ( already ) {
+											return (
+												<li
+													role="option"
+													aria-selected={ false }
+													className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
+												>
+													{ __(
+														'Already added',
+														'quickpostr'
+													) }
+												</li>
+											);
+										}
+										if ( ! exact ) {
+											return (
+												<li
+													role="option"
+													aria-selected={ false }
+													className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
+													onMouseDown={ () =>
+														handleCreateCategory(
+															catInput.trim()
+														)
+													}
+												>
+													{ creatingCat
+														? __(
+																'Creating…',
+																'quickpostr'
+														  )
+														: sprintf(
+																/* translators: %s: category name */
+																__(
+																	'Create "%s"',
+																	'quickpostr'
+																),
+																catInput.trim()
+														  ) }
+												</li>
+											);
+										}
+										return null;
+									} )() }
+								</>
+							) }
 						</ul>
 					) }
 				</div>
