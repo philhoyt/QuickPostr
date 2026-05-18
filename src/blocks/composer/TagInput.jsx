@@ -303,7 +303,7 @@ export default function TagInput( {
 					/>
 					{ tagOpen && (
 						<ul
-							className="qp-tag-input__suggestions"
+							className={ `qp-tag-input__suggestions${ tagInput.trim().length < 2 ? ' qp-tag-input__suggestions--popular' : '' }` }
 							role="listbox"
 						>
 							{ tagInput.trim().length < 2 ? (
@@ -462,7 +462,7 @@ export default function TagInput( {
 					/>
 					{ catOpen && (
 						<ul
-							className="qp-tag-input__suggestions"
+							className={ `qp-tag-input__suggestions${ catInput.trim().length < 2 ? ' qp-tag-input__suggestions--popular' : '' }` }
 							role="listbox"
 						>
 							{ catInput.trim().length < 2 ? (
