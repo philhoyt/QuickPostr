@@ -1,5 +1,6 @@
 .qp-share-post {
 	display: inline-flex;
+	position: relative;
 }
 
 .qp-share-post__btn {
@@ -25,4 +26,42 @@
 	width: 14px;
 	height: 14px;
 	flex-shrink: 0;
+}
+
+.qp-share-post__popover {
+	position: absolute;
+	bottom: calc(100% + 6px);
+	left: 0;
+	background: var(--wp--preset--color--base, #fff);
+	border: 1px solid var(--wp--preset--color--contrast-3, #ddd);
+	border-radius: var(--wp--custom--border-radius--sm, 6px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+	padding: 0.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	z-index: 100;
+	min-width: 150px;
+}
+
+.qp-share-post__social-link {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.375rem 0.5rem;
+	font-family: inherit;
+	font-size: 0.8125rem;
+	color: var(--wp--preset--color--contrast, #000);
+	text-decoration: none;
+	background: none;
+	border: none;
+	border-radius: var(--wp--custom--border-radius--sm, 4px);
+	cursor: pointer;
+	width: 100%;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.qp-share-post__social-link:hover {
+	background: var(--wp--preset--color--contrast-3, #f0f0f0);
 }
