@@ -2,11 +2,17 @@
 	position: relative;
 }
 
-/* Viewport clips the sliding track; pill is anchored here */
+/* Viewport clips the sliding track; pill and arrows are anchored here */
 .qp-media-gallery__viewport {
 	position: relative;
 	overflow: hidden;
 	height: var( --qp-gallery-height, 300px );
+	cursor: grab;
+	user-select: none;
+}
+
+.qp-media-gallery__viewport:active {
+	cursor: grabbing;
 }
 
 .qp-media-gallery__track {
@@ -29,13 +35,56 @@
 	height: 100%;
 	object-fit: contain;
 	display: block;
+	pointer-events: none;
 }
 
 .qp-media-gallery__track figcaption {
 	display: none;
 }
 
-/* Dot navigation — outside the viewport, in normal flow */
+/* Prev / next arrow buttons */
+.qp-media-gallery__arrow {
+	position: absolute;
+	top: 50%;
+	transform: translateY( -50% );
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	background: rgba( 0, 0, 0, 0.45 );
+	color: #fff;
+	border: none;
+	border-radius: 50%;
+	cursor: pointer;
+	transition: background 0.2s ease, opacity 0.2s ease;
+	z-index: 1;
+}
+
+.qp-media-gallery__arrow svg {
+	width: 18px;
+	height: 18px;
+}
+
+.qp-media-gallery__arrow:hover:not( :disabled ) {
+	background: rgba( 0, 0, 0, 0.7 );
+}
+
+.qp-media-gallery__arrow:disabled {
+	opacity: 0.25;
+	cursor: default;
+}
+
+.qp-media-gallery__arrow--prev {
+	left: 10px;
+}
+
+.qp-media-gallery__arrow--next {
+	right: 10px;
+}
+
+/* Dot navigation — outside the viewport, in normal flow below the images */
 .qp-media-gallery__dots {
 	display: flex;
 	justify-content: center;
