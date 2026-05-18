@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.8.0
+Stable tag: 0.8.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,11 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.8.1 =
+* Fix: Scope popover display:flex to :not([hidden]) so the hidden attribute takes effect.
+* Fix: Add social links popover fallback for browsers without Web Share API.
+* Fix: Close autocomplete dropdown on input blur.
 
 = 0.8.0 =
 * Add: Media Gallery block -- slider with dot navigation, prev/next arrows, drag and swipe gestures, and a (x/y) image counter. Compose multi-photo posts directly in the composer.
