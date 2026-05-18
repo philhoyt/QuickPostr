@@ -2,18 +2,19 @@
  * Media Gallery — front-end slider.
  *
  * Initialises each .qp-media-gallery element: builds dot navigation,
- * fills the pill counter, handles keyboard navigation, and computes the
+ * fills the pill counter, handles keyboard/touch navigation, and computes the
  * container height from the tallest image's natural dimensions.
  */
 ( function () {
 	function initGallery( gallery ) {
+		const viewport = gallery.querySelector( '.qp-media-gallery__viewport' );
 		const track = gallery.querySelector( '.qp-media-gallery__track' );
 		const dotsContainer = gallery.querySelector(
 			'.qp-media-gallery__dots'
 		);
 		const pill = gallery.querySelector( '.qp-media-gallery__pill' );
 
-		if ( ! track || ! dotsContainer || ! pill ) {
+		if ( ! viewport || ! track || ! dotsContainer || ! pill ) {
 			return;
 		}
 
@@ -51,7 +52,7 @@
 		const imgs = Array.from( track.querySelectorAll( 'img' ) );
 
 		function computeHeight() {
-			const containerWidth = gallery.offsetWidth || 600;
+			const containerWidth = viewport.offsetWidth || 600;
 			let maxHeight = 0;
 			imgs.forEach( function ( img ) {
 				if ( img.naturalWidth > 0 ) {
@@ -128,6 +129,26 @@
 				goTo( current - 1 );
 			}
 		} );
+
+		// Swipe gesture navigation.
+		let touchStartX = 0;
+		viewport.addEventListener(
+			'touchstart',
+			function ( e ) {
+				touchStartX = e.touches[ 0 ].clientX;
+			},
+			{ passive: true }
+		);
+		viewport.addEventListener(
+			'touchend',
+			function ( e ) {
+				const delta = touchStartX - e.changedTouches[ 0 ].clientX;
+				if ( Math.abs( delta ) > 40 ) {
+					goTo( delta > 0 ? current + 1 : current - 1 );
+				}
+			},
+			{ passive: true }
+		);
 	}
 
 	function init() {

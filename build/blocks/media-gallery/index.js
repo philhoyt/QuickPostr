@@ -110,7 +110,7 @@ module.exports = window["wp"]["i18n"];
   \*********************************************/
 (module) {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/media-gallery","version":"1.0.0","title":"Media Gallery","category":"quickpostr","description":"Photo gallery slider with dot navigation and a pill counter.","icon":"format-gallery","keywords":["gallery","slider","photos"],"textdomain":"quickpostr","supports":{"html":false},"editorScript":"file:./index.js","viewScript":"file:./view.js","style":"file:./style.css","render":"file:./render.php"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"quickpostr/media-gallery","version":"1.0.0","title":"Media Gallery","category":"quickpostr","description":"Photo gallery slider with dot navigation and a pill counter.","icon":"format-gallery","keywords":["gallery","slider","photos"],"textdomain":"quickpostr","supports":{"html":false},"editorScript":"file:./index.js","viewScript":"quickpostr-media-gallery-view","style":"file:./style.css","render":"file:./render.php"}');
 
 /***/ }
 

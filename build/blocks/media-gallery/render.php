@@ -15,9 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 $wrapper_attributes = get_block_wrapper_attributes( array( 'class' => 'qp-media-gallery' ) );
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by core ?>>
-	<div class="qp-media-gallery__track">
-		<?php echo wp_kses_post( $content ); ?>
+	<div class="qp-media-gallery__viewport">
+		<div class="qp-media-gallery__track">
+			<?php echo wp_kses_post( $content ); ?>
+		</div>
+		<div class="qp-media-gallery__pill" aria-hidden="true"></div>
 	</div>
 	<nav class="qp-media-gallery__dots" aria-label="<?php esc_attr_e( 'Gallery navigation', 'quickpostr' ); ?>"></nav>
-	<div class="qp-media-gallery__pill" aria-hidden="true"></div>
 </div>

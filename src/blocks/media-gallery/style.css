@@ -1,8 +1,12 @@
 .qp-media-gallery {
 	position: relative;
+}
+
+/* Viewport clips the sliding track; pill is anchored here */
+.qp-media-gallery__viewport {
+	position: relative;
 	overflow: hidden;
 	height: var( --qp-gallery-height, 300px );
-	outline: none;
 }
 
 .qp-media-gallery__track {
@@ -31,7 +35,7 @@
 	display: none;
 }
 
-/* Dot navigation */
+/* Dot navigation — outside the viewport, in normal flow */
 .qp-media-gallery__dots {
 	display: flex;
 	justify-content: center;
@@ -58,7 +62,7 @@
 	background: rgba( 0, 0, 0, 0.75 );
 }
 
-/* Pill counter */
+/* Pill counter — inside the viewport, anchored to its top-right */
 .qp-media-gallery__pill {
 	position: absolute;
 	top: 10px;

@@ -111,6 +111,22 @@ class QuickPostr {
 		);
 		wp_set_script_translations( 'quickpostr-share-post-view', 'quickpostr' );
 
+		$gallery_asset_file = QUICKPOSTR_PATH . 'build/blocks/media-gallery/view.asset.php';
+		$gallery_asset      = file_exists( $gallery_asset_file )
+			? require $gallery_asset_file
+			: array(
+				'dependencies' => array(),
+				'version'      => QUICKPOSTR_VERSION,
+			);
+
+		wp_register_script(
+			'quickpostr-media-gallery-view',
+			QUICKPOSTR_URL . 'build/blocks/media-gallery/view.js',
+			$gallery_asset['dependencies'],
+			$gallery_asset['version'],
+			array( 'in_footer' => true )
+		);
+
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
