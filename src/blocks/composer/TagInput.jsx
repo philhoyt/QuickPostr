@@ -294,6 +294,7 @@ export default function TagInput( {
 						onChange={ handleTagInput }
 						onKeyDown={ handleTagKeyDown }
 						onFocus={ handleTagFocus }
+						onBlur={ () => setTagOpen( false ) }
 						placeholder={ __( 'Add tags…', 'quickpostr' ) }
 						aria-label={ __( 'Search tags', 'quickpostr' ) }
 						role="combobox"
@@ -453,6 +454,7 @@ export default function TagInput( {
 						onChange={ handleCatInput }
 						onKeyDown={ handleCatKeyDown }
 						onFocus={ handleCatFocus }
+						onBlur={ () => setCatOpen( false ) }
 						placeholder={ __( 'Add categories…', 'quickpostr' ) }
 						aria-label={ __( 'Search categories', 'quickpostr' ) }
 						role="combobox"
