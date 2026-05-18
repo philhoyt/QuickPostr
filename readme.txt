@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.7.0
+Stable tag: 0.8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,10 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.8.0 =
+* Add: Media Gallery block -- slider with dot navigation, prev/next arrows, drag and swipe gestures, and a (x/y) image counter. Compose multi-photo posts directly in the composer.
+* Add: Popular tags and categories shown as horizontal pill chips in the autocomplete dropdown on focus, so the most-used items are reachable without typing.
 
 = 0.7.0 =
 * Add: Video tab in the post composer -- drag-and-drop video upload with optional caption, using the WordPress video post format.
