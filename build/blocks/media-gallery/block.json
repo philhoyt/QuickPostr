@@ -17,7 +17,7 @@
     "html": false
   },
   "editorScript": "file:./index.js",
-  "viewScript": "quickpostr-media-gallery-view",
+  "viewScript": "file:./view.js",
   "style": "file:./style.css",
   "render": "file:./render.php"
 }
