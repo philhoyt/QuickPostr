@@ -1,48 +1,5 @@
-.qp-media-gallery {
-	position: relative;
-}
+/* ─── Shared UI elements (arrows, dots, pill) ────────────────────────────── */
 
-/* Viewport clips the sliding track; pill and arrows are anchored here */
-.qp-media-gallery__viewport {
-	position: relative;
-	overflow: hidden;
-	height: var( --qp-gallery-height, 300px );
-	cursor: grab;
-	user-select: none;
-}
-
-.qp-media-gallery__viewport:active {
-	cursor: grabbing;
-}
-
-.qp-media-gallery__track {
-	display: flex;
-	height: 100%;
-	transition: transform 0.3s ease;
-	will-change: transform;
-}
-
-.qp-media-gallery__track > figure {
-	flex: 0 0 100%;
-	width: 100%;
-	height: 100%;
-	margin: 0;
-	padding: 0;
-}
-
-.qp-media-gallery__track img {
-	width: 100%;
-	height: 100%;
-	object-fit: contain;
-	display: block;
-	pointer-events: none;
-}
-
-.qp-media-gallery__track figcaption {
-	display: none;
-}
-
-/* Prev / next arrow buttons */
 .qp-media-gallery__arrow {
 	position: absolute;
 	top: 50%;
@@ -84,7 +41,6 @@
 	right: 10px;
 }
 
-/* Dot navigation — outside the viewport, in normal flow below the images */
 .qp-media-gallery__dots {
 	display: flex;
 	justify-content: center;
@@ -111,7 +67,6 @@
 	background: rgba( 0, 0, 0, 0.75 );
 }
 
-/* Pill counter — inside the viewport, anchored to its top-right */
 .qp-media-gallery__pill {
 	position: absolute;
 	top: 10px;
@@ -129,13 +84,6 @@
 
 .qp-media-gallery__pill--visible {
 	opacity: 1;
-}
-
-/* Editor label */
-.qp-media-gallery__editor-label {
-	margin: 0 0 8px;
-	font-size: 12px;
-	color: #757575;
 }
 
 /* ─── core/gallery + QuickPostr Slider block style ─────────────────────────
@@ -178,7 +126,6 @@
 	display: none;
 }
 
-/* Each nested image block becomes a full-width slide */
 .wp-block-gallery.is-style-quickpostr-slider > .wp-block-image {
 	flex: 0 0 100%;
 	margin: 0;

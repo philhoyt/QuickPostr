@@ -112,27 +112,33 @@ class QuickPostr {
 		);
 		wp_set_script_translations( 'quickpostr-share-post-view', 'quickpostr' );
 
-		$gallery_view_asset_file = QUICKPOSTR_PATH . 'build/blocks/media-gallery/view.asset.php';
-		$gallery_view_asset      = file_exists( $gallery_view_asset_file )
-			? require $gallery_view_asset_file
+		$gallery_slider_asset_file = QUICKPOSTR_PATH . 'build/gallery-slider/view.asset.php';
+		$gallery_slider_asset      = file_exists( $gallery_slider_asset_file )
+			? require $gallery_slider_asset_file
 			: array(
 				'dependencies' => array(),
 				'version'      => QUICKPOSTR_VERSION,
 			);
 
 		wp_register_script(
-			'quickpostr-media-gallery-view',
-			QUICKPOSTR_URL . 'build/blocks/media-gallery/view.js',
-			$gallery_view_asset['dependencies'],
-			$gallery_view_asset['version'],
+			'quickpostr-gallery-slider-view',
+			QUICKPOSTR_URL . 'build/gallery-slider/view.js',
+			$gallery_slider_asset['dependencies'],
+			$gallery_slider_asset['version'],
 			array( 'in_footer' => true )
+		);
+
+		wp_register_style(
+			'quickpostr-gallery-slider-style',
+			QUICKPOSTR_URL . 'build/gallery-slider/style.css',
+			array(),
+			QUICKPOSTR_VERSION
 		);
 
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/share-post/' );
-		register_block_type( QUICKPOSTR_PATH . 'build/blocks/media-gallery/' );
 
 		register_block_style(
 			'core/gallery',
@@ -144,10 +150,9 @@ class QuickPostr {
 	}
 
 	/**
-	 * Enqueue the media-gallery view script when a core/gallery block with the
-	 * QuickPostr Slider style is rendered. The viewScript in block.json only
-	 * fires for quickpostr/media-gallery blocks, so new posts (which use
-	 * core/gallery) would never load the slider JS without this filter.
+	 * Enqueue the gallery slider script and style when a core/gallery block with
+	 * the QuickPostr Slider style is rendered. block.json viewScript only fires
+	 * for blocks registered by this plugin, so core/gallery needs this filter.
 	 *
 	 * @param string $block_content Rendered block HTML — returned unchanged.
 	 * @param array  $block         Block data including attrs.
@@ -156,7 +161,8 @@ class QuickPostr {
 	public function maybe_enqueue_slider_script( string $block_content, array $block ): string {
 		$class_name = $block['attrs']['className'] ?? '';
 		if ( str_contains( $class_name, 'is-style-quickpostr-slider' ) ) {
-			wp_enqueue_script( 'quickpostr-media-gallery-view' );
+			wp_enqueue_script( 'quickpostr-gallery-slider-view' );
+			wp_enqueue_style( 'quickpostr-gallery-slider-style' );
 		}
 		return $block_content;
 	}

@@ -47,10 +47,11 @@ module.exports = {
 
 		return {
 			...discovered,
-			'blocks/composer/view':    path.resolve( __dirname, 'src/blocks/composer/view.js' ),
+			'blocks/composer/view':   path.resolve( __dirname, 'src/blocks/composer/view.js' ),
 			'blocks/delete-post/view': path.resolve( __dirname, 'src/blocks/delete-post/view.js' ),
-			'blocks/edit-post/view':   path.resolve( __dirname, 'src/blocks/edit-post/view.js' ),
-			'blocks/share-post/view':  path.resolve( __dirname, 'src/blocks/share-post/view.js' ),
+			'blocks/edit-post/view':  path.resolve( __dirname, 'src/blocks/edit-post/view.js' ),
+			'blocks/share-post/view': path.resolve( __dirname, 'src/blocks/share-post/view.js' ),
+			'gallery-slider/view':    path.resolve( __dirname, 'src/gallery-slider/view.js' ),
 		};
 	},
 };
