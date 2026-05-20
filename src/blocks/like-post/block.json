@@ -1,0 +1,22 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "quickpostr/like-post",
+    "version": "1.0.0",
+    "icon": "heart",
+    "title": "Like Post",
+    "category": "quickpostr",
+    "description": "Heart button that lets logged-in users like a post. Stores likes as comments; shows the like count. Place inside a Query Loop post template.",
+    "keywords": [ "like", "heart", "react", "quickpostr" ],
+    "textdomain": "quickpostr",
+    "supports": {
+        "html": false,
+        "reusable": false,
+        "lock": false
+    },
+    "usesContext": [ "postId" ],
+    "editorScript": "file:./index.js",
+    "viewScript": "quickpostr-like-post-view",
+    "style": "file:./style.css",
+    "render": "file:./render.php"
+}

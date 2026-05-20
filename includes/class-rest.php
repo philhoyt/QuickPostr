@@ -51,6 +51,192 @@ class QuickPostr_Rest {
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
+
+		$this->register_like_routes();
+	}
+
+	/**
+	 * Register the like toggle route.
+	 *
+	 * Public endpoint — auth is handled inside toggle_like so both logged-in
+	 * users (toggle) and anonymous visitors (name + email, one-way) can like.
+	 */
+	public function register_like_routes(): void {
+		register_rest_route(
+			self::NAMESPACE,
+			'/posts/(?P<id>\d+)/like',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'toggle_like' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'id'    => array(
+						'validate_callback' => function ( $value ) {
+							return is_numeric( $value );
+						},
+						'sanitize_callback' => 'absint',
+					),
+					'name'  => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+						'default'           => '',
+					),
+					'email' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_email',
+						'default'           => '',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Toggle or create a like-comment for the current user or visitor.
+	 *
+	 * Logged-in users: toggle (create or delete). Anonymous visitors: create
+	 * only (one-way), requires name, deduplicates by email when provided.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function toggle_like( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$post_id = absint( $request->get_param( 'id' ) );
+		$post    = get_post( $post_id );
+
+		if ( ! $post || 'publish' !== $post->post_status ) {
+			return new \WP_Error(
+				'rest_post_not_found',
+				esc_html__( 'Post not found.', 'quickpostr' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( is_user_logged_in() ) {
+			$user_id    = get_current_user_id();
+			$comment_id = $this->get_user_like_comment_id( $post_id, $user_id );
+
+			if ( $comment_id ) {
+				wp_delete_comment( $comment_id, true );
+				$liked = false;
+			} else {
+				$quickpostr_user = wp_get_current_user();
+				$display_name    = $quickpostr_user->display_name ? $quickpostr_user->display_name : $quickpostr_user->user_login;
+
+				wp_insert_comment(
+					array(
+						'comment_post_ID'  => $post_id,
+						'user_id'          => $user_id,
+						'comment_type'     => 'quickpostr_like',
+						'comment_content'  => sanitize_text_field( $display_name ) . esc_html__( ' liked this post', 'quickpostr' ),
+						'comment_approved' => 1,
+					)
+				);
+				$liked = true;
+			}
+		} else {
+			$name  = (string) $request->get_param( 'name' );
+			$email = (string) $request->get_param( 'email' );
+
+			if ( ! $name ) {
+				return new \WP_Error(
+					'rest_missing_name',
+					esc_html__( 'Name is required to like this post.', 'quickpostr' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Deduplicate by email when provided.
+			if ( $email && $this->get_anonymous_like_exists( $post_id, $email ) ) {
+				return rest_ensure_response(
+					array(
+						'liked' => true,
+						'count' => $this->get_like_count( $post_id ),
+					)
+				);
+			}
+
+			wp_insert_comment(
+				array(
+					'comment_post_ID'      => $post_id,
+					'comment_author'       => $name,
+					'comment_author_email' => $email,
+					'comment_type'         => 'quickpostr_like',
+					'comment_content'      => $name . esc_html__( ' liked this post', 'quickpostr' ),
+					'comment_approved'     => 1,
+				)
+			);
+			$liked = true;
+		}
+
+		return rest_ensure_response(
+			array(
+				'liked' => $liked,
+				'count' => $this->get_like_count( $post_id ),
+			)
+		);
+	}
+
+	/**
+	 * Return the number of quickpostr_like comments on a post.
+	 *
+	 * @param int $post_id The post ID.
+	 * @return int
+	 */
+	public function get_like_count( int $post_id ): int {
+		return (int) get_comments(
+			array(
+				'post_id' => $post_id,
+				'type'    => 'quickpostr_like',
+				'status'  => 'approve',
+				'count'   => true,
+			)
+		);
+	}
+
+	/**
+	 * Return the comment ID of the current user's like-comment on a post, or false.
+	 *
+	 * @param int $post_id The post ID.
+	 * @param int $user_id The user ID.
+	 * @return int|false
+	 */
+	public function get_user_like_comment_id( int $post_id, int $user_id ): int|false {
+		$comments = get_comments(
+			array(
+				'post_id' => $post_id,
+				'user_id' => $user_id,
+				'type'    => 'quickpostr_like',
+				'status'  => 'approve',
+				'number'  => 1,
+			)
+		);
+
+		if ( ! empty( $comments ) ) {
+			return (int) $comments[0]->comment_ID;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Return true if an anonymous like-comment with the given email exists on a post.
+	 *
+	 * @param int    $post_id The post ID.
+	 * @param string $email   The commenter email.
+	 * @return bool
+	 */
+	public function get_anonymous_like_exists( int $post_id, string $email ): bool {
+		$comments = get_comments(
+			array(
+				'post_id'      => $post_id,
+				'author_email' => $email,
+				'type'         => 'quickpostr_like',
+				'status'       => 'approve',
+				'number'       => 1,
+			)
+		);
+		return ! empty( $comments );
 	}
 
 	/**

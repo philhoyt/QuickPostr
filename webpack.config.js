@@ -49,6 +49,7 @@ module.exports = {
 		return {
 			...discovered,
 			'blocks/composer/view':     path.resolve( __dirname, 'src/blocks/composer/view.js' ),
+			'blocks/like-post/view':    path.resolve( __dirname, 'src/blocks/like-post/view.js' ),
 			'blocks/post-actions/view': path.resolve( __dirname, 'src/blocks/post-actions/view.js' ),
 			'blocks/share-post/view':   path.resolve( __dirname, 'src/blocks/share-post/view.js' ),
 			'gallery-slider/view':      path.resolve( __dirname, 'src/gallery-slider/view.js' ),
