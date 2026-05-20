@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.9.1
+Stable tag: 0.10.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,11 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.10.0 =
+* Add: Video composer now includes a "choose from library" option, matching the photo composer.
+* Fix: Photo post editing pre-fills the existing image and caption; the image can be replaced or the caption updated without re-uploading.
+* Fix: Editing video, gallery, or link posts now navigates directly to the WordPress editor instead of attempting to parse block content.
 
 = 0.9.1 =
 * Fix: Resolve semi-transparent overlay on Chrome Android after uploading a video.
