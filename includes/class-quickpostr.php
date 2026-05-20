@@ -116,6 +116,14 @@ class QuickPostr {
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/share-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/media-gallery/' );
+
+		register_block_style(
+			'core/gallery',
+			array(
+				'name'  => 'quickpostr-slider',
+				'label' => __( 'QuickPostr Slider', 'quickpostr' ),
+			)
+		);
 	}
 
 	/**
