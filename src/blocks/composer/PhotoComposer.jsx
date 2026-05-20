@@ -89,6 +89,9 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 			? [ config.settings.defaultCategory ]
 			: []
 	);
+	const [ loadingExisting, setLoadingExisting ] = useState(
+		!! ( editPost?.featured_media )
+	);
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
@@ -125,8 +128,11 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		setSelectedCategories( defaultCats );
 		if ( editPost.featured_media ) {
 			getMediaUrl( editPost.featured_media )
-				.then( ( url ) => setExistingPhotoUrl( url ) )
-				.catch( () => {} );
+				.then( ( url ) => {
+					setExistingPhotoUrl( url );
+					setLoadingExisting( false );
+				} )
+				.catch( () => setLoadingExisting( false ) );
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -146,7 +152,6 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 		setError( null );
 		setExistingPhotoUrl( null );
-		setLibraryMediaId( null );
 		setFiles( incoming );
 		setPreviews( incoming.map( ( f ) => URL.createObjectURL( f ) ) );
 	}
@@ -347,9 +352,10 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 	const showDropzone =
 		files.length === 0 &&
+		libraryMediaItems.length === 0 &&
 		previews.length === 0 &&
 		! existingPhotoUrl &&
-		! ( editPost && editPost.featured_media );
+		! loadingExisting;
 
 	const showSinglePreview =
 		previews.length === 1 ||
@@ -425,6 +431,12 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
+			{ loadingExisting && (
+				<p className="qp-composer-loading">
+					{ __( 'Loading…', 'quickpostr' ) }
+				</p>
+			) }
+
 			{ showSinglePreview && (
 				<div className="qp-photo-preview">
 					<img
@@ -466,7 +478,9 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( files.length > 0 || libraryMediaItems.length > 0 || editPost ) && (
+			{ ( files.length > 0 ||
+				libraryMediaItems.length > 0 ||
+				( editPost && ! loadingExisting ) ) && (
 				<>
 					<textarea
 						className="qp-photo-caption"
