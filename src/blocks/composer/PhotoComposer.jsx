@@ -80,7 +80,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 	const [ files, setFiles ] = useState( [] );
 	const [ previews, setPreviews ] = useState( [] );
 	const [ existingPhotoUrl, setExistingPhotoUrl ] = useState( null );
-	const [ libraryMediaId, setLibraryMediaId ] = useState( null );
+	const [ libraryMediaItems, setLibraryMediaItems ] = useState( [] );
 	const [ caption, setCaption ] = useState( '' );
 	const [ dragging, setDragging ] = useState( false );
 	const [ selectedTags, setSelectedTags ] = useState( [] );
@@ -177,7 +177,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		setFiles( [] );
 		setPreviews( [] );
 		setExistingPhotoUrl( null );
-		setLibraryMediaId( null );
+		setLibraryMediaItems( [] );
 		if ( fileInputRef.current ) {
 			fileInputRef.current.value = '';
 		}
@@ -185,9 +185,9 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 	function openMediaLibrary() {
 		const frame = window.wp?.media( {
-			title: __( 'Select a Photo', 'quickpostr' ),
-			button: { text: __( 'Use this photo', 'quickpostr' ) },
-			multiple: false,
+			title: __( 'Select Photos', 'quickpostr' ),
+			button: { text: __( 'Use selected photos', 'quickpostr' ) },
+			multiple: true,
 			library: { type: 'image' },
 		} );
 
@@ -196,23 +196,29 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		}
 
 		frame.on( 'select', () => {
-			const attachment = frame
+			const attachments = frame
 				.state()
 				.get( 'selection' )
-				.first()
 				.toJSON();
 			setError( null );
 			setFiles( [] );
 			setExistingPhotoUrl( null );
-			setLibraryMediaId( attachment.id );
-			setPreviews( [ attachment.sizes?.large?.url ?? attachment.url ] );
+			setLibraryMediaItems(
+				attachments.map( ( a ) => ( {
+					id: a.id,
+					source_url: a.url,
+				} ) )
+			);
+			setPreviews(
+				attachments.map( ( a ) => a.sizes?.large?.url ?? a.url )
+			);
 		} );
 
 		frame.open();
 	}
 
 	async function handleSubmit() {
-		if ( ! editPost && files.length === 0 && ! libraryMediaId ) {
+		if ( ! editPost && files.length === 0 && libraryMediaItems.length === 0 ) {
 			return;
 		}
 		if ( submitting ) {
@@ -225,7 +231,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		try {
 			let wpPost;
 
-			if ( editPost && files.length === 0 && ! libraryMediaId ) {
+			if ( editPost && files.length === 0 && libraryMediaItems.length === 0 ) {
 				// Edit mode: update caption/tags only, keep existing featured media.
 				wpPost = await updatePost( editPost.id, {
 					content: caption,
@@ -249,13 +255,25 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 					meta: { _quickpostr_post: '1' },
 				} );
 				onSuccess?.( wpPost, mediaItems[ 0 ]?.source_url ?? '' );
+			} else if ( libraryMediaItems.length >= 2 ) {
+				// Gallery from library: media already uploaded, no transfer needed.
+				wpPost = await createPost( {
+					title: generateTitle( 'gallery', '', caption ),
+					content: buildGalleryContent( libraryMediaItems, caption ),
+					status: defaultStatus,
+					format: 'gallery',
+					tags: selectedTags,
+					categories: selectedCategories,
+					meta: { _quickpostr_post: '1' },
+				} );
+				onSuccess?.( wpPost, previews[ 0 ] ?? '' );
 			} else {
 				// Single image: library pick or file upload.
 				let mediaId;
 				let mediaUrl;
 
-				if ( libraryMediaId ) {
-					mediaId = libraryMediaId;
+				if ( libraryMediaItems.length === 1 ) {
+					mediaId = libraryMediaItems[ 0 ].id;
 					mediaUrl = previews[ 0 ] ?? '';
 				} else {
 					const media = await uploadMedia( files[ 0 ] );
@@ -290,7 +308,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 			// Reset form.
 			setFiles( [] );
 			setPreviews( [] ); // useEffect cleanup revokes blob URLs
-			setLibraryMediaId( null );
+			setLibraryMediaItems( [] );
 			if ( fileInputRef.current ) {
 				fileInputRef.current.value = '';
 			}
@@ -337,7 +355,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		previews.length === 1 ||
 		( previews.length === 0 && !! existingPhotoUrl );
 
-	const showStrip = files.length >= 2;
+	const showStrip = files.length >= 2 || libraryMediaItems.length >= 2;
 
 	return (
 		<div className="qp-photo-composer">
@@ -448,7 +466,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( files.length > 0 || libraryMediaId || editPost ) && (
+			{ ( files.length > 0 || libraryMediaItems.length > 0 || editPost ) && (
 				<>
 					<textarea
 						className="qp-photo-caption"
@@ -485,7 +503,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 					disabled={
 						( ! editPost &&
 							files.length === 0 &&
-							! libraryMediaId ) ||
+							libraryMediaItems.length === 0 ) ||
 						submitting
 					}
 					aria-label={
