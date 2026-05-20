@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.8.1
+Stable tag: 0.9.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,13 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.9.0 =
+* Add: Like Post block with heart toggle and live like count for logged-in and logged-out visitors.
+* Add: Scroll-snap gallery slider for core/gallery blocks via QuickPostr Slider block style.
+* Add: Photo composer supports selecting multiple images from the media library at once.
+* Change: Replace Edit Post and Delete Post blocks with a unified Post Actions kebab menu.
+* Fix: Gallery images now render at their natural aspect ratio.
 
 = 0.8.1 =
 * Fix: Scope popover display:flex to :not([hidden]) so the hidden attribute takes effect.
