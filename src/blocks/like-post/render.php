@@ -36,9 +36,10 @@ if ( ! $qp_like_config_added ) {
 		'quickpostr-like-post-view',
 		'window.quickpostrLikePost = ' . wp_json_encode(
 			array(
-				'restUrl'  => rest_url(),
-				'nonce'    => wp_create_nonce( 'wp_rest' ),
-				'loginUrl' => wp_login_url(),
+				'restUrl'   => rest_url(),
+				'nonce'     => wp_create_nonce( 'wp_rest' ),
+				'loginUrl'  => wp_login_url(),
+				'showLogin' => (bool) get_option( 'users_can_register' ),
 			)
 		) . ';',
 		'before'

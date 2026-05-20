@@ -26,6 +26,14 @@
 		el.setAttribute( 'aria-modal', 'true' );
 		el.setAttribute( 'aria-labelledby', 'qp-like-modal-title' );
 		el.hidden = true;
+		const loginSection = config.showLogin
+			? '<div class="qp-like-modal__login-section">' +
+			  '<p class="qp-like-modal__login-desc">Log in to like and unlike posts on future visits.</p>' +
+			  '<a href="" class="qp-like-modal__login-btn">Log In</a>' +
+			  '</div>' +
+			  '<div class="qp-like-modal__divider" aria-hidden="true"><span>or</span></div>'
+			: '';
+
 		el.innerHTML =
 			'<div class="qp-like-modal__backdrop"></div>' +
 			'<div class="qp-like-modal__dialog">' +
@@ -33,11 +41,7 @@
 			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
 			'</button>' +
 			'<h2 id="qp-like-modal-title" class="qp-like-modal__title">Like this post</h2>' +
-			'<div class="qp-like-modal__login-section">' +
-			'<p class="qp-like-modal__login-desc">Log in to like and unlike posts on future visits.</p>' +
-			'<a href="" class="qp-like-modal__login-btn">Log In</a>' +
-			'</div>' +
-			'<div class="qp-like-modal__divider" aria-hidden="true"><span>or</span></div>' +
+			loginSection +
 			'<form class="qp-like-modal__form" novalidate>' +
 			'<div class="qp-like-modal__error" hidden></div>' +
 			'<label class="qp-like-modal__label" for="qp-like-name">Name</label>' +
@@ -90,10 +94,13 @@
 		currentWrapper = wrapper;
 		const m = getModal();
 
-		m.querySelector( '.qp-like-modal__login-btn' ).href =
-			config.loginUrl +
-			'?redirect_to=' +
-			encodeURIComponent( window.location.href );
+		const loginBtn = m.querySelector( '.qp-like-modal__login-btn' );
+		if ( loginBtn ) {
+			loginBtn.href =
+				config.loginUrl +
+				'?redirect_to=' +
+				encodeURIComponent( window.location.href );
+		}
 
 		const errorEl = m.querySelector( '.qp-like-modal__error' );
 		errorEl.hidden = true;
