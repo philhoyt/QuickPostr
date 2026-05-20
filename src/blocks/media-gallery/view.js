@@ -23,16 +23,16 @@
 	function initLegacyGallery( gallery ) {
 		const viewport = gallery.querySelector( '.qp-media-gallery__viewport' );
 		const track = gallery.querySelector( '.qp-media-gallery__track' );
-		const dotsContainer = gallery.querySelector( '.qp-media-gallery__dots' );
+		const dotsContainer = gallery.querySelector(
+			'.qp-media-gallery__dots'
+		);
 		const pill = gallery.querySelector( '.qp-media-gallery__pill' );
 
 		if ( ! viewport || ! track || ! dotsContainer || ! pill ) {
 			return;
 		}
 
-		const items = Array.from(
-			track.querySelectorAll( ':scope > figure' )
-		);
+		const items = Array.from( track.querySelectorAll( ':scope > figure' ) );
 		const total = items.length;
 
 		if ( total <= 1 ) {
@@ -93,7 +93,8 @@
 			imgs.forEach( function ( img ) {
 				if ( img.naturalWidth > 0 ) {
 					const h =
-						( img.naturalHeight / img.naturalWidth ) * containerWidth;
+						( img.naturalHeight / img.naturalWidth ) *
+						containerWidth;
 					if ( h > maxHeight ) {
 						maxHeight = h;
 					}
@@ -118,7 +119,9 @@
 				unloaded.map( function ( img ) {
 					return new Promise( function ( resolve ) {
 						img.addEventListener( 'load', resolve, { once: true } );
-						img.addEventListener( 'error', resolve, { once: true } );
+						img.addEventListener( 'error', resolve, {
+							once: true,
+						} );
 					} );
 				} )
 			).then( computeHeight );
@@ -266,10 +269,7 @@
 		// Dots nav — injected after the wrapper as a sibling.
 		const dotsNav = document.createElement( 'nav' );
 		dotsNav.className = 'qp-media-gallery__dots';
-		dotsNav.setAttribute(
-			'aria-label',
-			'Gallery navigation'
-		);
+		dotsNav.setAttribute( 'aria-label', 'Gallery navigation' );
 		wrapper.insertAdjacentElement( 'afterend', dotsNav );
 
 		slides.forEach( function ( _, i ) {
@@ -300,7 +300,7 @@
 			prevBtn.disabled = current === 0;
 			nextBtn.disabled = current === total - 1;
 
-			pill.textContent = ( current + 1 ) + '/' + total;
+			pill.textContent = current + 1 + '/' + total;
 			pill.classList.add( 'qp-media-gallery__pill--visible' );
 			clearTimeout( pillTimer );
 			pillTimer = setTimeout( function () {
@@ -356,9 +356,7 @@
 			.forEach( initLegacyGallery );
 
 		document
-			.querySelectorAll(
-				'.wp-block-gallery.is-style-quickpostr-slider'
-			)
+			.querySelectorAll( '.wp-block-gallery.is-style-quickpostr-slider' )
 			.forEach( initCoreGallery );
 	}
 
