@@ -23,6 +23,8 @@ export default function Composer() {
 	const [ editPost, setEditPost ] = useState( null );
 	const [ editLoading, setEditLoading ] = useState( false );
 
+	const editableFormats = [ 'image', 'standard', '' ];
+
 	// Listen for 'quickpostr:edit-post' from the Edit Post block view script.
 	useEffect( () => {
 		function handleEditEvent( e ) {
@@ -31,12 +33,12 @@ export default function Composer() {
 			if ( ! post ) {
 				return;
 			}
-			setEditPost( post );
-			let newMode = 'status';
-			if ( post.format === 'image' ) {
-				newMode = 'photo';
+			if ( ! editableFormats.includes( post.format ) ) {
+				window.location.href = `/wp-admin/post.php?post=${ post.id }&action=edit`;
+				return;
 			}
-			setMode( newMode );
+			setEditPost( post );
+			setMode( post.format === 'image' ? 'photo' : 'status' );
 		}
 
 		document.addEventListener( 'quickpostr:edit-post', handleEditEvent );
@@ -45,7 +47,7 @@ export default function Composer() {
 				'quickpostr:edit-post',
 				handleEditEvent
 			);
-	}, [] );
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Detect ?qp-edit param and load the post into the composer (fallback path).
 	useEffect( () => {
@@ -58,16 +60,16 @@ export default function Composer() {
 		setEditLoading( true );
 		getPost( editId )
 			.then( ( post ) => {
-				setEditPost( post );
-				let editMode = 'status';
-				if ( post.format === 'image' ) {
-					editMode = 'photo';
+				if ( ! editableFormats.includes( post.format ) ) {
+					window.location.href = `/wp-admin/post.php?post=${ post.id }&action=edit`;
+					return;
 				}
-				setMode( editMode );
+				setEditPost( post );
+				setMode( post.format === 'image' ? 'photo' : 'status' );
 			} )
 			.catch( () => {} )
 			.finally( () => setEditLoading( false ) );
-	}, [] );
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const user = config.currentUser ?? {};
 	const avatarUrl = user.avatarUrls?.[ '48' ];
@@ -98,47 +100,6 @@ export default function Composer() {
 		return (
 			<div className="qp-composer">
 				<p className="qp-composer__loading">{ __( 'Loading…', 'quickpostr' ) }</p>
-			</div>
-		);
-	}
-
-	// Video, gallery, and link posts use complex block content that can't be
-	// safely round-tripped through the front-end composer. Redirect to wp-admin.
-	const editableFormats = [ 'image', 'standard', '' ];
-	if ( editPost && ! editableFormats.includes( editPost.format ) ) {
-		const adminEditUrl = `/wp-admin/post.php?post=${ editPost.id }&action=edit`;
-		return (
-			<div className="qp-composer">
-				<header className="qp-composer__header">
-					<div className="qp-composer__identity">
-						<div className="qp-composer__avatar" aria-hidden="true">
-							{ avatarUrl ? (
-								<img src={ avatarUrl } alt="" width="32" height="32" />
-							) : (
-								<span>{ initials }</span>
-							) }
-						</div>
-						<span className="qp-composer__user-name">{ user.name }</span>
-					</div>
-					<button
-						type="button"
-						className="qp-composer__cancel-edit"
-						onClick={ handleCancelEdit }
-					>
-						&#x2715; { __( 'Cancel edit', 'quickpostr' ) }
-					</button>
-				</header>
-				<div className="qp-composer__admin-redirect">
-					<p className="qp-composer__admin-redirect-msg">
-						{ __( 'This post type is best edited in the WordPress editor.', 'quickpostr' ) }
-					</p>
-					<a
-						href={ adminEditUrl }
-						className="qp-composer-submit qp-composer-submit--link"
-					>
-						{ __( 'Edit in WordPress', 'quickpostr' ) }
-					</a>
-				</div>
 			</div>
 		);
 	}
