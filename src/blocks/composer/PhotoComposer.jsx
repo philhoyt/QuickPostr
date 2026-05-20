@@ -89,6 +89,9 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 			? [ config.settings.defaultCategory ]
 			: []
 	);
+	const [ loadingExisting, setLoadingExisting ] = useState(
+		!! ( editPost?.featured_media )
+	);
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
@@ -107,12 +110,11 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		};
 	}, [ previews ] );
 
-	// Pre-fill caption, terms, and load existing photo from editPost.
+	// Pre-fill caption, terms, and load existing photo/gallery from editPost.
 	useEffect( () => {
 		if ( ! editPost ) {
 			return;
 		}
-		setCaption( editPost.content?.raw ?? '' );
 		setSelectedTags( editPost.tags ?? [] );
 		let defaultCats;
 		if ( editPost.categories?.length ) {
@@ -123,10 +125,15 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 			defaultCats = [];
 		}
 		setSelectedCategories( defaultCats );
+
+		setCaption( editPost.content?.raw ?? '' );
 		if ( editPost.featured_media ) {
 			getMediaUrl( editPost.featured_media )
-				.then( ( url ) => setExistingPhotoUrl( url ) )
-				.catch( () => {} );
+				.then( ( url ) => {
+					setExistingPhotoUrl( url );
+					setLoadingExisting( false );
+				} )
+				.catch( () => setLoadingExisting( false ) );
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -146,7 +153,6 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 		setError( null );
 		setExistingPhotoUrl( null );
-		setLibraryMediaId( null );
 		setFiles( incoming );
 		setPreviews( incoming.map( ( f ) => URL.createObjectURL( f ) ) );
 	}
@@ -241,7 +247,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				} );
 				onSuccess?.( wpPost, '' );
 			} else if ( files.length >= 2 ) {
-				// Gallery: upload all files in parallel, create a gallery post.
+				// Gallery: upload all files, then create or update post.
 				const mediaItems = await Promise.all(
 					files.map( ( f ) => uploadMedia( f ) )
 				);
@@ -256,7 +262,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				} );
 				onSuccess?.( wpPost, mediaItems[ 0 ]?.source_url ?? '' );
 			} else if ( libraryMediaItems.length >= 2 ) {
-				// Gallery from library: media already uploaded, no transfer needed.
+				// Gallery from library: media already uploaded, create post.
 				wpPost = await createPost( {
 					title: generateTitle( 'gallery', '', caption ),
 					content: buildGalleryContent( libraryMediaItems, caption ),
@@ -347,9 +353,10 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 
 	const showDropzone =
 		files.length === 0 &&
+		libraryMediaItems.length === 0 &&
 		previews.length === 0 &&
 		! existingPhotoUrl &&
-		! ( editPost && editPost.featured_media );
+		! loadingExisting;
 
 	const showSinglePreview =
 		previews.length === 1 ||
@@ -425,6 +432,12 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
+			{ loadingExisting && (
+				<p className="qp-composer-loading">
+					{ __( 'Loading…', 'quickpostr' ) }
+				</p>
+			) }
+
 			{ showSinglePreview && (
 				<div className="qp-photo-preview">
 					<img
@@ -466,7 +479,9 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( files.length > 0 || libraryMediaItems.length > 0 || editPost ) && (
+			{ ( files.length > 0 ||
+				libraryMediaItems.length > 0 ||
+				( editPost && ! loadingExisting ) ) && (
 				<>
 					<textarea
 						className="qp-photo-caption"

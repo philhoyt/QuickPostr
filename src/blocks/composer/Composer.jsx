@@ -23,6 +23,8 @@ export default function Composer() {
 	const [ editPost, setEditPost ] = useState( null );
 	const [ editLoading, setEditLoading ] = useState( false );
 
+	const editableFormats = [ 'image', 'standard', '' ];
+
 	// Listen for 'quickpostr:edit-post' from the Edit Post block view script.
 	useEffect( () => {
 		function handleEditEvent( e ) {
@@ -31,16 +33,12 @@ export default function Composer() {
 			if ( ! post ) {
 				return;
 			}
-			setEditPost( post );
-			let newMode = 'status';
-			if ( post.format === 'image' || post.format === 'gallery' ) {
-				newMode = 'photo';
-			} else if ( post.format === 'video' ) {
-				newMode = 'video';
-			} else if ( post.format === 'link' ) {
-				newMode = 'link';
+			if ( ! editableFormats.includes( post.format ) ) {
+				window.location.href = `/wp-admin/post.php?post=${ post.id }&action=edit`;
+				return;
 			}
-			setMode( newMode );
+			setEditPost( post );
+			setMode( post.format === 'image' ? 'photo' : 'status' );
 		}
 
 		document.addEventListener( 'quickpostr:edit-post', handleEditEvent );
@@ -49,7 +47,7 @@ export default function Composer() {
 				'quickpostr:edit-post',
 				handleEditEvent
 			);
-	}, [] );
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Detect ?qp-edit param and load the post into the composer (fallback path).
 	useEffect( () => {
@@ -62,20 +60,16 @@ export default function Composer() {
 		setEditLoading( true );
 		getPost( editId )
 			.then( ( post ) => {
-				setEditPost( post );
-				let editMode = 'status';
-				if ( post.format === 'image' || post.format === 'gallery' ) {
-					editMode = 'photo';
-				} else if ( post.format === 'video' ) {
-					editMode = 'video';
-				} else if ( post.format === 'link' ) {
-					editMode = 'link';
+				if ( ! editableFormats.includes( post.format ) ) {
+					window.location.href = `/wp-admin/post.php?post=${ post.id }&action=edit`;
+					return;
 				}
-				setMode( editMode );
+				setEditPost( post );
+				setMode( post.format === 'image' ? 'photo' : 'status' );
 			} )
 			.catch( () => {} )
 			.finally( () => setEditLoading( false ) );
-	}, [] );
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const user = config.currentUser ?? {};
 	const avatarUrl = user.avatarUrls?.[ '48' ];
@@ -187,25 +181,14 @@ export default function Composer() {
 						editPost={ editPost ?? undefined }
 					/>
 				) }
-				{ mode === 'photo' &&
-					( editPost?.format === 'gallery' ? (
-						<p className="qp-composer-notice">
-							{ __(
-								'Gallery posts cannot be edited in the composer.',
-								'quickpostr'
-							) }
-						</p>
-					) : (
-						<PhotoComposer
-							onSuccess={ handleSuccess }
-							editPost={ editPost ?? undefined }
-						/>
-					) ) }
-				{ mode === 'video' && (
-					<VideoComposer
+				{ mode === 'photo' && (
+					<PhotoComposer
 						onSuccess={ handleSuccess }
 						editPost={ editPost ?? undefined }
 					/>
+				) }
+				{ mode === 'video' && (
+					<VideoComposer onSuccess={ handleSuccess } />
 				) }
 				{ mode === 'link' && (
 					<LinkComposer

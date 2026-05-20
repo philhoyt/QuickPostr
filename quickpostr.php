@@ -1,12 +1,12 @@
 <?php
 /**
  * Plugin Name:       QuickPostr
- * Plugin URI:        https://wordpress.org/plugins/quickpostr/
+ * Plugin URI:        https://github.com/philhoyt/QuickPostr
  * Description:       A front-end, social-style post composer for WordPress. Place the Composer block anywhere, post like it's social media.
  * Version:           0.9.1
  * Requires at least: 6.7
  * Requires PHP:      8.1
- * Author:            QuickPostr Contributors
+ * Author:            Phil Hoyt
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       quickpostr
