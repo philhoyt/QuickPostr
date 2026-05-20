@@ -612,7 +612,6 @@
 .wp-block-quickpostr-composer .qp-video-preview {
 	position: relative;
 	border-radius: var(--qp-radius-sm);
-	overflow: hidden;
 	background: var(--qp-surface);
 }
 
@@ -620,6 +619,8 @@
 	display: block;
 	width: 100%;
 	max-height: 360px;
+	border-radius: var(--qp-radius-sm);
+	transform: translateZ(0);
 }
 
 .wp-block-quickpostr-composer .qp-video-preview__remove {
