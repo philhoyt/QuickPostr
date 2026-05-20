@@ -1,0 +1,145 @@
+/* ─── Shared UI elements (arrows, dots, pill) ────────────────────────────── */
+
+.qp-media-gallery__arrow {
+	position: absolute;
+	top: 50%;
+	transform: translateY( -50% );
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	background: rgba( 0, 0, 0, 0.45 );
+	color: #fff;
+	border: none;
+	border-radius: 50%;
+	cursor: pointer;
+	transition: background 0.2s ease, opacity 0.2s ease;
+	z-index: 1;
+}
+
+.qp-media-gallery__arrow svg {
+	width: 18px;
+	height: 18px;
+}
+
+.qp-media-gallery__arrow:hover:not( :disabled ) {
+	background: rgba( 0, 0, 0, 0.7 );
+}
+
+.qp-media-gallery__arrow:disabled {
+	opacity: 0.25;
+	cursor: default;
+}
+
+.qp-media-gallery__arrow--prev {
+	left: 10px;
+}
+
+.qp-media-gallery__arrow--next {
+	right: 10px;
+}
+
+.qp-media-gallery__dots {
+	display: flex;
+	justify-content: center;
+	gap: 6px;
+	padding: 8px 0 4px;
+}
+
+.qp-media-gallery__dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	border: none;
+	padding: 0;
+	background: rgba( 0, 0, 0, 0.25 );
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+.qp-media-gallery__dot:hover {
+	background: rgba( 0, 0, 0, 0.5 );
+}
+
+.qp-media-gallery__dot--active {
+	background: rgba( 0, 0, 0, 0.75 );
+}
+
+.qp-media-gallery__pill {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	background: rgba( 0, 0, 0, 0.55 );
+	color: #fff;
+	font-size: 12px;
+	line-height: 1;
+	padding: 4px 8px;
+	border-radius: 10px;
+	opacity: 0;
+	transition: opacity 0.25s ease;
+	pointer-events: none;
+}
+
+.qp-media-gallery__pill--visible {
+	opacity: 1;
+}
+
+/* ─── core/gallery + QuickPostr Slider block style ─────────────────────────
+ *
+ * view.js injects a .qp-gallery-wrapper div around the gallery figure so that
+ * arrows and the pill counter can be absolutely positioned over the slider
+ * without scrolling with the gallery content.
+ *
+ * DOM after view.js runs:
+ *   .qp-gallery-wrapper
+ *     figure.wp-block-gallery.is-style-quickpostr-slider  ← scroll container
+ *       figure.wp-block-image (slide)
+ *       figure.wp-block-image (slide)
+ *     .qp-media-gallery__arrow--prev (injected — absolute)
+ *     .qp-media-gallery__arrow--next (injected — absolute)
+ *     .qp-media-gallery__pill        (injected — absolute)
+ *   nav.qp-media-gallery__dots       (injected — sibling after wrapper)
+ */
+
+.qp-gallery-wrapper {
+	position: relative;
+}
+
+.wp-block-gallery.is-style-quickpostr-slider {
+	display: flex;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	scrollbar-width: none;
+	gap: 0;
+	cursor: grab;
+	user-select: none;
+}
+
+.wp-block-gallery.is-style-quickpostr-slider:active {
+	cursor: grabbing;
+}
+
+.wp-block-gallery.is-style-quickpostr-slider::-webkit-scrollbar {
+	display: none;
+}
+
+.wp-block-gallery.is-style-quickpostr-slider > .wp-block-image {
+	flex: 0 0 100%;
+	margin: 0;
+	padding: 0;
+	scroll-snap-align: start;
+}
+
+.wp-block-gallery.is-style-quickpostr-slider > .wp-block-image img {
+	width: 100%;
+	height: auto;
+	display: block;
+	pointer-events: none;
+}
+
+.wp-block-gallery.is-style-quickpostr-slider figcaption {
+	display: none;
+}

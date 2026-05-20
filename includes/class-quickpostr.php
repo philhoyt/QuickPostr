@@ -29,6 +29,7 @@ class QuickPostr {
 		add_action( 'init', array( $this, 'register_block' ) );
 		add_action( 'init', array( $this, 'register_block_patterns' ) );
 		add_filter( 'block_categories_all', array( $this, 'register_block_category' ), 10, 1 );
+		add_filter( 'render_block_core/gallery', array( $this, 'maybe_enqueue_slider_script' ), 10, 2 );
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
@@ -51,17 +52,9 @@ class QuickPostr {
 				'version'      => QUICKPOSTR_VERSION,
 			);
 
-		$delete_asset_file = QUICKPOSTR_PATH . 'build/blocks/delete-post/view.asset.php';
-		$delete_asset      = file_exists( $delete_asset_file )
-			? require $delete_asset_file
-			: array(
-				'dependencies' => array(),
-				'version'      => QUICKPOSTR_VERSION,
-			);
-
-		$edit_asset_file = QUICKPOSTR_PATH . 'build/blocks/edit-post/view.asset.php';
-		$edit_asset      = file_exists( $edit_asset_file )
-			? require $edit_asset_file
+		$post_actions_asset_file = QUICKPOSTR_PATH . 'build/blocks/post-actions/view.asset.php';
+		$post_actions_asset      = file_exists( $post_actions_asset_file )
+			? require $post_actions_asset_file
 			: array(
 				'dependencies' => array(),
 				'version'      => QUICKPOSTR_VERSION,
@@ -85,22 +78,13 @@ class QuickPostr {
 		wp_set_script_translations( 'quickpostr-composer-view', 'quickpostr' );
 
 		wp_register_script(
-			'quickpostr-delete-post-view',
-			QUICKPOSTR_URL . 'build/blocks/delete-post/view.js',
-			$delete_asset['dependencies'],
-			$delete_asset['version'],
+			'quickpostr-post-actions-view',
+			QUICKPOSTR_URL . 'build/blocks/post-actions/view.js',
+			$post_actions_asset['dependencies'],
+			$post_actions_asset['version'],
 			array( 'in_footer' => true )
 		);
-		wp_set_script_translations( 'quickpostr-delete-post-view', 'quickpostr' );
-
-		wp_register_script(
-			'quickpostr-edit-post-view',
-			QUICKPOSTR_URL . 'build/blocks/edit-post/view.js',
-			$edit_asset['dependencies'],
-			$edit_asset['version'],
-			array( 'in_footer' => true )
-		);
-		wp_set_script_translations( 'quickpostr-edit-post-view', 'quickpostr' );
+		wp_set_script_translations( 'quickpostr-post-actions-view', 'quickpostr' );
 
 		wp_register_script(
 			'quickpostr-share-post-view',
@@ -111,11 +95,58 @@ class QuickPostr {
 		);
 		wp_set_script_translations( 'quickpostr-share-post-view', 'quickpostr' );
 
+		$gallery_slider_asset_file = QUICKPOSTR_PATH . 'build/gallery-slider/view.asset.php';
+		$gallery_slider_asset      = file_exists( $gallery_slider_asset_file )
+			? require $gallery_slider_asset_file
+			: array(
+				'dependencies' => array(),
+				'version'      => QUICKPOSTR_VERSION,
+			);
+
+		wp_register_script(
+			'quickpostr-gallery-slider-view',
+			QUICKPOSTR_URL . 'build/gallery-slider/view.js',
+			$gallery_slider_asset['dependencies'],
+			$gallery_slider_asset['version'],
+			array( 'in_footer' => true )
+		);
+
+		wp_register_style(
+			'quickpostr-gallery-slider-style',
+			QUICKPOSTR_URL . 'build/gallery-slider/style.css',
+			array(),
+			QUICKPOSTR_VERSION
+		);
+
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
-		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
-		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/post-actions/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/share-post/' );
-		register_block_type( QUICKPOSTR_PATH . 'build/blocks/media-gallery/' );
+
+		register_block_style(
+			'core/gallery',
+			array(
+				'name'  => 'quickpostr-slider',
+				'label' => __( 'QuickPostr Slider', 'quickpostr' ),
+			)
+		);
+	}
+
+	/**
+	 * Enqueue the gallery slider script and style when a core/gallery block with
+	 * the QuickPostr Slider style is rendered. block.json viewScript only fires
+	 * for blocks registered by this plugin, so core/gallery needs this filter.
+	 *
+	 * @param string $block_content Rendered block HTML — returned unchanged.
+	 * @param array  $block         Block data including attrs.
+	 * @return string
+	 */
+	public function maybe_enqueue_slider_script( string $block_content, array $block ): string {
+		$class_name = $block['attrs']['className'] ?? '';
+		if ( str_contains( $class_name, 'is-style-quickpostr-slider' ) ) {
+			wp_enqueue_script( 'quickpostr-gallery-slider-view' );
+			wp_enqueue_style( 'quickpostr-gallery-slider-style' );
+		}
+		return $block_content;
 	}
 
 	/**

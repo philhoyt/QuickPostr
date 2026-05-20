@@ -1,0 +1,135 @@
+.qp-post-actions {
+	position: relative;
+	display: inline-flex;
+}
+
+/* ── Kebab toggle button ─────────────────────────────────────────────────── */
+
+.qp-post-actions__toggle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	background: none;
+	border: none;
+	border-radius: var( --wp--custom--border-radius--sm, 6px );
+	color: var( --wp--preset--color--contrast-2, #666 );
+	cursor: pointer;
+	transition: color 150ms ease, background 150ms ease;
+}
+
+.qp-post-actions__toggle:hover {
+	color: var( --wp--preset--color--contrast, #333 );
+	background: rgba( 0, 0, 0, 0.06 );
+}
+
+.qp-post-actions__toggle:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* ── Dropdown menu ───────────────────────────────────────────────────────── */
+
+.qp-post-actions__menu {
+	position: absolute;
+	top: calc( 100% + 4px );
+	right: 0;
+	z-index: 100;
+	min-width: 140px;
+	padding: 4px 0;
+	background: #fff;
+	border: 1px solid rgba( 0, 0, 0, 0.12 );
+	border-radius: var( --wp--custom--border-radius--sm, 6px );
+	box-shadow: 0 4px 12px rgba( 0, 0, 0, 0.12 );
+}
+
+.qp-post-actions__menu[hidden] {
+	display: none;
+}
+
+/* ── Action items ────────────────────────────────────────────────────────── */
+
+.qp-post-actions__item {
+	display: block;
+	width: 100%;
+	padding: 7px 14px;
+	background: none;
+	border: none;
+	font-family: inherit;
+	font-size: 0.8125rem;
+	text-align: left;
+	cursor: pointer;
+	transition: background 120ms ease;
+	color: var( --wp--preset--color--contrast, #333 );
+}
+
+.qp-post-actions__item:hover {
+	background: rgba( 0, 0, 0, 0.05 );
+}
+
+.qp-post-actions__item:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.qp-post-actions__item--delete {
+	color: #dc2626;
+}
+
+.qp-post-actions__item--delete:hover {
+	background: rgba( 220, 38, 38, 0.06 );
+}
+
+/* ── Delete inline confirmation ──────────────────────────────────────────── */
+
+.qp-post-actions__confirm {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 8px 14px;
+	border-top: 1px solid rgba( 0, 0, 0, 0.08 );
+	font-size: 0.8125rem;
+	color: var( --wp--preset--color--contrast, #333 );
+}
+
+.qp-post-actions__confirm[hidden] {
+	display: none;
+}
+
+.qp-post-actions__confirm-yes,
+.qp-post-actions__confirm-no {
+	padding: 3px 8px;
+	background: none;
+	border: 1px solid transparent;
+	border-radius: var( --wp--custom--border-radius--sm, 6px );
+	font-family: inherit;
+	font-size: 0.8125rem;
+	cursor: pointer;
+	transition: background 120ms ease;
+}
+
+.qp-post-actions__confirm-yes {
+	color: #dc2626;
+	border-color: rgba( 220, 38, 38, 0.35 );
+	font-weight: 600;
+}
+
+.qp-post-actions__confirm-yes:hover {
+	background: rgba( 220, 38, 38, 0.08 );
+}
+
+.qp-post-actions__confirm-yes:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.qp-post-actions__confirm-no {
+	color: var( --wp--preset--color--contrast-2, #666 );
+}
+
+.qp-post-actions__confirm-no:hover {
+	background: rgba( 0, 0, 0, 0.05 );
+}
