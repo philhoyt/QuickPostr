@@ -251,27 +251,41 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				const mediaItems = await Promise.all(
 					files.map( ( f ) => uploadMedia( f ) )
 				);
-				wpPost = await createPost( {
-					title: generateTitle( 'gallery', '', caption ),
+				const galleryPayload = {
 					content: buildGalleryContent( mediaItems, caption ),
 					status: defaultStatus,
 					format: 'gallery',
 					tags: selectedTags,
 					categories: selectedCategories,
-					meta: { _quickpostr_post: '1' },
-				} );
+				};
+				if ( editPost ) {
+					wpPost = await updatePost( editPost.id, galleryPayload );
+				} else {
+					wpPost = await createPost( {
+						title: generateTitle( 'gallery', '', caption ),
+						...galleryPayload,
+						meta: { _quickpostr_post: '1' },
+					} );
+				}
 				onSuccess?.( wpPost, mediaItems[ 0 ]?.source_url ?? '' );
 			} else if ( libraryMediaItems.length >= 2 ) {
-				// Gallery from library: media already uploaded, create post.
-				wpPost = await createPost( {
-					title: generateTitle( 'gallery', '', caption ),
+				// Gallery from library: media already uploaded, create or update post.
+				const galleryPayload = {
 					content: buildGalleryContent( libraryMediaItems, caption ),
 					status: defaultStatus,
 					format: 'gallery',
 					tags: selectedTags,
 					categories: selectedCategories,
-					meta: { _quickpostr_post: '1' },
-				} );
+				};
+				if ( editPost ) {
+					wpPost = await updatePost( editPost.id, galleryPayload );
+				} else {
+					wpPost = await createPost( {
+						title: generateTitle( 'gallery', '', caption ),
+						...galleryPayload,
+						meta: { _quickpostr_post: '1' },
+					} );
+				}
 				onSuccess?.( wpPost, previews[ 0 ] ?? '' );
 			} else {
 				// Single image: library pick or file upload.
