@@ -2,8 +2,9 @@
 /**
  * Server-side render for quickpostr/like-post.
  *
- * Renders a heart button with the current like count for logged-in users.
- * Renders nothing for logged-out visitors.
+ * Renders a heart button with the current like count for all visitors.
+ * Logged-in users get a toggle (like/unlike). Logged-out visitors see a modal
+ * offering a login link or a name/email form for anonymous likes.
  *
  * @package QuickPostr
  *
@@ -16,36 +17,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! is_user_logged_in() ) {
-	return;
-}
-
 $quickpostr_post_id = (int) ( $block->context['postId'] ?? 0 );
 if ( ! $quickpostr_post_id ) {
 	return;
 }
 
+$qp_logged_in  = is_user_logged_in();
 $qp_rest       = new QuickPostr_Rest();
 $qp_like_count = $qp_rest->get_like_count( $quickpostr_post_id );
-$qp_liked      = (bool) $qp_rest->get_user_like_comment_id( $quickpostr_post_id, get_current_user_id() );
+$qp_liked      = $qp_logged_in
+	? (bool) $qp_rest->get_user_like_comment_id( $quickpostr_post_id, get_current_user_id() )
+	: false;
 
-wp_add_inline_script(
-	'quickpostr-like-post-view',
-	'window.quickpostrLikePost = ' . wp_json_encode(
-		array(
-			'restUrl' => rest_url(),
-			'nonce'   => wp_create_nonce( 'wp_rest' ),
-		)
-	) . ';',
-	'before'
-);
+// Output the inline config once per page even when multiple like blocks render.
+static $qp_like_config_added = false;
+if ( ! $qp_like_config_added ) {
+	wp_add_inline_script(
+		'quickpostr-like-post-view',
+		'window.quickpostrLikePost = ' . wp_json_encode(
+			array(
+				'restUrl'  => rest_url(),
+				'nonce'    => wp_create_nonce( 'wp_rest' ),
+				'loginUrl' => wp_login_url(),
+			)
+		) . ';',
+		'before'
+	);
+	$qp_like_config_added = true;
+}
 
 $qp_wrapper_attributes = get_block_wrapper_attributes(
 	array(
-		'class'        => 'qp-like-post',
-		'data-post-id' => (string) $quickpostr_post_id,
-		'data-liked'   => $qp_liked ? 'true' : 'false',
-		'data-count'   => (string) $qp_like_count,
+		'class'          => 'qp-like-post',
+		'data-post-id'   => (string) $quickpostr_post_id,
+		'data-liked'     => $qp_liked ? 'true' : 'false',
+		'data-count'     => (string) $qp_like_count,
+		'data-logged-in' => $qp_logged_in ? 'true' : 'false',
 	)
 );
 ?>
