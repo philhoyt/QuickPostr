@@ -30,6 +30,7 @@ class QuickPostr {
 		add_action( 'init', array( $this, 'register_block_patterns' ) );
 		add_filter( 'block_categories_all', array( $this, 'register_block_category' ), 10, 1 );
 		add_filter( 'render_block_core/gallery', array( $this, 'maybe_enqueue_slider_script' ), 10, 2 );
+		add_filter( 'get_comments_number', array( $this, 'exclude_like_comments_from_count' ), 10, 2 );
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
@@ -404,5 +405,21 @@ class QuickPostr {
 		}
 
 		return $upload;
+	}
+
+	/**
+	 * Subtract quickpostr_like comments from the displayed comment count.
+	 *
+	 * WordPress includes all approved comments of any type in the post's
+	 * comment_count column. This filter corrects the visible count so like-comments
+	 * are never shown as regular comments.
+	 *
+	 * @param int|string $count   The comment count.
+	 * @param int        $post_id The post ID.
+	 * @return int
+	 */
+	public function exclude_like_comments_from_count( int|string $count, int $post_id ): int {
+		$rest = new QuickPostr_Rest();
+		return max( 0, (int) $count - $rest->get_like_count( $post_id ) );
 	}
 }
