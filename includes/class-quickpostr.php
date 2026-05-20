@@ -52,17 +52,9 @@ class QuickPostr {
 				'version'      => QUICKPOSTR_VERSION,
 			);
 
-		$delete_asset_file = QUICKPOSTR_PATH . 'build/blocks/delete-post/view.asset.php';
-		$delete_asset      = file_exists( $delete_asset_file )
-			? require $delete_asset_file
-			: array(
-				'dependencies' => array(),
-				'version'      => QUICKPOSTR_VERSION,
-			);
-
-		$edit_asset_file = QUICKPOSTR_PATH . 'build/blocks/edit-post/view.asset.php';
-		$edit_asset      = file_exists( $edit_asset_file )
-			? require $edit_asset_file
+		$post_actions_asset_file = QUICKPOSTR_PATH . 'build/blocks/post-actions/view.asset.php';
+		$post_actions_asset      = file_exists( $post_actions_asset_file )
+			? require $post_actions_asset_file
 			: array(
 				'dependencies' => array(),
 				'version'      => QUICKPOSTR_VERSION,
@@ -86,22 +78,13 @@ class QuickPostr {
 		wp_set_script_translations( 'quickpostr-composer-view', 'quickpostr' );
 
 		wp_register_script(
-			'quickpostr-delete-post-view',
-			QUICKPOSTR_URL . 'build/blocks/delete-post/view.js',
-			$delete_asset['dependencies'],
-			$delete_asset['version'],
+			'quickpostr-post-actions-view',
+			QUICKPOSTR_URL . 'build/blocks/post-actions/view.js',
+			$post_actions_asset['dependencies'],
+			$post_actions_asset['version'],
 			array( 'in_footer' => true )
 		);
-		wp_set_script_translations( 'quickpostr-delete-post-view', 'quickpostr' );
-
-		wp_register_script(
-			'quickpostr-edit-post-view',
-			QUICKPOSTR_URL . 'build/blocks/edit-post/view.js',
-			$edit_asset['dependencies'],
-			$edit_asset['version'],
-			array( 'in_footer' => true )
-		);
-		wp_set_script_translations( 'quickpostr-edit-post-view', 'quickpostr' );
+		wp_set_script_translations( 'quickpostr-post-actions-view', 'quickpostr' );
 
 		wp_register_script(
 			'quickpostr-share-post-view',
@@ -136,8 +119,7 @@ class QuickPostr {
 		);
 
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
-		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
-		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/post-actions/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/share-post/' );
 
 		register_block_style(

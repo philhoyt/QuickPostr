@@ -10,8 +10,9 @@ const CopyPlugin    = require( 'copy-webpack-plugin' );
  * references into build/blocks/<block-name>/.
  *
  * We add entries that auto-discovery won't pick up:
- *   - composer/view.js  — the front-end React app (named handle, not file:)
- *   - delete-post/view.js, edit-post/view.js — vanilla JS view scripts (named handle)
+ *   - composer/view.js     — the front-end React app (named handle, not file:)
+ *   - post-actions/view.js — vanilla JS view script (named handle)
+ *   - share-post/view.js   — vanilla JS view script (named handle)
  *
  * CSS files referenced as file: in block.json are copied via CopyPlugin (plain CSS,
  * no PostCSS transforms needed) so they land at build/blocks/<name>/<file>.css.
@@ -47,11 +48,10 @@ module.exports = {
 
 		return {
 			...discovered,
-			'blocks/composer/view':   path.resolve( __dirname, 'src/blocks/composer/view.js' ),
-			'blocks/delete-post/view': path.resolve( __dirname, 'src/blocks/delete-post/view.js' ),
-			'blocks/edit-post/view':  path.resolve( __dirname, 'src/blocks/edit-post/view.js' ),
-			'blocks/share-post/view': path.resolve( __dirname, 'src/blocks/share-post/view.js' ),
-			'gallery-slider/view':    path.resolve( __dirname, 'src/gallery-slider/view.js' ),
+			'blocks/composer/view':     path.resolve( __dirname, 'src/blocks/composer/view.js' ),
+			'blocks/post-actions/view': path.resolve( __dirname, 'src/blocks/post-actions/view.js' ),
+			'blocks/share-post/view':   path.resolve( __dirname, 'src/blocks/share-post/view.js' ),
+			'gallery-slider/view':      path.resolve( __dirname, 'src/gallery-slider/view.js' ),
 		};
 	},
 };
