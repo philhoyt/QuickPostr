@@ -52,13 +52,14 @@
 	min-width: 1ch;
 }
 
-/* ─── Like modal ──────────────────────────────────────────────────────────── */
+/* ─── Like modal (Micromodal) ─────────────────────────────────────────────── */
 
-.qp-like-modal-open {
-	overflow: hidden;
+/* Micromodal toggles aria-hidden to show/hide the modal. */
+.qp-like-modal[aria-hidden="true"] {
+	display: none;
 }
 
-.qp-like-modal {
+.qp-like-modal__backdrop {
 	position: fixed;
 	inset: 0;
 	z-index: 1000;
@@ -66,11 +67,6 @@
 	align-items: center;
 	justify-content: center;
 	padding: 16px;
-}
-
-.qp-like-modal__backdrop {
-	position: absolute;
-	inset: 0;
 	background: rgba( 0, 0, 0, 0.5 );
 }
 

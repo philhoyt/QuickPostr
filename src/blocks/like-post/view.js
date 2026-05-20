@@ -1,15 +1,20 @@
+import MicroModal from 'micromodal';
+
 /**
  * Like Post — front-end view script.
  *
  * Logged-in users: click toggles like/unlike via REST, optimistic UI.
- * Logged-out users: click opens a modal with a login link and a name/email
- * form for anonymous likes. Anonymous liked state is tracked in localStorage.
+ * Logged-out users: click opens a modal (via Micromodal) with a login link
+ * and a name/email form for anonymous likes. Anonymous liked state is tracked
+ * in localStorage.
  */
 ( function () {
 	const config = window.quickpostrLikePost;
 	if ( ! config ) {
 		return;
 	}
+
+	const MODAL_ID = 'qp-like-modal';
 
 	const HEART_SVG =
 		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="qp-like-post__icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
@@ -21,11 +26,10 @@
 
 	function buildModal() {
 		const el = document.createElement( 'div' );
+		el.id = MODAL_ID;
 		el.className = 'qp-like-modal';
-		el.setAttribute( 'role', 'dialog' );
-		el.setAttribute( 'aria-modal', 'true' );
-		el.setAttribute( 'aria-labelledby', 'qp-like-modal-title' );
-		el.hidden = true;
+		el.setAttribute( 'aria-hidden', 'true' );
+
 		const loginSection = config.showLogin
 			? '<div class="qp-like-modal__login-section">' +
 			  '<p class="qp-like-modal__login-desc">Log in to like and unlike posts on future visits.</p>' +
@@ -35,9 +39,9 @@
 			: '';
 
 		el.innerHTML =
-			'<div class="qp-like-modal__backdrop"></div>' +
-			'<div class="qp-like-modal__dialog">' +
-			'<button type="button" class="qp-like-modal__close" aria-label="Close">' +
+			'<div class="qp-like-modal__backdrop" tabindex="-1" data-micromodal-close>' +
+			'<div class="qp-like-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="qp-like-modal-title">' +
+			'<button type="button" class="qp-like-modal__close" aria-label="Close" data-micromodal-close>' +
 			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
 			'</button>' +
 			'<h2 id="qp-like-modal-title" class="qp-like-modal__title">Like this post</h2>' +
@@ -55,16 +59,9 @@
 			' Like this post' +
 			'</button>' +
 			'</form>' +
+			'</div>' +
 			'</div>';
 
-		el.querySelector( '.qp-like-modal__backdrop' ).addEventListener(
-			'click',
-			closeModal
-		);
-		el.querySelector( '.qp-like-modal__close' ).addEventListener(
-			'click',
-			closeModal
-		);
 		el.querySelector( '.qp-like-modal__form' ).addEventListener(
 			'submit',
 			function ( e ) {
@@ -72,12 +69,6 @@
 				submitAnonymousLike();
 			}
 		);
-
-		document.addEventListener( 'keydown', function ( e ) {
-			if ( e.key === 'Escape' && modal && ! modal.hidden ) {
-				closeModal();
-			}
-		} );
 
 		document.body.appendChild( el );
 		return el;
@@ -106,18 +97,12 @@
 		errorEl.hidden = true;
 		errorEl.textContent = '';
 
-		m.hidden = false;
-		document.body.classList.add( 'qp-like-modal-open' );
-		m.querySelector( '#qp-like-name' ).focus();
-	}
-
-	function closeModal() {
-		if ( ! modal ) {
-			return;
-		}
-		modal.hidden = true;
-		document.body.classList.remove( 'qp-like-modal-open' );
-		currentWrapper = null;
+		MicroModal.show( MODAL_ID, {
+			disableScroll: true,
+			onClose() {
+				currentWrapper = null;
+			},
+		} );
 	}
 
 	function submitAnonymousLike() {
@@ -168,7 +153,7 @@
 					// localStorage unavailable — state won't persist across page loads.
 				}
 				applyLikedToAllBlocks( postId, true, data.count );
-				closeModal();
+				MicroModal.close( MODAL_ID );
 			} )
 			.catch( function ( err ) {
 				errorEl.textContent =
