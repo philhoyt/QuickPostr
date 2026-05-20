@@ -68,7 +68,9 @@ class QuickPostr_Rest {
 				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
 					'id' => array(
-						'validate_callback' => 'is_numeric',
+						'validate_callback' => function ( $value ) {
+							return is_numeric( $value );
+						},
 						'sanitize_callback' => 'absint',
 					),
 				),
