@@ -31,6 +31,9 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 			? [ config.settings.defaultCategory ]
 			: []
 	);
+	const [ loadingExisting, setLoadingExisting ] = useState(
+		!! ( editPost?.featured_media )
+	);
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
@@ -65,8 +68,11 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 		setSelectedCategories( defaultCats );
 		if ( editPost.featured_media ) {
 			getMediaUrl( editPost.featured_media )
-				.then( ( url ) => setExistingVideoUrl( url ) )
-				.catch( () => {} );
+				.then( ( url ) => {
+					setExistingVideoUrl( url );
+					setLoadingExisting( false );
+				} )
+				.catch( () => setLoadingExisting( false ) );
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -130,6 +136,15 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 
 	async function handleSubmit() {
 		if ( ! editPost && ! file ) {
+			return;
+		}
+		if ( editPost && ! file && ! existingVideoUrl ) {
+			setError(
+				__(
+					'Please select a video to replace the current one, or cancel editing.',
+					'quickpostr'
+				)
+			);
 			return;
 		}
 		if ( submitting ) {
@@ -235,7 +250,7 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 			{ ! file &&
 				! preview &&
 				! existingVideoUrl &&
-				! ( editPost && editPost.featured_media ) && (
+				! loadingExisting && (
 					<div
 						className={ dropzoneClass }
 						onDrop={ handleDrop }
@@ -277,6 +292,12 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 					</div>
 				) }
 
+			{ loadingExisting && (
+				<p className="qp-composer-loading">
+					{ __( 'Loading…', 'quickpostr' ) }
+				</p>
+			) }
+
 			{ ( file || preview || existingVideoUrl ) && (
 				<div className="qp-video-preview">
 					{ /* eslint-disable-next-line jsx-a11y/media-has-caption -- caption is optional user content, not a required accessibility feature for the composer preview */ }
@@ -297,7 +318,7 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( file || editPost ) && (
+			{ ( file || existingVideoUrl ) && (
 				<>
 					<textarea
 						className="qp-video-caption"
