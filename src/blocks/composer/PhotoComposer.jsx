@@ -8,7 +8,9 @@ const config = window.quickpostrConfig ?? {};
 const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
 
 /**
- * Build serialized gallery block content wrapping inner core/image blocks.
+ * Build serialized gallery block content as a core/gallery block with the
+ * QuickPostr Slider block style. The output matches core/gallery save() for
+ * WP 6.7+ (nested-images format) so the block editor validates cleanly.
  * @param {Array<{id: number, source_url: string}>} mediaItems
  * @param {string} captionText
  * @returns {string}
@@ -17,16 +19,18 @@ function buildGalleryContent( mediaItems, captionText ) {
 	const innerBlocks = mediaItems
 		.map(
 			( m ) =>
-				`<!-- wp:image {"id":${ m.id }} -->` +
-				`<figure class="wp-block-image"><img src="${ m.source_url }" alt="" class="wp-image-${ m.id }"/></figure>` +
+				`<!-- wp:image {"id":${ m.id },"sizeSlug":"large","linkDestination":"none"} -->\n` +
+				`<figure class="wp-block-image size-large"><img src="${ m.source_url }" alt="" class="wp-image-${ m.id }"/></figure>\n` +
 				`<!-- /wp:image -->`
 		)
 		.join( '\n' );
 
 	const gallery =
-		`<!-- wp:quickpostr/media-gallery -->\n` +
+		`<!-- wp:gallery {"linkTo":"none","className":"is-style-quickpostr-slider"} -->\n` +
+		`<figure class="wp-block-gallery has-nested-images columns-default is-cropped is-style-quickpostr-slider">` +
 		innerBlocks +
-		`\n<!-- /wp:quickpostr/media-gallery -->`;
+		`</figure>\n` +
+		`<!-- /wp:gallery -->`;
 
 	if ( captionText.trim() ) {
 		return (
