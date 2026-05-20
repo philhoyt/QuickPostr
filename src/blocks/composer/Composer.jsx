@@ -33,12 +33,8 @@ export default function Composer() {
 			}
 			setEditPost( post );
 			let newMode = 'status';
-			if ( post.format === 'image' || post.format === 'gallery' ) {
+			if ( post.format === 'image' ) {
 				newMode = 'photo';
-			} else if ( post.format === 'video' ) {
-				newMode = 'video';
-			} else if ( post.format === 'link' ) {
-				newMode = 'link';
 			}
 			setMode( newMode );
 		}
@@ -64,12 +60,8 @@ export default function Composer() {
 			.then( ( post ) => {
 				setEditPost( post );
 				let editMode = 'status';
-				if ( post.format === 'image' || post.format === 'gallery' ) {
+				if ( post.format === 'image' ) {
 					editMode = 'photo';
-				} else if ( post.format === 'video' ) {
-					editMode = 'video';
-				} else if ( post.format === 'link' ) {
-					editMode = 'link';
 				}
 				setMode( editMode );
 			} )
@@ -106,6 +98,47 @@ export default function Composer() {
 		return (
 			<div className="qp-composer">
 				<p className="qp-composer__loading">{ __( 'Loading…', 'quickpostr' ) }</p>
+			</div>
+		);
+	}
+
+	// Video, gallery, and link posts use complex block content that can't be
+	// safely round-tripped through the front-end composer. Redirect to wp-admin.
+	const editableFormats = [ 'image', 'standard', '' ];
+	if ( editPost && ! editableFormats.includes( editPost.format ) ) {
+		const adminEditUrl = `/wp-admin/post.php?post=${ editPost.id }&action=edit`;
+		return (
+			<div className="qp-composer">
+				<header className="qp-composer__header">
+					<div className="qp-composer__identity">
+						<div className="qp-composer__avatar" aria-hidden="true">
+							{ avatarUrl ? (
+								<img src={ avatarUrl } alt="" width="32" height="32" />
+							) : (
+								<span>{ initials }</span>
+							) }
+						</div>
+						<span className="qp-composer__user-name">{ user.name }</span>
+					</div>
+					<button
+						type="button"
+						className="qp-composer__cancel-edit"
+						onClick={ handleCancelEdit }
+					>
+						&#x2715; { __( 'Cancel edit', 'quickpostr' ) }
+					</button>
+				</header>
+				<div className="qp-composer__admin-redirect">
+					<p className="qp-composer__admin-redirect-msg">
+						{ __( 'This post type is best edited in the WordPress editor.', 'quickpostr' ) }
+					</p>
+					<a
+						href={ adminEditUrl }
+						className="qp-composer-submit qp-composer-submit--link"
+					>
+						{ __( 'Edit in WordPress', 'quickpostr' ) }
+					</a>
+				</div>
 			</div>
 		);
 	}
@@ -194,10 +227,7 @@ export default function Composer() {
 					/>
 				) }
 				{ mode === 'video' && (
-					<VideoComposer
-						onSuccess={ handleSuccess }
-						editPost={ editPost ?? undefined }
-					/>
+					<VideoComposer onSuccess={ handleSuccess } />
 				) }
 				{ mode === 'link' && (
 					<LinkComposer
