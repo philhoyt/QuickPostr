@@ -246,21 +246,19 @@ $qp_post_url = esc_url( get_permalink( $quickpostr_post_id ) );
 
 ### [TST-02] All 4 dynamic blocks have no E2E coverage
 
-**Recommendation:** All four blocks use `render.php` and have auth-gated output. Key flows worth automating: composer block renders for `author` role, shows nothing for logged-out visitor; delete-post block renders only for the post's author; share-post renders the share button on public posts. These would catch auth-gate regressions on WordPress upgrades.
+**Recommendation:** All four blocks use `render.php` and have auth-gated output. Key flows worth automating: composer block renders for `author` role, shows nothing for logged-out visitor; post-actions block renders only for the post's author; share-post renders the share button on public posts. These would catch auth-gate regressions on WordPress upgrades.
 
 ---
 
 ### [TST-03] Security-sensitive render.php auth gates are untested
 
-**Recommendation:** `composer/render.php`, `delete-post/render.php`, and `edit-post/render.php` all check `is_user_logged_in()`, `current_user_can()`, and the `allowed_roles` setting before rendering. These gates are never exercised by automated tests. A simple PHPUnit integration test using `wp_set_current_user()` to simulate different roles would verify these paths don't regress.
+**Recommendation:** `composer/render.php`, `post-actions/render.php` (merged from delete-post and edit-post), and other render.php files all check `is_user_logged_in()`, `current_user_can()`, and the `allowed_roles` setting before rendering. These gates are never exercised by automated tests. A simple PHPUnit integration test using `wp_set_current_user()` to simulate different roles would verify these paths don't regress.
 
 ---
 
 ## Quick Wins
 
-1. **STD-01 (15 min):** Replace `wp_localize_script` with `wp_add_inline_script` in `delete-post/render.php` and `edit-post/render.php` — two small, well-contained PHP changes with clear before/after pattern from composer's render.php.
-2. **BLK-01/BLK-02 (5 min):** Add `wp_strip_all_tags()` to `$qp_post_title` and `esc_url()` to `$qp_post_url` in `share-post/render.php` — two one-liner changes that make escaping intent explicit.
-3. **STD-04/STD-05 (1–2 hours):** Upgrade `@wordpress/scripts` to v32 + migrate ESLint to flat config — unblocks eslint-plugin upgrade and gets the project onto supported tooling.
+All quick wins resolved as of 2026-05-20.
 
 ---
 
@@ -277,3 +275,15 @@ $qp_post_url = esc_url( get_permalink( $quickpostr_post_id ) );
 - **Version headers:** `readme.txt` `Tested up to: 6.9.4` matches WordPress latest stable. `Stable tag: 0.6.0` consistent across readme.txt, plugin header, and package.json.
 - **Dependency extraction:** View scripts are registered manually with asset-file dependencies to correctly bundle React for the front end.
 - **EXIF stripping:** The `maybe_strip_exif()` handler auto-orients before stripping — preventing rotation bugs from missing EXIF orientation data.
+- **REST nonce passing:** All blocks use `wp_add_inline_script()` (not `wp_localize_script`) for REST nonces — `post-actions/render.php` consolidates what was previously split across `delete-post` and `edit-post`.
+- **i18n:** All user-facing strings in JSX and view scripts are wrapped in `__()` / `sprintf()` from `@wordpress/i18n`.
+- **React imports:** No direct `import React from 'react'` — all JSX files import hooks from `@wordpress/element`.
+- **Tooling currency:** `@wordpress/scripts` v32.2.0, `@wordpress/eslint-plugin` v25.2.0 — both on latest stable.
+
+---
+
+## Revision Log
+
+| Date | Changes |
+|------|---------|
+| 2026-05-20 | Re-checked 10 findings: 7 already marked fixed (all confirmed), 3 still open (TST-01/02/03 — no tests added). Build passes. delete-post and edit-post blocks merged into post-actions; STD-01 fix verified via new consolidated block. Quick Wins section cleared. |
