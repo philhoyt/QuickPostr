@@ -3,7 +3,7 @@
  * Plugin Name:       QuickPostr
  * Plugin URI:        https://wordpress.org/plugins/quickpostr/
  * Description:       A front-end, social-style post composer for WordPress. Place the Composer block anywhere, post like it's social media.
- * Version:           0.9.0
+ * Version:           0.9.1
  * Requires at least: 6.7
  * Requires PHP:      8.1
  * Author:            QuickPostr Contributors
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'QUICKPOSTR_VERSION', '0.9.0' );
+define( 'QUICKPOSTR_VERSION', '0.9.1' );
 define( 'QUICKPOSTR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'QUICKPOSTR_URL', plugin_dir_url( __FILE__ ) );
 
