@@ -96,6 +96,22 @@ class QuickPostr {
 		);
 		wp_set_script_translations( 'quickpostr-share-post-view', 'quickpostr' );
 
+		$like_post_asset_file = QUICKPOSTR_PATH . 'build/blocks/like-post/view.asset.php';
+		$like_post_asset      = file_exists( $like_post_asset_file )
+			? require $like_post_asset_file
+			: array(
+				'dependencies' => array(),
+				'version'      => QUICKPOSTR_VERSION,
+			);
+
+		wp_register_script(
+			'quickpostr-like-post-view',
+			QUICKPOSTR_URL . 'build/blocks/like-post/view.js',
+			$like_post_asset['dependencies'],
+			$like_post_asset['version'],
+			array( 'in_footer' => true )
+		);
+
 		$gallery_slider_asset_file = QUICKPOSTR_PATH . 'build/gallery-slider/view.asset.php';
 		$gallery_slider_asset      = file_exists( $gallery_slider_asset_file )
 			? require $gallery_slider_asset_file
@@ -120,6 +136,7 @@ class QuickPostr {
 		);
 
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
+		register_block_type( QUICKPOSTR_PATH . 'build/blocks/like-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/post-actions/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/share-post/' );
 
