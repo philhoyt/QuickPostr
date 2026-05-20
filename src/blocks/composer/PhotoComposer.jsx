@@ -26,8 +26,8 @@ function buildGalleryContent( mediaItems, captionText ) {
 		.join( '\n' );
 
 	const gallery =
-		`<!-- wp:gallery {"linkTo":"none","className":"is-style-quickpostr-slider"} -->\n` +
-		`<figure class="wp-block-gallery has-nested-images columns-default is-cropped is-style-quickpostr-slider">` +
+		`<!-- wp:gallery {"linkTo":"none","imageCrop":false,"className":"is-style-quickpostr-slider"} -->\n` +
+		`<figure class="wp-block-gallery has-nested-images columns-default is-style-quickpostr-slider">` +
 		innerBlocks +
 		`</figure>\n` +
 		`<!-- /wp:gallery -->`;

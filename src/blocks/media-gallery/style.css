@@ -186,12 +186,9 @@
 	scroll-snap-align: start;
 }
 
-/* Higher specificity than core/gallery .is-cropped so object-fit wins */
-.wp-block-gallery.has-nested-images.is-style-quickpostr-slider > .wp-block-image img {
+.wp-block-gallery.is-style-quickpostr-slider > .wp-block-image img {
 	width: 100%;
 	height: auto;
-	max-height: 70vh;
-	object-fit: contain;
 	display: block;
 	pointer-events: none;
 }
