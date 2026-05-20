@@ -29,6 +29,7 @@ class QuickPostr {
 		add_action( 'init', array( $this, 'register_block' ) );
 		add_action( 'init', array( $this, 'register_block_patterns' ) );
 		add_filter( 'block_categories_all', array( $this, 'register_block_category' ), 10, 1 );
+		add_filter( 'render_block_core/gallery', array( $this, 'maybe_enqueue_slider_script' ), 10, 2 );
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
@@ -111,6 +112,22 @@ class QuickPostr {
 		);
 		wp_set_script_translations( 'quickpostr-share-post-view', 'quickpostr' );
 
+		$gallery_view_asset_file = QUICKPOSTR_PATH . 'build/blocks/media-gallery/view.asset.php';
+		$gallery_view_asset      = file_exists( $gallery_view_asset_file )
+			? require $gallery_view_asset_file
+			: array(
+				'dependencies' => array(),
+				'version'      => QUICKPOSTR_VERSION,
+			);
+
+		wp_register_script(
+			'quickpostr-media-gallery-view',
+			QUICKPOSTR_URL . 'build/blocks/media-gallery/view.js',
+			$gallery_view_asset['dependencies'],
+			$gallery_view_asset['version'],
+			array( 'in_footer' => true )
+		);
+
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/composer/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/delete-post/' );
 		register_block_type( QUICKPOSTR_PATH . 'build/blocks/edit-post/' );
@@ -124,6 +141,24 @@ class QuickPostr {
 				'label' => __( 'QuickPostr Slider', 'quickpostr' ),
 			)
 		);
+	}
+
+	/**
+	 * Enqueue the media-gallery view script when a core/gallery block with the
+	 * QuickPostr Slider style is rendered. The viewScript in block.json only
+	 * fires for quickpostr/media-gallery blocks, so new posts (which use
+	 * core/gallery) would never load the slider JS without this filter.
+	 *
+	 * @param string $block_content Rendered block HTML — returned unchanged.
+	 * @param array  $block         Block data including attrs.
+	 * @return string
+	 */
+	public function maybe_enqueue_slider_script( string $block_content, array $block ): string {
+		$class_name = $block['attrs']['className'] ?? '';
+		if ( str_contains( $class_name, 'is-style-quickpostr-slider' ) ) {
+			wp_enqueue_script( 'quickpostr-media-gallery-view' );
+		}
+		return $block_content;
 	}
 
 	/**
