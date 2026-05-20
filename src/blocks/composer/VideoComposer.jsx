@@ -23,6 +23,7 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 	const [ file, setFile ] = useState( null );
 	const [ preview, setPreview ] = useState( null );
 	const [ existingVideoUrl, setExistingVideoUrl ] = useState( null );
+	const [ libraryMediaItem, setLibraryMediaItem ] = useState( null );
 	const [ caption, setCaption ] = useState( '' );
 	const [ dragging, setDragging ] = useState( false );
 	const [ selectedTags, setSelectedTags ] = useState( [] );
@@ -122,6 +123,40 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 		setDragging( false );
 	}
 
+	function openMediaLibrary() {
+		const frame = window.wp?.media( {
+			title: __( 'Select Video', 'quickpostr' ),
+			button: { text: __( 'Use this video', 'quickpostr' ) },
+			multiple: false,
+			library: { type: 'video' },
+		} );
+
+		if ( ! frame ) {
+			return;
+		}
+
+		frame.on( 'select', () => {
+			const attachment = frame
+				.state()
+				.get( 'selection' )
+				.first()
+				.toJSON();
+			setError( null );
+			setFile( null );
+			if ( preview ) {
+				URL.revokeObjectURL( preview );
+			}
+			setPreview( null );
+			setExistingVideoUrl( null );
+			setLibraryMediaItem( { id: attachment.id, source_url: attachment.url } );
+			if ( fileInputRef.current ) {
+				fileInputRef.current.value = '';
+			}
+		} );
+
+		frame.open();
+	}
+
 	function clearFile() {
 		if ( preview ) {
 			URL.revokeObjectURL( preview );
@@ -129,16 +164,17 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 		setFile( null );
 		setPreview( null );
 		setExistingVideoUrl( null );
+		setLibraryMediaItem( null );
 		if ( fileInputRef.current ) {
 			fileInputRef.current.value = '';
 		}
 	}
 
 	async function handleSubmit() {
-		if ( ! editPost && ! file ) {
+		if ( ! editPost && ! file && ! libraryMediaItem ) {
 			return;
 		}
-		if ( editPost && ! file && ! existingVideoUrl ) {
+		if ( editPost && ! file && ! libraryMediaItem && ! existingVideoUrl ) {
 			setError(
 				__(
 					'Please select a video to replace the current one, or cancel editing.',
@@ -157,22 +193,30 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 		try {
 			let wpPost;
 
-			if ( editPost && ! file ) {
-				// Edit mode, no new file — rebuild content from existing video + updated caption.
-				const existingContent = existingVideoUrl
-					? buildVideoContent( editPost.featured_media, existingVideoUrl, caption )
-					: caption;
+			if ( editPost && ! file && ! libraryMediaItem ) {
+				// Edit mode, no new media — rebuild content from existing video + updated caption.
 				wpPost = await updatePost( editPost.id, {
-					content: existingContent,
+					content: buildVideoContent(
+						editPost.featured_media,
+						existingVideoUrl,
+						caption
+					),
 					status: defaultStatus,
 					tags: selectedTags,
 					categories: selectedCategories,
 				} );
 				onSuccess?.( wpPost, '' );
 			} else {
-				const media = await uploadMedia( file );
-				const mediaId = media.id;
-				const mediaUrl = media.source_url;
+				let mediaId, mediaUrl;
+
+				if ( libraryMediaItem ) {
+					mediaId = libraryMediaItem.id;
+					mediaUrl = libraryMediaItem.source_url;
+				} else {
+					const media = await uploadMedia( file );
+					mediaId = media.id;
+					mediaUrl = media.source_url;
+				}
 
 				if ( editPost ) {
 					wpPost = await updatePost( editPost.id, {
@@ -204,6 +248,7 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 			}
 			setFile( null );
 			setPreview( null );
+			setLibraryMediaItem( null );
 			if ( fileInputRef.current ) {
 				fileInputRef.current.value = '';
 			}
@@ -250,6 +295,7 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 			{ ! file &&
 				! preview &&
 				! existingVideoUrl &&
+				! libraryMediaItem &&
 				! loadingExisting && (
 					<div
 						className={ dropzoneClass }
@@ -275,10 +321,25 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 							<polyline points="22 8 17 12 22 16 22 8" />
 						</svg>
 						<span className="qp-video-dropzone__label">
-							{ __( 'Drop a video here, or', 'quickpostr' ) }{ ' ' }
+							{ __( 'Drop a video here,', 'quickpostr' ) }{ ' ' }
 							<span className="qp-video-dropzone__browse">
 								{ __( 'browse', 'quickpostr' ) }
 							</span>
+							{ window.wp?.media && (
+								<>
+									{ __( ', or', 'quickpostr' ) }{ ' ' }
+									<button
+										type="button"
+										className="qp-video-dropzone__library"
+										onClick={ ( e ) => {
+											e.stopPropagation();
+											openMediaLibrary();
+										} }
+									>
+										{ __( 'choose from library', 'quickpostr' ) }
+									</button>
+								</>
+							) }
 						</span>
 						<input
 							ref={ fileInputRef }
@@ -298,11 +359,15 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 				</p>
 			) }
 
-			{ ( file || preview || existingVideoUrl ) && (
+			{ ( file || preview || existingVideoUrl || libraryMediaItem ) && (
 				<div className="qp-video-preview">
 					{ /* eslint-disable-next-line jsx-a11y/media-has-caption -- caption is optional user content, not a required accessibility feature for the composer preview */ }
 					<video
-						src={ preview ?? existingVideoUrl }
+						src={
+							preview ??
+							libraryMediaItem?.source_url ??
+							existingVideoUrl
+						}
 						className="qp-video-preview__video"
 						controls
 					/>
@@ -318,7 +383,10 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( file || existingVideoUrl || ( editPost && ! loadingExisting ) ) && (
+			{ ( file ||
+				existingVideoUrl ||
+				libraryMediaItem ||
+				( editPost && ! loadingExisting ) ) && (
 				<>
 					<textarea
 						className="qp-video-caption"
@@ -349,7 +417,10 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 				<button
 					className="qp-composer-submit"
 					onClick={ handleSubmit }
-					disabled={ ( ! editPost && ! file ) || submitting }
+					disabled={
+						( ! editPost && ! file && ! libraryMediaItem ) ||
+						submitting
+					}
 					aria-label={
 						submitting
 							? __( 'Publishing…', 'quickpostr' )
