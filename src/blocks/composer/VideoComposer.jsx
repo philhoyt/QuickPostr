@@ -318,7 +318,7 @@ export default function VideoComposer( { onSuccess, editPost } ) {
 				</div>
 			) }
 
-			{ ( file || existingVideoUrl ) && (
+			{ ( file || existingVideoUrl || ( editPost && ! loadingExisting ) ) && (
 				<>
 					<textarea
 						className="qp-video-caption"
