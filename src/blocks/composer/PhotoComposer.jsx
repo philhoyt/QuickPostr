@@ -42,6 +42,40 @@ function buildGalleryContent( mediaItems, captionText ) {
 }
 
 /**
+ * Extract { id, source_url } pairs from a serialised gallery block string.
+ * @param {string} content
+ * @returns {Array<{id: number, source_url: string}>}
+ */
+function parseGalleryImages( content ) {
+	const images = [];
+	const re =
+		/<!-- wp:image ({[^}]+}) -->[\s\S]*?<img[^>]+src="([^"]+)"[^>]*\/?>/g;
+	let m;
+	while ( ( m = re.exec( content ) ) !== null ) {
+		try {
+			const attrs = JSON.parse( m[ 1 ] );
+			if ( attrs.id ) {
+				images.push( { id: attrs.id, source_url: m[ 2 ] } );
+			}
+		} catch ( e ) {}
+	}
+	return images;
+}
+
+/**
+ * Extract the plain-text caption from a serialised gallery block string.
+ * The caption is stored as a trailing wp:paragraph block.
+ * @param {string} content
+ * @returns {string}
+ */
+function parseGalleryCaption( content ) {
+	const match = content.match(
+		/<!-- wp:paragraph --><p>([\s\S]*?)<\/p><!-- \/wp:paragraph -->/
+	);
+	return match ? match[ 1 ] : '';
+}
+
+/**
  * Validate a file: must be image/*, under MAX_BYTES.
  * Returns an error string or null.
  * @param {File} f
@@ -110,12 +144,11 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		};
 	}, [ previews ] );
 
-	// Pre-fill caption, terms, and load existing photo from editPost.
+	// Pre-fill caption, terms, and load existing photo/gallery from editPost.
 	useEffect( () => {
 		if ( ! editPost ) {
 			return;
 		}
-		setCaption( editPost.content?.raw ?? '' );
 		setSelectedTags( editPost.tags ?? [] );
 		let defaultCats;
 		if ( editPost.categories?.length ) {
@@ -126,13 +159,26 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 			defaultCats = [];
 		}
 		setSelectedCategories( defaultCats );
-		if ( editPost.featured_media ) {
-			getMediaUrl( editPost.featured_media )
-				.then( ( url ) => {
-					setExistingPhotoUrl( url );
-					setLoadingExisting( false );
-				} )
-				.catch( () => setLoadingExisting( false ) );
+
+		if ( editPost.format === 'gallery' ) {
+			// Gallery: parse image items and caption from block content.
+			const raw = editPost.content?.raw ?? '';
+			const galleryImages = parseGalleryImages( raw );
+			if ( galleryImages.length ) {
+				setLibraryMediaItems( galleryImages );
+				setPreviews( galleryImages.map( ( g ) => g.source_url ) );
+			}
+			setCaption( parseGalleryCaption( raw ) );
+		} else {
+			setCaption( editPost.content?.raw ?? '' );
+			if ( editPost.featured_media ) {
+				getMediaUrl( editPost.featured_media )
+					.then( ( url ) => {
+						setExistingPhotoUrl( url );
+						setLoadingExisting( false );
+					} )
+					.catch( () => setLoadingExisting( false ) );
+			}
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -236,7 +282,21 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 		try {
 			let wpPost;
 
-			if ( editPost && files.length === 0 && libraryMediaItems.length === 0 ) {
+			if (
+				editPost &&
+				editPost.format === 'gallery' &&
+				files.length === 0 &&
+				libraryMediaItems.length === 0
+			) {
+				setError(
+					__(
+						'Please add at least two photos to update the gallery, or cancel editing.',
+						'quickpostr'
+					)
+				);
+				setSubmitting( false );
+				return;
+			} else if ( editPost && files.length === 0 && libraryMediaItems.length === 0 ) {
 				// Edit mode: update caption/tags only, keep existing featured media.
 				wpPost = await updatePost( editPost.id, {
 					content: caption,
@@ -246,31 +306,45 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				} );
 				onSuccess?.( wpPost, '' );
 			} else if ( files.length >= 2 ) {
-				// Gallery: upload all files in parallel, create a gallery post.
+				// Gallery: upload all files, then create or update post.
 				const mediaItems = await Promise.all(
 					files.map( ( f ) => uploadMedia( f ) )
 				);
-				wpPost = await createPost( {
+				const galleryPayload = {
 					title: generateTitle( 'gallery', '', caption ),
 					content: buildGalleryContent( mediaItems, caption ),
 					status: defaultStatus,
 					format: 'gallery',
 					tags: selectedTags,
 					categories: selectedCategories,
-					meta: { _quickpostr_post: '1' },
-				} );
+				};
+				if ( editPost ) {
+					wpPost = await updatePost( editPost.id, galleryPayload );
+				} else {
+					wpPost = await createPost( {
+						...galleryPayload,
+						meta: { _quickpostr_post: '1' },
+					} );
+				}
 				onSuccess?.( wpPost, mediaItems[ 0 ]?.source_url ?? '' );
 			} else if ( libraryMediaItems.length >= 2 ) {
-				// Gallery from library: media already uploaded, no transfer needed.
-				wpPost = await createPost( {
+				// Gallery from library: media already uploaded, create or update post.
+				const galleryPayload = {
 					title: generateTitle( 'gallery', '', caption ),
 					content: buildGalleryContent( libraryMediaItems, caption ),
 					status: defaultStatus,
 					format: 'gallery',
 					tags: selectedTags,
 					categories: selectedCategories,
-					meta: { _quickpostr_post: '1' },
-				} );
+				};
+				if ( editPost ) {
+					wpPost = await updatePost( editPost.id, galleryPayload );
+				} else {
+					wpPost = await createPost( {
+						...galleryPayload,
+						meta: { _quickpostr_post: '1' },
+					} );
+				}
 				onSuccess?.( wpPost, previews[ 0 ] ?? '' );
 			} else {
 				// Single image: library pick or file upload.

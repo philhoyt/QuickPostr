@@ -187,20 +187,12 @@ export default function Composer() {
 						editPost={ editPost ?? undefined }
 					/>
 				) }
-				{ mode === 'photo' &&
-					( editPost?.format === 'gallery' ? (
-						<p className="qp-composer-notice">
-							{ __(
-								'Gallery posts cannot be edited in the composer.',
-								'quickpostr'
-							) }
-						</p>
-					) : (
-						<PhotoComposer
-							onSuccess={ handleSuccess }
-							editPost={ editPost ?? undefined }
-						/>
-					) ) }
+				{ mode === 'photo' && (
+					<PhotoComposer
+						onSuccess={ handleSuccess }
+						editPost={ editPost ?? undefined }
+					/>
+				) }
 				{ mode === 'video' && (
 					<VideoComposer
 						onSuccess={ handleSuccess }
