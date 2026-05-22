@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.10.1
+Stable tag: 0.10.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,9 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.10.2 =
+* Fix: Portrait videos uploaded from mobile now render with the correct aspect-ratio on the front end.
 
 = 0.10.1 =
 * Fix: Editing a photo post with multiple images now updates the existing post instead of creating a duplicate.
