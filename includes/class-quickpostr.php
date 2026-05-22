@@ -35,6 +35,8 @@ class QuickPostr {
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
 		add_filter( 'wp_handle_upload', array( $this, 'maybe_strip_exif' ), 10, 1 );
+		add_filter( 'wp_update_attachment_metadata', array( $this, 'fix_rotated_video_dimensions' ), 10, 2 );
+		add_filter( 'render_block_core/video', array( $this, 'set_video_aspect_ratio_auto' ), 10, 1 );
 	}
 
 	/**
@@ -422,6 +424,65 @@ class QuickPostr {
 		}
 
 		return $upload;
+	}
+
+	/**
+	 * Correct stored video dimensions when the attachment has rotation metadata.
+	 *
+	 * Phone videos are stored in landscape orientation (e.g. 2336×1080) with a
+	 * Display Matrix that tells players to rotate the frame 90° or 270° before
+	 * displaying. WordPress reads the raw stream dimensions via getID3 and ignores
+	 * the rotation, so the wp:video block renders the wrong aspect-ratio. Swapping
+	 * width and height for 90°/270° rotations fixes the stored metadata so the
+	 * block sets the correct CSS aspect-ratio on the front end.
+	 *
+	 * @param array $metadata      Attachment metadata.
+	 * @param int   $attachment_id Attachment post ID.
+	 * @return array
+	 */
+	public function fix_rotated_video_dimensions( array $metadata, int $attachment_id ): array {
+		$mime_type = get_post_mime_type( $attachment_id );
+		if ( ! $mime_type || ! str_starts_with( $mime_type, 'video/' ) ) {
+			return $metadata;
+		}
+
+		$rotate = isset( $metadata['rotate'] ) ? (int) $metadata['rotate'] : 0;
+
+		// If not already in metadata, ask WordPress to read it from the file.
+		if ( 0 === $rotate ) {
+			$file = get_attached_file( $attachment_id );
+			if ( $file && file_exists( $file ) ) {
+				$video_meta = wp_read_video_metadata( $file );
+				if ( is_array( $video_meta ) && isset( $video_meta['rotate'] ) ) {
+					$rotate = (int) $video_meta['rotate'];
+				}
+			}
+		}
+
+		// Normalise to 0–359 so we handle -90, 270, -270, etc. uniformly.
+		$rotate = ( ( $rotate % 360 ) + 360 ) % 360;
+
+		if ( ( 90 === $rotate || 270 === $rotate ) && isset( $metadata['width'], $metadata['height'] ) ) {
+			[ $metadata['width'], $metadata['height'] ] = [ $metadata['height'], $metadata['width'] ];
+		}
+
+		return $metadata;
+	}
+
+	/**
+	 * Replace the pixel aspect-ratio WordPress inlines on wp:video figures with
+	 * "auto" so the browser derives the ratio from the video's natural dimensions,
+	 * including any rotation matrix embedded in the file.
+	 *
+	 * @param string $block_content Rendered block HTML.
+	 * @return string
+	 */
+	public function set_video_aspect_ratio_auto( string $block_content ): string {
+		return preg_replace(
+			'/(\baspect-ratio\s*:\s*)\d+\s*\/\s*\d+/',
+			'${1}auto',
+			$block_content
+		) ?? $block_content;
 	}
 
 	/**
