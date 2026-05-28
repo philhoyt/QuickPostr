@@ -52,7 +52,116 @@ class QuickPostr_Rest {
 			)
 		);
 
+		register_rest_route(
+			self::NAMESPACE,
+			'/posts',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_post_with_geo' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'title'          => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'content'        => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'status'         => array(
+						'type'    => 'string',
+						'default' => 'publish',
+						'enum'    => array( 'publish', 'draft', 'pending', 'private' ),
+					),
+					'format'         => array(
+						'type'    => 'string',
+						'default' => 'standard',
+					),
+					'tags'           => array(
+						'type'    => 'array',
+						'items'   => array( 'type' => 'integer' ),
+						'default' => array(),
+					),
+					'categories'     => array(
+						'type'    => 'array',
+						'items'   => array( 'type' => 'integer' ),
+						'default' => array(),
+					),
+					'meta'           => array(
+						'type'    => 'object',
+						'default' => array(),
+					),
+					'featured_media' => array(
+						'type'    => 'integer',
+						'default' => 0,
+					),
+					'geo_lat'        => array(
+						'type'              => 'number',
+						'sanitize_callback' => 'floatval',
+					),
+					'geo_lng'        => array(
+						'type'              => 'number',
+						'sanitize_callback' => 'floatval',
+					),
+					'geo_place'      => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'geo_address'    => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
 		$this->register_like_routes();
+	}
+
+	/**
+	 * Create a post via the core WP REST endpoint, then save GeoTagr meta if present.
+	 *
+	 * Proxies standard post fields to /wp/v2/posts so WP core handles all
+	 * validation and hooks (including assign_source_terms). The geo_* params
+	 * are written directly via update_post_meta() after the post is created.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function create_post_with_geo( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$inner = new \WP_REST_Request( 'POST', '/wp/v2/posts' );
+
+		foreach ( array( 'title', 'content', 'status', 'format', 'tags', 'categories', 'meta' ) as $key ) {
+			$value = $request->get_param( $key );
+			if ( null !== $value ) {
+				$inner->set_param( $key, $value );
+			}
+		}
+
+		$featured_media = (int) $request->get_param( 'featured_media' );
+		if ( $featured_media ) {
+			$inner->set_param( 'featured_media', $featured_media );
+		}
+
+		$response = rest_do_request( $inner );
+		$data     = $response->get_data();
+		$post_id  = is_array( $data ) ? ( $data['id'] ?? 0 ) : 0;
+
+		if ( $post_id && function_exists( 'geo_tagr_get_post_meta' ) ) {
+			$geo_map = array(
+				'_geo_tagr_lat'     => $request->get_param( 'geo_lat' ),
+				'_geo_tagr_lng'     => $request->get_param( 'geo_lng' ),
+				'_geo_tagr_place'   => $request->get_param( 'geo_place' ),
+				'_geo_tagr_address' => $request->get_param( 'geo_address' ),
+			);
+			foreach ( $geo_map as $meta_key => $meta_value ) {
+				if ( null !== $meta_value && '' !== $meta_value ) {
+					update_post_meta( $post_id, $meta_key, $meta_value );
+				}
+			}
+		}
+
+		return $response;
 	}
 
 	/**

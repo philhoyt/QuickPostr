@@ -57,6 +57,7 @@ $qp_config = array(
 	),
 	'maxUploadSize'   => wp_max_upload_size(),
 	'betterBookmarks' => class_exists( 'Better_Bookmarks' ),
+	'geoTagrActive'   => function_exists( 'geo_tagr_get_post_meta' ),
 );
 
 // Enqueue the WP media modal so PhotoComposer can open the library picker.
