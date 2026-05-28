@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.12.2
+Stable tag: 0.13.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,11 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.13.0 =
+* Add: Geo-tagged posts now retain their location when published from a draft — coordinates and place name are saved correctly on publish.
+* Add: Location chip now supports typing a custom place name directly, without having to pick a search result.
+* Add: Location chip shows an "Add a name…" placeholder when coordinates are attached but no place name has been set.
 
 = 0.12.2 =
 * Fix: Location chip now has a Change button so users can correct a wrong auto-detected address without dismissing and starting over.
