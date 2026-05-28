@@ -67,22 +67,27 @@ function validateImageFile( f ) {
  *
  * Flow: pick/drop one or more images → optional caption → upload → create post.
  * Single image → format:image + featured_media.
- * Multiple images (2+) → format:gallery + quickpostr/media-gallery block content.
+ * Multiple images (2+) → format:gallery + core/gallery block content.
+ *
+ * Each photo is tracked as a unified object:
+ *   { file: File|null, preview: string, mediaId: number|null, sourceUrl: string|null }
  *
  * Props:
  *   onSuccess (wpPost, mediaUrl) => void
  *   editPost  {object|undefined} — when set, the composer is in edit mode
+ *   geoData   {object} — location data from Composer root
  * @param {Object}           root0
  * @param {Function}         root0.onSuccess
  * @param {object|undefined} root0.editPost
+ * @param {object}           root0.geoData
  */
 export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
-	const [ files, setFiles ] = useState( [] );
-	const [ previews, setPreviews ] = useState( [] );
+	// Unified per-photo state: { file, preview, mediaId, sourceUrl }
+	const [ photos, setPhotos ] = useState( [] );
 	const [ existingPhotoUrl, setExistingPhotoUrl ] = useState( null );
-	const [ libraryMediaItems, setLibraryMediaItems ] = useState( [] );
 	const [ caption, setCaption ] = useState( '' );
 	const [ dragging, setDragging ] = useState( false );
+	const [ dragOverIndex, setDragOverIndex ] = useState( null );
 	const [ selectedTags, setSelectedTags ] = useState( [] );
 	const [ selectedCategories, setSelectedCategories ] = useState(
 		config.settings?.defaultCategory
@@ -97,20 +102,21 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 	const [ flash, setFlash ] = useState( false );
 
 	const fileInputRef = useRef( null );
+	const dragIndexRef = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
-	// Revoke blob object URLs when previews change or component unmounts.
+	// Revoke blob object URLs on photos change or unmount.
 	useEffect( () => {
 		return () => {
-			previews.forEach( ( url ) => {
-				if ( url.startsWith( 'blob:' ) ) {
-					URL.revokeObjectURL( url );
+			photos.forEach( ( p ) => {
+				if ( p.preview.startsWith( 'blob:' ) ) {
+					URL.revokeObjectURL( p.preview );
 				}
 			} );
 		};
-	}, [ previews ] );
+	}, [ photos ] );
 
-	// Pre-fill caption, terms, and load existing photo/gallery from editPost.
+	// Pre-fill caption, terms, and load existing photo from editPost.
 	useEffect( () => {
 		if ( ! editPost ) {
 			return;
@@ -153,8 +159,14 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 
 		setError( null );
 		setExistingPhotoUrl( null );
-		setFiles( incoming );
-		setPreviews( incoming.map( ( f ) => URL.createObjectURL( f ) ) );
+		setPhotos(
+			incoming.map( ( f ) => ( {
+				file: f,
+				preview: URL.createObjectURL( f ),
+				mediaId: null,
+				sourceUrl: null,
+			} ) )
+		);
 	}
 
 	function handleInputChange( e ) {
@@ -180,10 +192,8 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 	}
 
 	function clearFiles() {
-		setFiles( [] );
-		setPreviews( [] );
+		setPhotos( [] );
 		setExistingPhotoUrl( null );
-		setLibraryMediaItems( [] );
 		if ( fileInputRef.current ) {
 			fileInputRef.current.value = '';
 		}
@@ -207,24 +217,34 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 				.get( 'selection' )
 				.toJSON();
 			setError( null );
-			setFiles( [] );
 			setExistingPhotoUrl( null );
-			setLibraryMediaItems(
+			setPhotos(
 				attachments.map( ( a ) => ( {
-					id: a.id,
-					source_url: a.url,
+					file: null,
+					preview: a.sizes?.large?.url ?? a.url,
+					mediaId: a.id,
+					sourceUrl: a.url,
 				} ) )
-			);
-			setPreviews(
-				attachments.map( ( a ) => a.sizes?.large?.url ?? a.url )
 			);
 		} );
 
 		frame.open();
 	}
 
+	function movePhoto( fromIndex, toIndex ) {
+		if ( fromIndex === toIndex ) {
+			return;
+		}
+		setPhotos( ( prev ) => {
+			const next = [ ...prev ];
+			const [ item ] = next.splice( fromIndex, 1 );
+			next.splice( toIndex, 0, item );
+			return next;
+		} );
+	}
+
 	async function handleSubmit() {
-		if ( ! editPost && files.length === 0 && libraryMediaItems.length === 0 ) {
+		if ( ! editPost && photos.length === 0 ) {
 			return;
 		}
 		if ( submitting ) {
@@ -236,8 +256,10 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 
 		try {
 			let wpPost;
+			const isGallery = photos.length >= 2;
+			const isFromFiles = photos.length > 0 && photos[ 0 ].file !== null;
 
-			if ( editPost && files.length === 0 && libraryMediaItems.length === 0 ) {
+			if ( editPost && photos.length === 0 ) {
 				// Edit mode: update caption/tags only, keep existing featured media.
 				wpPost = await updatePost( editPost.id, {
 					content: caption,
@@ -246,10 +268,10 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 					categories: selectedCategories,
 				} );
 				onSuccess?.( wpPost, '' );
-			} else if ( files.length >= 2 ) {
+			} else if ( isGallery && isFromFiles ) {
 				// Gallery: upload all files, then create or update post.
 				const mediaItems = await Promise.all(
-					files.map( ( f ) => uploadMedia( f ) )
+					photos.map( ( p ) => uploadMedia( p.file ) )
 				);
 				const galleryPayload = {
 					content: buildGalleryContent( mediaItems, caption ),
@@ -271,10 +293,14 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 						: createPost( baseFields ) );
 				}
 				onSuccess?.( wpPost, mediaItems[ 0 ]?.source_url ?? '' );
-			} else if ( libraryMediaItems.length >= 2 ) {
-				// Gallery from library: media already uploaded, create or update post.
+			} else if ( isGallery && ! isFromFiles ) {
+				// Gallery from library: media already uploaded.
+				const mediaItems = photos.map( ( p ) => ( {
+					id: p.mediaId,
+					source_url: p.sourceUrl,
+				} ) );
 				const galleryPayload = {
-					content: buildGalleryContent( libraryMediaItems, caption ),
+					content: buildGalleryContent( mediaItems, caption ),
 					status: defaultStatus,
 					format: 'gallery',
 					tags: selectedTags,
@@ -292,19 +318,18 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 						? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
 						: createPost( baseFields ) );
 				}
-				onSuccess?.( wpPost, previews[ 0 ] ?? '' );
+				onSuccess?.( wpPost, photos[ 0 ]?.preview ?? '' );
 			} else {
 				// Single image: library pick or file upload.
-				let mediaId;
-				let mediaUrl;
+				let mediaId, mediaUrl;
 
-				if ( libraryMediaItems.length === 1 ) {
-					mediaId = libraryMediaItems[ 0 ].id;
-					mediaUrl = previews[ 0 ] ?? '';
-				} else {
-					const media = await uploadMedia( files[ 0 ] );
+				if ( isFromFiles ) {
+					const media = await uploadMedia( photos[ 0 ].file );
 					mediaId = media.id;
 					mediaUrl = media.source_url;
+				} else {
+					mediaId = photos[ 0 ].mediaId;
+					mediaUrl = photos[ 0 ].sourceUrl;
 				}
 
 				if ( editPost ) {
@@ -335,9 +360,7 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 			}
 
 			// Reset form.
-			setFiles( [] );
-			setPreviews( [] ); // useEffect cleanup revokes blob URLs
-			setLibraryMediaItems( [] );
+			setPhotos( [] ); // useEffect cleanup revokes blob URLs
 			if ( fileInputRef.current ) {
 				fileInputRef.current.value = '';
 			}
@@ -375,17 +398,10 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 		.join( ' ' );
 
 	const showDropzone =
-		files.length === 0 &&
-		libraryMediaItems.length === 0 &&
-		previews.length === 0 &&
-		! existingPhotoUrl &&
-		! loadingExisting;
-
+		photos.length === 0 && ! existingPhotoUrl && ! loadingExisting;
 	const showSinglePreview =
-		previews.length === 1 ||
-		( previews.length === 0 && !! existingPhotoUrl );
-
-	const showStrip = files.length >= 2 || libraryMediaItems.length >= 2;
+		photos.length === 1 || ( photos.length === 0 && !! existingPhotoUrl );
+	const showStrip = photos.length >= 2;
 
 	return (
 		<div className="qp-photo-composer">
@@ -464,7 +480,7 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 			{ showSinglePreview && (
 				<div className="qp-photo-preview">
 					<img
-						src={ previews[ 0 ] ?? existingPhotoUrl }
+						src={ photos[ 0 ]?.preview ?? existingPhotoUrl }
 						alt={ __( 'Preview', 'quickpostr' ) }
 						className="qp-photo-preview__img"
 					/>
@@ -482,13 +498,64 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 
 			{ showStrip && (
 				<div className="qp-photo-strip">
-					{ previews.map( ( src, i ) => (
-						<img
-							key={ i }
-							src={ src }
-							alt=""
-							className="qp-photo-strip__thumb"
-						/>
+					{ photos.map( ( photo, i ) => (
+						<div
+							key={ photo.preview }
+							className={ [
+								'qp-photo-strip__item',
+								dragOverIndex === i
+									? 'qp-photo-strip__item--drag-over'
+									: '',
+							]
+								.filter( Boolean )
+								.join( ' ' ) }
+							draggable={ ! submitting }
+							onDragStart={ () => {
+								dragIndexRef.current = i;
+							} }
+							onDragOver={ ( e ) => {
+								e.preventDefault();
+								setDragOverIndex( i );
+							} }
+							onDrop={ () => {
+								if ( dragIndexRef.current !== null ) {
+									movePhoto( dragIndexRef.current, i );
+								}
+								setDragOverIndex( null );
+							} }
+							onDragEnd={ () => {
+								dragIndexRef.current = null;
+								setDragOverIndex( null );
+							} }
+						>
+							<img
+								src={ photo.preview }
+								alt=""
+								className="qp-photo-strip__thumb"
+							/>
+							{ i > 0 && (
+								<button
+									type="button"
+									className="qp-photo-strip__move qp-photo-strip__move--prev"
+									onClick={ () => movePhoto( i, i - 1 ) }
+									aria-label={ __( 'Move photo left', 'quickpostr' ) }
+									disabled={ submitting }
+								>
+									&#x2039;
+								</button>
+							) }
+							{ i < photos.length - 1 && (
+								<button
+									type="button"
+									className="qp-photo-strip__move qp-photo-strip__move--next"
+									onClick={ () => movePhoto( i, i + 1 ) }
+									aria-label={ __( 'Move photo right', 'quickpostr' ) }
+									disabled={ submitting }
+								>
+									&#x203a;
+								</button>
+							) }
+						</div>
 					) ) }
 					<button
 						type="button"
@@ -502,9 +569,7 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 				</div>
 			) }
 
-			{ ( files.length > 0 ||
-				libraryMediaItems.length > 0 ||
-				( editPost && ! loadingExisting ) ) && (
+			{ ( photos.length > 0 || ( editPost && ! loadingExisting ) ) && (
 				<>
 					<textarea
 						className="qp-photo-caption"
@@ -538,12 +603,7 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 				<button
 					className="qp-composer-submit"
 					onClick={ handleSubmit }
-					disabled={
-						( ! editPost &&
-							files.length === 0 &&
-							libraryMediaItems.length === 0 ) ||
-						submitting
-					}
+					disabled={ ( ! editPost && photos.length === 0 ) || submitting }
 					aria-label={
 						submitting
 							? __( 'Publishing…', 'quickpostr' )
