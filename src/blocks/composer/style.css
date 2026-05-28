@@ -9,6 +9,13 @@
  * leaks into the surrounding theme.
  */
 
+/* ── Box-sizing reset ───────────────────────────────────────────────────── */
+.wp-block-quickpostr-composer *,
+.wp-block-quickpostr-composer *::before,
+.wp-block-quickpostr-composer *::after {
+	box-sizing: border-box;
+}
+
 /* ── Custom property fallbacks ──────────────────────────────────────────── */
 .wp-block-quickpostr-composer {
 	--qp-bg:           var(--wp--preset--color--base,           #fff);
