@@ -204,7 +204,7 @@ export default function Composer() {
 				</div>
 			) }
 
-			{ ! editPost && (
+			{ ! editPost && config.geoTagrActive && (
 				<div className="qp-composer__geo-bar">
 					{ ! geoData.active && (
 						<GeoTagButton
