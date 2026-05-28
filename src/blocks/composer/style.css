@@ -9,6 +9,13 @@
  * leaks into the surrounding theme.
  */
 
+/* ── Box-sizing reset ───────────────────────────────────────────────────── */
+.wp-block-quickpostr-composer *,
+.wp-block-quickpostr-composer *::before,
+.wp-block-quickpostr-composer *::after {
+	box-sizing: border-box;
+}
+
 /* ── Custom property fallbacks ──────────────────────────────────────────── */
 .wp-block-quickpostr-composer {
 	--qp-bg:           var(--wp--preset--color--base,           #fff);
@@ -908,12 +915,198 @@
 	margin-top: 0.75rem;
 }
 
+/* ── Geo toolbar ────────────────────────────────────────────────────────── */
+.wp-block-quickpostr-composer .qp-composer__geo-bar {
+	display: flex;
+	align-items: center;
+	padding: 0.375rem 1rem;
+	border-bottom: 1px solid var(--qp-border);
+}
+
+.wp-block-quickpostr-composer .qp-geo-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.3rem 0.75rem;
+	background: transparent;
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-pill);
+	color: var(--qp-text-muted);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: color var(--qp-transition), border-color var(--qp-transition);
+}
+
+.wp-block-quickpostr-composer .qp-geo-button:hover:not(:disabled) {
+	color: var(--qp-accent);
+	border-color: var(--qp-accent);
+}
+
+.wp-block-quickpostr-composer .qp-geo-button:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.wp-block-quickpostr-composer .qp-geo-button__icon {
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+}
+
+.wp-block-quickpostr-composer .qp-geo-button__spinner {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border: 2px solid var(--qp-border);
+	border-top-color: var(--qp-accent);
+	border-radius: 50%;
+	animation: qp-spin 0.7s linear infinite;
+	flex-shrink: 0;
+}
+
+@keyframes qp-spin {
+
+	to { transform: rotate(360deg); }
+}
+
+/* ── Location chip ──────────────────────────────────────────────────────── */
+.wp-block-quickpostr-composer .qp-location-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.3rem 0.5rem 0.3rem 0.625rem;
+	background: var(--qp-surface);
+	border: 1px solid var(--qp-accent);
+	border-radius: var(--qp-radius-pill);
+	font-size: 0.8125rem;
+	color: var(--qp-text);
+	flex-shrink: 0;
+}
+
+.wp-block-quickpostr-composer .qp-location-chip--manual {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	border-radius: var(--qp-radius-sm);
+	padding: 0.5rem 0.625rem;
+	width: 100%;
+	gap: 0.5rem;
+}
+
+.wp-block-quickpostr-composer .qp-location-chip__icon {
+	width: 13px;
+	height: 13px;
+	flex-shrink: 0;
+	color: var(--qp-accent);
+}
+
+.wp-block-quickpostr-composer .qp-location-chip__place {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 240px;
+}
+
+.wp-block-quickpostr-composer .qp-location-chip__dismiss {
+	background: none;
+	border: none;
+	padding: 0;
+	width: 18px;
+	height: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--qp-text-muted);
+	font-size: 0.75rem;
+	cursor: pointer;
+	flex-shrink: 0;
+	border-radius: 50%;
+	transition: color var(--qp-transition), background var(--qp-transition);
+}
+
+.wp-block-quickpostr-composer .qp-location-chip__dismiss:hover {
+	color: var(--qp-text);
+	background: var(--qp-border);
+}
+
+/* ── Geo search (manual override) ───────────────────────────────────────── */
+.wp-block-quickpostr-composer .qp-geo-error {
+	margin: 0;
+	padding: 0.25rem 0;
+	font-size: 0.8125rem;
+	color: #dc2626;
+}
+
+.wp-block-quickpostr-composer .qp-geo-search {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.wp-block-quickpostr-composer .qp-geo-search__input {
+	flex: 1;
+	padding: 0.3rem 0.625rem;
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-pill);
+	background: var(--qp-bg);
+	color: var(--qp-text);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	outline: none;
+	transition: border-color var(--qp-transition);
+	min-width: 0;
+}
+
+.wp-block-quickpostr-composer .qp-geo-search__input:focus {
+	border-color: var(--qp-accent);
+}
+
+.wp-block-quickpostr-composer .qp-geo-search__input::placeholder {
+	color: var(--qp-text-muted);
+}
+
+.wp-block-quickpostr-composer .qp-geo-search__loading,
+.wp-block-quickpostr-composer .qp-geo-search__no-results {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--qp-text-muted);
+}
+
+.wp-block-quickpostr-composer .qp-geo-search__results {
+	list-style: none;
+	margin: 0;
+	padding: 0.25rem 0;
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-sm);
+	background: var(--qp-bg);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.wp-block-quickpostr-composer .qp-geo-search__result {
+	padding: 0.4rem 0.75rem;
+	font-size: 0.8125rem;
+	cursor: pointer;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wp-block-quickpostr-composer .qp-geo-search__result:hover,
+.wp-block-quickpostr-composer .qp-geo-search__result:focus-visible {
+	background: var(--qp-surface);
+	outline: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
 
 	.wp-block-quickpostr-composer .qp-composer-flash,
 	.wp-block-quickpostr-composer .qp-composer__mode-btn,
 	.wp-block-quickpostr-composer .qp-rich-editor__toolbar-btn,
-	.wp-block-quickpostr-composer .qp-composer-submit {
+	.wp-block-quickpostr-composer .qp-composer-submit,
+	.wp-block-quickpostr-composer .qp-geo-button,
+	.wp-block-quickpostr-composer .qp-geo-button__spinner {
 		transition: none;
 		animation: none;
 	}

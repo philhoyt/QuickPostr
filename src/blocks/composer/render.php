@@ -36,27 +36,33 @@ $qp_avatar_urls  = rest_get_avatar_urls( $quickpostr_user->user_email );
 $qp_actor_handle = '';
 
 $qp_config = array(
-	'restUrl'         => rest_url(),
-	'nonce'           => wp_create_nonce( 'wp_rest' ),
-	'currentUser'     => array(
+	'restUrl'          => rest_url(),
+	'nonce'            => wp_create_nonce( 'wp_rest' ),
+	'currentUser'      => array(
 		'id'          => $quickpostr_user->ID,
 		'name'        => $quickpostr_user->display_name,
 		'avatarUrls'  => $qp_avatar_urls,
 		'actorHandle' => $qp_actor_handle,
 	),
-	'settings'        => array(
+	'settings'         => array(
 		'defaultStatus'   => $qp_settings['default_status'],
 		'defaultCategory' => (int) $qp_settings['default_category'],
 		'showSlugPreview' => (bool) $qp_settings['show_slug_preview'],
 		'frontEndEdit'    => (bool) $qp_settings['front_end_edit'],
 	),
-	'blockAttrs'      => array(
+	'blockAttrs'       => array(
 		'defaultMode'     => $attributes['defaultMode'] ?? 'status',
 		'showSlugPreview' => $attributes['showSlugPreview'] ?? true,
 		'placeholderText' => $attributes['placeholderText'] ?? __( "What's on your mind?", 'quickpostr' ),
 	),
-	'maxUploadSize'   => wp_max_upload_size(),
-	'betterBookmarks' => class_exists( 'Better_Bookmarks' ),
+	'maxUploadSize'    => wp_max_upload_size(),
+	'betterBookmarks'  => class_exists( 'Better_Bookmarks' ),
+	'geoTagrActive'    => function_exists( 'geo_tagr_get_post_meta' ),
+	'geoTagrGeocoding' => ( function_exists( 'geo_tagr_get_post_meta' ) && class_exists( '\\GeoTagr\\Settings' ) ) ? array(
+		'provider' => \GeoTagr\Settings::get( 'geocoding_provider', 'nominatim' ),
+		'proxyUrl' => rest_url( 'geotagr/v1/geocode' ),
+		'nonce'    => wp_create_nonce( 'wp_rest' ),
+	) : null,
 );
 
 // Enqueue the WP media modal so PhotoComposer can open the library picker.

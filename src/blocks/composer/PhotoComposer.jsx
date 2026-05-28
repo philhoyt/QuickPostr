@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { createPost, updatePost, uploadMedia, getMediaUrl } from './api.js';
+import { createPost, createGeoPost, updatePost, uploadMedia, getMediaUrl } from './api.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 
@@ -76,7 +76,7 @@ function validateImageFile( f ) {
  * @param {Function}         root0.onSuccess
  * @param {object|undefined} root0.editPost
  */
-export default function PhotoComposer( { onSuccess, editPost } ) {
+export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 	const [ files, setFiles ] = useState( [] );
 	const [ previews, setPreviews ] = useState( [] );
 	const [ existingPhotoUrl, setExistingPhotoUrl ] = useState( null );
@@ -261,11 +261,14 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				if ( editPost ) {
 					wpPost = await updatePost( editPost.id, galleryPayload );
 				} else {
-					wpPost = await createPost( {
+					const baseFields = {
 						title: generateTitle( 'gallery', '', caption ),
 						...galleryPayload,
 						meta: { _quickpostr_post: '1' },
-					} );
+					};
+					wpPost = await ( geoData?.active && geoData?.lat !== null
+						? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
+						: createPost( baseFields ) );
 				}
 				onSuccess?.( wpPost, mediaItems[ 0 ]?.source_url ?? '' );
 			} else if ( libraryMediaItems.length >= 2 ) {
@@ -280,11 +283,14 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 				if ( editPost ) {
 					wpPost = await updatePost( editPost.id, galleryPayload );
 				} else {
-					wpPost = await createPost( {
+					const baseFields = {
 						title: generateTitle( 'gallery', '', caption ),
 						...galleryPayload,
 						meta: { _quickpostr_post: '1' },
-					} );
+					};
+					wpPost = await ( geoData?.active && geoData?.lat !== null
+						? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
+						: createPost( baseFields ) );
 				}
 				onSuccess?.( wpPost, previews[ 0 ] ?? '' );
 			} else {
@@ -310,7 +316,7 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 						categories: selectedCategories,
 					} );
 				} else {
-					wpPost = await createPost( {
+					const baseFields = {
 						title: generateTitle( 'photo', '', caption ),
 						content: caption,
 						status: defaultStatus,
@@ -319,7 +325,10 @@ export default function PhotoComposer( { onSuccess, editPost } ) {
 						tags: selectedTags,
 						categories: selectedCategories,
 						meta: { _quickpostr_post: '1' },
-					} );
+					};
+					wpPost = await ( geoData?.active && geoData?.lat !== null
+						? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
+						: createPost( baseFields ) );
 				}
 
 				onSuccess?.( wpPost, mediaUrl );

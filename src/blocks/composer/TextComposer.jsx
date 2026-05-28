@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
-import { createPost, updatePost, getDraft, discardDraft } from './api.js';
+import { createPost, createGeoPost, updatePost, getDraft, discardDraft } from './api.js';
 import SlugPreview from './SlugPreview.jsx';
 import TagInput from './TagInput.jsx';
 
@@ -143,7 +143,7 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  * @param {Function}         root0.onSuccess
  * @param {object|undefined} root0.editPost
  */
-export default function TextComposer( { onSuccess, editPost } ) {
+export default function TextComposer( { onSuccess, editPost, geoData } ) {
 	const editorRef = useRef( null );
 	const draftTimer = useRef( null );
 	const wasEditingRef = useRef( false );
@@ -323,7 +323,7 @@ export default function TextComposer( { onSuccess, editPost } ) {
 				} );
 			} else {
 				// No draft: create a new post.
-				wpPost = await createPost( {
+				const postFields = {
 					title: '',
 					content: html,
 					status: defaultStatus,
@@ -331,7 +331,18 @@ export default function TextComposer( { onSuccess, editPost } ) {
 					tags: selectedTags,
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
-				} );
+				};
+				if ( geoData?.active && geoData?.lat !== null ) {
+					wpPost = await createGeoPost( {
+						...postFields,
+						geo_lat: geoData.lat,
+						geo_lng: geoData.lng,
+						geo_place: geoData.place,
+						geo_address: geoData.address,
+					} );
+				} else {
+					wpPost = await createPost( postFields );
+				}
 			}
 
 			onSuccess?.( wpPost );
@@ -365,6 +376,7 @@ export default function TextComposer( { onSuccess, editPost } ) {
 		onSuccess,
 		editPost,
 		draftId,
+		geoData,
 	] );
 
 	function handleKeyDown( e ) {
