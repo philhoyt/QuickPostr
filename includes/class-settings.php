@@ -341,7 +341,7 @@ class QuickPostr_Settings {
 			<h2><?php esc_html_e( 'Companion Plugins', 'quickpostr' ); ?></h2>
 
 			<?php if ( function_exists( 'geo_tagr_get_post_meta' ) ) : ?>
-			<div class="notice notice-success inline" style="margin:0">
+			<div class="notice notice-success inline" style="margin:0 0 8px">
 				<p>
 					<strong><?php esc_html_e( 'GeoTagr', 'quickpostr' ); ?></strong>
 					&mdash;
@@ -349,7 +349,7 @@ class QuickPostr_Settings {
 				</p>
 			</div>
 			<?php else : ?>
-			<div class="notice notice-info inline" style="margin:0">
+			<div class="notice notice-info inline" style="margin:0 0 8px">
 				<p>
 					<strong><?php esc_html_e( 'GeoTagr', 'quickpostr' ); ?></strong>
 					&mdash;
@@ -358,6 +358,30 @@ class QuickPostr_Settings {
 						/* translators: %s: link to GeoTagr releases page */
 						esc_html__( 'Install and activate %s to let users tag a location on their posts directly from the composer.', 'quickpostr' ),
 						'<a href="https://github.com/philhoyt/geotagr/releases/latest" target="_blank" rel="noopener noreferrer">' . esc_html__( 'GeoTagr', 'quickpostr' ) . '</a>'
+					);
+					?>
+				</p>
+			</div>
+			<?php endif; ?>
+
+			<?php if ( class_exists( 'Better_Bookmarks' ) ) : ?>
+			<div class="notice notice-success inline" style="margin:0">
+				<p>
+					<strong><?php esc_html_e( 'Better Bookmarks', 'quickpostr' ); ?></strong>
+					&mdash;
+					<?php esc_html_e( 'Active. The Link composer will display a rich preview card when users paste a URL.', 'quickpostr' ); ?>
+				</p>
+			</div>
+			<?php else : ?>
+			<div class="notice notice-info inline" style="margin:0">
+				<p>
+					<strong><?php esc_html_e( 'Better Bookmarks', 'quickpostr' ); ?></strong>
+					&mdash;
+					<?php
+					printf(
+						/* translators: %s: link to Better Bookmarks releases page */
+						esc_html__( 'Install and activate %s to display a rich Open Graph preview card when users paste a URL in the Link composer.', 'quickpostr' ),
+						'<a href="https://github.com/philhoyt/BetterBookmarks/releases/latest" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Better Bookmarks', 'quickpostr' ) . '</a>'
 					);
 					?>
 				</p>
