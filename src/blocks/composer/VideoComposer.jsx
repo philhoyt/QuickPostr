@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { createPost, uploadMedia } from './api.js';
+import { createPost, createGeoPost, uploadMedia } from './api.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 
@@ -17,7 +17,7 @@ const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
  * @param {Object}   root0
  * @param {Function} root0.onSuccess
  */
-export default function VideoComposer( { onSuccess } ) {
+export default function VideoComposer( { onSuccess, geoData } ) {
 	const [ file, setFile ] = useState( null );
 	const [ preview, setPreview ] = useState( null );
 	const [ libraryMediaItem, setLibraryMediaItem ] = useState( null );
@@ -159,7 +159,7 @@ export default function VideoComposer( { onSuccess } ) {
 				mediaUrl = media.source_url;
 			}
 
-			const wpPost = await createPost( {
+			const baseFields = {
 				title: generateTitle( 'photo', '', caption ),
 				content: buildVideoContent( mediaId, mediaUrl, caption ),
 				status: defaultStatus,
@@ -168,7 +168,10 @@ export default function VideoComposer( { onSuccess } ) {
 				tags: selectedTags,
 				categories: selectedCategories,
 				meta: { _quickpostr_post: '1' },
-			} );
+			};
+			const wpPost = await ( geoData?.active && geoData?.lat !== null
+				? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
+				: createPost( baseFields ) );
 
 			onSuccess?.( wpPost, mediaUrl );
 

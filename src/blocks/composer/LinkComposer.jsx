@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { createPost, updatePost, fetchLinkPreview } from './api.js';
+import { createPost, createGeoPost, updatePost, fetchLinkPreview } from './api.js';
 import TagInput from './TagInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
@@ -69,7 +69,7 @@ function parsePostContent( raw ) {
  * @param {Function}         root0.onSuccess
  * @param {object|undefined} root0.editPost
  */
-export default function LinkComposer( { onSuccess, editPost } ) {
+export default function LinkComposer( { onSuccess, editPost, geoData } ) {
 	const [ url, setUrl ] = useState( '' );
 	const [ preview, setPreview ] = useState( null );
 	const [ fetching, setFetching ] = useState( false );
@@ -170,14 +170,20 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 				categories: selectedCategories,
 			};
 
-			const wpPost = editPost
-				? await updatePost( editPost.id, fields )
-				: await createPost( {
-						...fields,
-						title: '',
-						status: defaultStatus,
-						meta: { _quickpostr_post: '1' },
-				  } );
+			let wpPost;
+			if ( editPost ) {
+				wpPost = await updatePost( editPost.id, fields );
+			} else {
+				const baseFields = {
+					...fields,
+					title: '',
+					status: defaultStatus,
+					meta: { _quickpostr_post: '1' },
+				};
+				wpPost = await ( geoData?.active && geoData?.lat !== null
+					? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
+					: createPost( baseFields ) );
+			}
 
 			onSuccess?.( wpPost );
 
@@ -208,6 +214,7 @@ export default function LinkComposer( { onSuccess, editPost } ) {
 		onSuccess,
 		bbAvailable,
 		editPost,
+		geoData,
 	] );
 
 	const canSubmit = url.trim() && ! submitting;

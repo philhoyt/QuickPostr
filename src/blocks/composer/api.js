@@ -52,6 +52,20 @@ export function createPost( fields ) {
 }
 
 /**
+ * Create a new post with geo metadata.
+ *
+ * Routes through /quickpostr/v1/posts which proxies to /wp/v2/posts and
+ * additionally writes _geo_tagr_* post meta when GeoTagr is active.
+ * Include geo_lat, geo_lng, geo_place, geo_address in fields.
+ *
+ * @param {Object} fields — post fields plus geo_lat, geo_lng, geo_place, geo_address.
+ * @return {Promise<object>} The created post object.
+ */
+export function createGeoPost( fields ) {
+	return request( 'POST', '/quickpostr/v1/posts', fields );
+}
+
+/**
  * Upload a media file.
  *
  * @param {File} file

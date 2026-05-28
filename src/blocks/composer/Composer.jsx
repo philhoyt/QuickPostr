@@ -4,6 +4,8 @@ import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
 import VideoComposer from './VideoComposer.jsx';
 import LinkComposer from './LinkComposer.jsx';
+import GeoTagButton from './components/GeoTagButton.jsx';
+import LocationChip from './components/LocationChip.jsx';
 import { getPost } from './api.js';
 
 const config = window.quickpostrConfig ?? {};
@@ -22,6 +24,14 @@ export default function Composer() {
 	const [ mode, setMode ] = useState( initialMode );
 	const [ editPost, setEditPost ] = useState( null );
 	const [ editLoading, setEditLoading ] = useState( false );
+	const [ geoData, setGeoData ] = useState( {
+		lat: null,
+		lng: null,
+		place: '',
+		address: '',
+		active: false,
+	} );
+	const [ geoError, setGeoError ] = useState( '' );
 
 	const editableFormats = [ 'image', 'standard', '' ];
 
@@ -94,6 +104,26 @@ export default function Composer() {
 		window.history.replaceState( {}, '', url );
 		setEditPost( null );
 		setMode( initialMode );
+	}
+
+	function handleGeoDetected( result ) {
+		setGeoData( { ...result, active: true } );
+		setGeoError( '' );
+	}
+
+	function handleGeoError( message ) {
+		setGeoData( { lat: null, lng: null, place: '', address: '', active: true } );
+		setGeoError( message );
+	}
+
+	function handleGeoLocationSelect( result ) {
+		setGeoData( { ...result, active: true } );
+		setGeoError( '' );
+	}
+
+	function handleGeoDismiss() {
+		setGeoData( { lat: null, lng: null, place: '', address: '', active: false } );
+		setGeoError( '' );
 	}
 
 	if ( editLoading ) {
@@ -174,26 +204,51 @@ export default function Composer() {
 				</div>
 			) }
 
+			{ ! editPost && (
+				<div className="qp-composer__geo-bar">
+					{ ! geoData.active && (
+						<GeoTagButton
+							onGeoDetected={ handleGeoDetected }
+							onGeoError={ handleGeoError }
+						/>
+					) }
+					{ geoData.active && (
+						<LocationChip
+							geoData={ geoData }
+							errorMsg={ geoError }
+							onDismiss={ handleGeoDismiss }
+							onLocationSelect={ handleGeoLocationSelect }
+						/>
+					) }
+				</div>
+			) }
+
 			<div className="qp-composer__body">
 				{ mode === 'status' && (
 					<TextComposer
 						onSuccess={ handleSuccess }
 						editPost={ editPost ?? undefined }
+						geoData={ geoData }
 					/>
 				) }
 				{ mode === 'photo' && (
 					<PhotoComposer
 						onSuccess={ handleSuccess }
 						editPost={ editPost ?? undefined }
+						geoData={ geoData }
 					/>
 				) }
 				{ mode === 'video' && (
-					<VideoComposer onSuccess={ handleSuccess } />
+					<VideoComposer
+						onSuccess={ handleSuccess }
+						geoData={ geoData }
+					/>
 				) }
 				{ mode === 'link' && (
 					<LinkComposer
 						onSuccess={ handleSuccess }
 						editPost={ editPost ?? undefined }
+						geoData={ geoData }
 					/>
 				) }
 			</div>
