@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
-import { createPost, createGeoPost, updatePost, getDraft, discardDraft } from './api.js';
+import { createPost, createGeoPost, updatePost, updateGeoPost, getDraft, discardDraft } from './api.js';
 import SlugPreview from './SlugPreview.jsx';
 import TagInput from './TagInput.jsx';
 
@@ -313,14 +313,25 @@ export default function TextComposer( { onSuccess, editPost, geoData } ) {
 				} );
 			} else if ( draftId ) {
 				// Publish the auto-saved draft.
-				wpPost = await updatePost( draftId, {
+				const draftFields = {
 					title: '',
 					content: html,
 					status: defaultStatus,
 					format: 'status',
 					tags: selectedTags,
 					categories: selectedCategories,
-				} );
+				};
+				if ( geoData?.active && geoData?.lat !== null ) {
+					wpPost = await updateGeoPost( draftId, {
+						...draftFields,
+						geo_lat: geoData.lat,
+						geo_lng: geoData.lng,
+						geo_place: geoData.place,
+						geo_address: geoData.address,
+					} );
+				} else {
+					wpPost = await updatePost( draftId, draftFields );
+				}
 			} else {
 				// No draft: create a new post.
 				const postFields = {

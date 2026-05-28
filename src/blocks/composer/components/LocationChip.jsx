@@ -1,5 +1,5 @@
 import { useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import useNominatimSearch from '../hooks/useNominatimSearch.js';
 
 /**
@@ -32,6 +32,18 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 
 	function handleSelect( result ) {
 		onLocationSelect( result );
+		setQuery( '' );
+		setEditing( false );
+		clearResults();
+	}
+
+	function handleUseTypedName() {
+		onLocationSelect( {
+			lat: geoData.lat,
+			lng: geoData.lng,
+			place: query.trim(),
+			address: geoData.address,
+		} );
 		setQuery( '' );
 		setEditing( false );
 		clearResults();
@@ -79,7 +91,9 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 					<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
 					<circle cx="12" cy="9" r="2.5" />
 				</svg>
-				<span className="qp-location-chip__place">{ geoData.place }</span>
+				<span className={ `qp-location-chip__place${ ! geoData.place ? ' qp-location-chip__place--empty' : '' }` }>
+					{ geoData.place || __( 'Add a name…', 'quickpostr' ) }
+				</span>
 				<button
 					type="button"
 					className="qp-location-chip__edit"
@@ -179,6 +193,19 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 						);
 					} ) }
 				</ul>
+			) }
+			{ editing && ! isManual && query.trim() && (
+				<button
+					type="button"
+					className={ `qp-geo-search__use-name${ results.length > 0 ? ' qp-geo-search__use-name--has-results' : '' }` }
+					onClick={ handleUseTypedName }
+				>
+					{ sprintf(
+						/* translators: %s: typed place name */
+						__( 'Use "%s" as place name', 'quickpostr' ),
+						query.trim()
+					) }
+				</button>
 			) }
 		</div>
 	);
