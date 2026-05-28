@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 6.9.4
 Requires PHP: 8.1
-Stable tag: 0.10.2
+Stable tag: 0.11.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,11 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.11.0 =
+* Add: Location tagging in the composer. When the GeoTagr companion plugin is active, a Location button appears in the composer toolbar. Tap to auto-detect via the browser Geolocation API, or enter an address manually. The four GeoTagr meta keys are saved on the post on submit.
+* Fix: Address search uses GeoTagr's configured geocoding provider (Google, Nominatim, or Mapbox) rather than always calling Nominatim.
+* Fix: Location chip no longer overflows the composer container.
 
 = 0.10.2 =
 * Fix: Portrait videos uploaded from mobile now render with the correct aspect-ratio on the front end.
