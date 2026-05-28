@@ -52,6 +52,60 @@ class QuickPostr_Rest {
 			)
 		);
 
+		$geo_args = array(
+			'title'          => array(
+				'type'    => 'string',
+				'default' => '',
+			),
+			'content'        => array(
+				'type'    => 'string',
+				'default' => '',
+			),
+			'status'         => array(
+				'type'    => 'string',
+				'default' => 'publish',
+				'enum'    => array( 'publish', 'draft', 'pending', 'private' ),
+			),
+			'format'         => array(
+				'type'    => 'string',
+				'default' => 'standard',
+			),
+			'tags'           => array(
+				'type'    => 'array',
+				'items'   => array( 'type' => 'integer' ),
+				'default' => array(),
+			),
+			'categories'     => array(
+				'type'    => 'array',
+				'items'   => array( 'type' => 'integer' ),
+				'default' => array(),
+			),
+			'meta'           => array(
+				'type'    => 'object',
+				'default' => array(),
+			),
+			'featured_media' => array(
+				'type'    => 'integer',
+				'default' => 0,
+			),
+			'geo_lat'        => array(
+				'type'              => 'number',
+				'sanitize_callback' => fn( $v ) => (float) $v,
+			),
+			'geo_lng'        => array(
+				'type'              => 'number',
+				'sanitize_callback' => fn( $v ) => (float) $v,
+			),
+			'geo_place'      => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'geo_address'    => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+
 		register_rest_route(
 			self::NAMESPACE,
 			'/posts',
@@ -59,58 +113,27 @@ class QuickPostr_Rest {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_post_with_geo' ),
 				'permission_callback' => array( $this, 'check_permission' ),
-				'args'                => array(
-					'title'          => array(
-						'type'    => 'string',
-						'default' => '',
-					),
-					'content'        => array(
-						'type'    => 'string',
-						'default' => '',
-					),
-					'status'         => array(
-						'type'    => 'string',
-						'default' => 'publish',
-						'enum'    => array( 'publish', 'draft', 'pending', 'private' ),
-					),
-					'format'         => array(
-						'type'    => 'string',
-						'default' => 'standard',
-					),
-					'tags'           => array(
-						'type'    => 'array',
-						'items'   => array( 'type' => 'integer' ),
-						'default' => array(),
-					),
-					'categories'     => array(
-						'type'    => 'array',
-						'items'   => array( 'type' => 'integer' ),
-						'default' => array(),
-					),
-					'meta'           => array(
-						'type'    => 'object',
-						'default' => array(),
-					),
-					'featured_media' => array(
-						'type'    => 'integer',
-						'default' => 0,
-					),
-					'geo_lat'        => array(
-						'type'              => 'number',
-						'sanitize_callback' => 'floatval',
-					),
-					'geo_lng'        => array(
-						'type'              => 'number',
-						'sanitize_callback' => 'floatval',
-					),
-					'geo_place'      => array(
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-					'geo_address'    => array(
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
+				'args'                => $geo_args,
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/posts/(?P<id>\d+)',
+			array(
+				'methods'             => WP_REST_Server::EDITABLE,
+				'callback'            => array( $this, 'update_post_with_geo' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array_merge(
+					$geo_args,
+					array(
+						'id' => array(
+							'validate_callback' => function ( $value ) {
+								return is_numeric( $value );
+							},
+							'sanitize_callback' => 'absint',
+						),
+					)
 				),
 			)
 		);
@@ -157,6 +180,49 @@ class QuickPostr_Rest {
 			foreach ( $geo_map as $meta_key => $meta_value ) {
 				if ( null !== $meta_value && '' !== $meta_value ) {
 					update_post_meta( $post_id, $meta_key, $meta_value );
+				}
+			}
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Update an existing post via the core WP REST endpoint, then save GeoTagr meta.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function update_post_with_geo( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$post_id = (int) $request->get_param( 'id' );
+		$inner   = new \WP_REST_Request( 'PUT', "/wp/v2/posts/$post_id" );
+
+		foreach ( array( 'title', 'content', 'status', 'format', 'tags', 'categories', 'meta' ) as $key ) {
+			$value = $request->get_param( $key );
+			if ( null !== $value ) {
+				$inner->set_param( $key, $value );
+			}
+		}
+
+		$featured_media = (int) $request->get_param( 'featured_media' );
+		if ( $featured_media ) {
+			$inner->set_param( 'featured_media', $featured_media );
+		}
+
+		$response   = rest_do_request( $inner );
+		$data       = $response->get_data();
+		$updated_id = is_array( $data ) ? ( $data['id'] ?? 0 ) : 0;
+
+		if ( $updated_id && function_exists( 'geo_tagr_get_post_meta' ) ) {
+			$geo_map = array(
+				'_geo_tagr_lat'     => $request->get_param( 'geo_lat' ),
+				'_geo_tagr_lng'     => $request->get_param( 'geo_lng' ),
+				'_geo_tagr_place'   => $request->get_param( 'geo_place' ),
+				'_geo_tagr_address' => $request->get_param( 'geo_address' ),
+			);
+			foreach ( $geo_map as $meta_key => $meta_value ) {
+				if ( null !== $meta_value && '' !== $meta_value ) {
+					update_post_meta( $updated_id, $meta_key, $meta_value );
 				}
 			}
 		}

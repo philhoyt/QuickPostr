@@ -241,6 +241,21 @@ export function updatePost( id, fields ) {
 }
 
 /**
+ * Update an existing post with geo metadata.
+ *
+ * Routes through /quickpostr/v1/posts/{id} which proxies to /wp/v2/posts/{id}
+ * and additionally writes _geo_tagr_* post meta when GeoTagr is active.
+ * Include geo_lat, geo_lng, geo_place, geo_address in fields.
+ *
+ * @param {number} id
+ * @param {Object} fields — post fields plus geo_lat, geo_lng, geo_place, geo_address.
+ * @return {Promise<object>} Updated post object.
+ */
+export function updateGeoPost( id, fields ) {
+	return request( 'PUT', `/quickpostr/v1/posts/${ id }`, fields );
+}
+
+/**
  * Return the current user's latest QuickPostr draft, or null if none.
  *
  * @return {Promise<object|null>} Draft post or null.
