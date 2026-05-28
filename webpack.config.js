@@ -1,6 +1,6 @@
 const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
-const path          = require( 'path' );
-const CopyPlugin    = require( 'copy-webpack-plugin' );
+const path = require( 'path' );
+const CopyPlugin = require( 'copy-webpack-plugin' );
 
 /**
  * Multi-block webpack config.
@@ -19,10 +19,13 @@ const CopyPlugin    = require( 'copy-webpack-plugin' );
  */
 
 // Extend the default CopyPlugin patterns to also copy block CSS files.
-const defaultPlugins   = defaultConfig.plugins ?? [];
-const defaultCopyIndex = defaultPlugins.findIndex( ( p ) => p.constructor?.name === 'CopyPlugin' );
-const defaultPatterns  = defaultCopyIndex >= 0 ? defaultPlugins[ defaultCopyIndex ].patterns : [];
-const extendedPlugins  = [ ...defaultPlugins ];
+const defaultPlugins = defaultConfig.plugins ?? [];
+const defaultCopyIndex = defaultPlugins.findIndex(
+	( p ) => p.constructor?.name === 'CopyPlugin'
+);
+const defaultPatterns =
+	defaultCopyIndex >= 0 ? defaultPlugins[ defaultCopyIndex ].patterns : [];
+const extendedPlugins = [ ...defaultPlugins ];
 
 if ( defaultCopyIndex >= 0 ) {
 	extendedPlugins[ defaultCopyIndex ] = new CopyPlugin( {
@@ -48,11 +51,26 @@ module.exports = {
 
 		return {
 			...discovered,
-			'blocks/composer/view':     path.resolve( __dirname, 'src/blocks/composer/view.js' ),
-			'blocks/like-post/view':    path.resolve( __dirname, 'src/blocks/like-post/view.js' ),
-			'blocks/post-actions/view': path.resolve( __dirname, 'src/blocks/post-actions/view.js' ),
-			'blocks/share-post/view':   path.resolve( __dirname, 'src/blocks/share-post/view.js' ),
-			'gallery-slider/view':      path.resolve( __dirname, 'src/gallery-slider/view.js' ),
+			'blocks/composer/view': path.resolve(
+				__dirname,
+				'src/blocks/composer/view.js'
+			),
+			'blocks/like-post/view': path.resolve(
+				__dirname,
+				'src/blocks/like-post/view.js'
+			),
+			'blocks/post-actions/view': path.resolve(
+				__dirname,
+				'src/blocks/post-actions/view.js'
+			),
+			'blocks/share-post/view': path.resolve(
+				__dirname,
+				'src/blocks/share-post/view.js'
+			),
+			'gallery-slider/view': path.resolve(
+				__dirname,
+				'src/gallery-slider/view.js'
+			),
 		};
 	},
 };
