@@ -17,7 +17,7 @@ import useNominatimSearch from '../hooks/useNominatimSearch.js';
  */
 export default function LocationChip( { geoData, errorMsg, onDismiss, onLocationSelect } ) {
 	const [ query, setQuery ] = useState( '' );
-	const { results, loading, search, clearResults } = useNominatimSearch();
+	const { results, loading, hasSearched, search, clearResults } = useNominatimSearch();
 
 	const isManual = geoData.lat === null;
 
@@ -104,6 +104,11 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 			{ loading && (
 				<p className="qp-geo-search__loading" aria-live="polite">
 					{ __( 'Searching…', 'quickpostr' ) }
+				</p>
+			) }
+			{ ! loading && hasSearched && query.trim() && results.length === 0 && (
+				<p className="qp-geo-search__no-results" aria-live="polite">
+					{ __( 'No results found.', 'quickpostr' ) }
 				</p>
 			) }
 			{ results.length > 0 && (

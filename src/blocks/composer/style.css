@@ -1060,7 +1060,8 @@
 	color: var(--qp-text-muted);
 }
 
-.wp-block-quickpostr-composer .qp-geo-search__loading {
+.wp-block-quickpostr-composer .qp-geo-search__loading,
+.wp-block-quickpostr-composer .qp-geo-search__no-results {
 	margin: 0;
 	font-size: 0.8125rem;
 	color: var(--qp-text-muted);
