@@ -3,21 +3,24 @@ import { __ } from '@wordpress/i18n';
 import useNominatimSearch from '../hooks/useNominatimSearch.js';
 
 /**
- * Attached location chip — shows the resolved place name and a dismiss button.
+ * Attached location chip — shows the resolved place name and action buttons.
  *
- * When geoData.lat is null (manual override mode) it renders an address
- * search input wired to Nominatim autocomplete instead of the place name.
- * Selecting a result calls onLocationSelect({ lat, lng, place, address }).
+ * Three render states:
+ *  1. Chip view  (!isManual && !editing) — place name + Change + ×
+ *  2. Edit mode  (!isManual && editing)  — search pre-filled with current place, Cancel + ×
+ *  3. Manual mode (isManual)             — permission-denied path, search + ×
  *
  * Props:
  *   geoData         { lat, lng, place, address, active }
- *   errorMsg        string — shown above the search input in manual mode
+ *   errorMsg        string — shown in manual mode only
  *   onDismiss       () => void
  *   onLocationSelect ({ lat, lng, place, address }) => void
  */
 export default function LocationChip( { geoData, errorMsg, onDismiss, onLocationSelect } ) {
 	const [ query, setQuery ] = useState( '' );
-	const { results, loading, hasSearched, search, clearResults } = useNominatimSearch();
+	const [ editing, setEditing ] = useState( false );
+	const { results, loading, hasSearched, search, clearResults } =
+		useNominatimSearch();
 
 	const isManual = geoData.lat === null;
 
@@ -30,13 +33,27 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 	function handleSelect( result ) {
 		onLocationSelect( result );
 		setQuery( '' );
+		setEditing( false );
 		clearResults();
 	}
 
 	function handleDismiss() {
 		setQuery( '' );
+		setEditing( false );
 		clearResults();
 		onDismiss();
+	}
+
+	function handleStartEdit() {
+		setQuery( geoData.place );
+		setEditing( true );
+		search( geoData.place );
+	}
+
+	function handleCancelEdit() {
+		setQuery( '' );
+		setEditing( false );
+		clearResults();
 	}
 
 	function handleResultKeyDown( e, result ) {
@@ -46,7 +63,8 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 		}
 	}
 
-	if ( ! isManual ) {
+	// ── State 1: chip view ───────────────────────────────────────────────────
+	if ( ! isManual && ! editing ) {
 		return (
 			<div className="qp-location-chip">
 				<svg
@@ -64,6 +82,14 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 				<span className="qp-location-chip__place">{ geoData.place }</span>
 				<button
 					type="button"
+					className="qp-location-chip__edit"
+					onClick={ handleStartEdit }
+					aria-label={ __( 'Change location', 'quickpostr' ) }
+				>
+					{ __( 'Change', 'quickpostr' ) }
+				</button>
+				<button
+					type="button"
 					className="qp-location-chip__dismiss"
 					onClick={ handleDismiss }
 					aria-label={ __( 'Remove location', 'quickpostr' ) }
@@ -74,9 +100,10 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 		);
 	}
 
+	// ── States 2 & 3: edit mode or manual override ───────────────────────────
 	return (
 		<div className="qp-location-chip qp-location-chip--manual">
-			{ errorMsg && (
+			{ errorMsg && ! editing && (
 				<p className="qp-geo-error" role="alert">
 					{ errorMsg }
 				</p>
@@ -92,11 +119,21 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 					aria-label={ __( 'Search location', 'quickpostr' ) }
 					autoFocus
 				/>
+				{ editing && (
+					<button
+						type="button"
+						className="qp-location-chip__edit"
+						onClick={ handleCancelEdit }
+						aria-label={ __( 'Cancel location change', 'quickpostr' ) }
+					>
+						{ __( 'Cancel', 'quickpostr' ) }
+					</button>
+				) }
 				<button
 					type="button"
 					className="qp-location-chip__dismiss"
 					onClick={ handleDismiss }
-					aria-label={ __( 'Cancel location', 'quickpostr' ) }
+					aria-label={ __( 'Remove location', 'quickpostr' ) }
 				>
 					&#x2715;
 				</button>

@@ -1061,6 +1061,23 @@
 	max-width: 240px;
 }
 
+.wp-block-quickpostr-composer .qp-location-chip__edit {
+	background: none;
+	border: none;
+	padding: 0 0.25rem;
+	color: var(--qp-accent);
+	font-family: inherit;
+	font-size: 0.75rem;
+	font-weight: 500;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: opacity var(--qp-transition);
+}
+
+.wp-block-quickpostr-composer .qp-location-chip__edit:hover {
+	opacity: 0.75;
+}
+
 .wp-block-quickpostr-composer .qp-location-chip__dismiss {
 	background: none;
 	border: none;
