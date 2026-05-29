@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.14.0
+Stable tag: 0.15.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,9 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.15.0 =
+* Change: Editing a post from the front end now opens the WordPress editor instead of an inline composer. The front-end composer is used only for creating posts.
 
 = 0.14.0 =
 * Add: VideoMuxr companion plugin support — when VideoMuxr is active, video uploads route directly to Mux for transcoding and CDN-hosted playback, and it appears in the Companion Plugins settings section.
