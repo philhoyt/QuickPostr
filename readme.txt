@@ -2,9 +2,9 @@
 Contributors: philhoyt
 Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
-Tested up to: 6.9.4
+Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.13.4
+Stable tag: 0.14.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,13 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.14.0 =
+* Add: VideoMuxr companion plugin support — when VideoMuxr is active, video uploads route directly to Mux for transcoding and CDN-hosted playback, and it appears in the Companion Plugins settings section.
+* Change: Single photos are now saved as an image block in the post content instead of a featured image, consistent with the other post formats. Existing photo posts are unaffected.
+* Security: Anonymous likes are deduplicated by IP address to prevent like-count inflation.
+* Change: Front-end strings in the like, share, and gallery-slider features are now translatable.
+* Change: Minor composer UI polish and tested up to WordPress 7.0.
 
 = 0.13.4 =
 * Fix: Gallery slider images are now vertically centered — overrides WordPress block layout styles that were preventing consistent slide heights and image centering.
