@@ -44,6 +44,7 @@ class QuickPostr_Settings {
 			'hide_admin_bar_admins' => false,
 			'front_end_edit'        => true,
 			'strip_exif'            => true,
+			'composer_page_id'      => 0,
 		);
 	}
 
@@ -152,6 +153,14 @@ class QuickPostr_Settings {
 			'quickpostr',
 			'quickpostr_general'
 		);
+
+		add_settings_field(
+			'composer_page_id',
+			esc_html__( 'Composer Page', 'quickpostr' ),
+			array( $this, 'field_composer_page_id' ),
+			'quickpostr',
+			'quickpostr_general'
+		);
 	}
 
 	/**
@@ -188,6 +197,7 @@ class QuickPostr_Settings {
 			'hide_admin_bar_admins' => ! empty( $input['hide_admin_bar_admins'] ),
 			'front_end_edit'        => ! empty( $input['front_end_edit'] ),
 			'strip_exif'            => ! empty( $input['strip_exif'] ),
+			'composer_page_id'      => absint( $input['composer_page_id'] ?? 0 ),
 		);
 	}
 
@@ -316,6 +326,28 @@ class QuickPostr_Settings {
 			esc_attr( self::OPTION_KEY ),
 			checked( $settings['strip_exif'], true, false ),
 			esc_html__( 'Strip EXIF metadata (GPS, camera info) from uploaded images. Requires the Imagick PHP extension.', 'quickpostr' )
+		);
+	}
+
+	/**
+	 * Render the composer_page_id page-picker field.
+	 *
+	 * Selects the page that holds the Composer block. It becomes the PWA
+	 * start_url and the page a shared photo is handed off to.
+	 */
+	public function field_composer_page_id(): void {
+		$settings = self::get();
+		wp_dropdown_pages(
+			array(
+				'name'              => esc_attr( self::OPTION_KEY . '[composer_page_id]' ),
+				'selected'          => (int) $settings['composer_page_id'],
+				'show_option_none'  => esc_html__( '— Select a page —', 'quickpostr' ),
+				'option_none_value' => '0',
+			)
+		);
+		printf(
+			'<p class="description">%s</p>',
+			esc_html__( 'The page containing the Composer block. Used as the PWA start page and the destination when a photo is shared to QuickPostr.', 'quickpostr' )
 		);
 	}
 
