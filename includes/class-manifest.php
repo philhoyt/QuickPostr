@@ -104,6 +104,10 @@ class QuickPostr_Manifest {
 			'name'         => $name,
 			'short_name'   => $short ? $short : $name,
 			'start_url'    => $start_url,
+			// Root scope so the share_target action (/quickpostr-share/) is in
+			// scope regardless of which page holds the composer, matching the
+			// root-scoped service worker.
+			'scope'        => home_url( '/' ),
 			'display'      => 'standalone',
 			'icons'        => $icons,
 			'share_target' => array(
