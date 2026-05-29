@@ -111,7 +111,11 @@ class QuickPostr_Manifest {
 			'display'      => 'standalone',
 			'icons'        => $icons,
 			'share_target' => array(
-				'action'  => home_url( '/quickpostr-share/' ),
+				// The ?to= target tells the service worker which page to
+				// redirect to after stashing the shared file. The PHP fallback
+				// (when no service worker is controlling the request) ignores
+				// it and computes the composer URL itself.
+				'action'  => add_query_arg( 'to', $start_url, home_url( '/quickpostr-share/' ) ),
 				'method'  => 'POST',
 				'enctype' => 'multipart/form-data',
 				'params'  => array(
