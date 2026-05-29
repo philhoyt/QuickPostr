@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 import { createPost, createGeoPost, updatePost, fetchLinkPreview } from './api.js';
 import TagInput from './TagInput.jsx';
 
@@ -287,16 +287,6 @@ export default function LinkComposer( { onSuccess, editPost, geoData } ) {
 						) }
 					</div>
 				</div>
-			) }
-
-			{ ! bbAvailable && (
-				<p className="qp-link-composer__no-bb">
-					{ sprintf(
-						/* translators: %s: plugin name */
-						__( 'Install %s to include a rich link card in the post.', 'quickpostr' ),
-						'Better Bookmarks'
-					) }
-				</p>
 			) }
 
 			<TagInput
