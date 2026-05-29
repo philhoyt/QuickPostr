@@ -3,9 +3,9 @@ import { __ } from '@wordpress/i18n';
 /**
  * Post Actions block — front-end view script.
  *
- * Manages the kebab menu toggle, the Edit action (REST fetch + custom DOM
- * event + URL fallback), and the Delete action (inline confirmation + REST
- * DELETE + card fade).
+ * Manages the kebab menu toggle and the Delete action (inline confirmation +
+ * REST DELETE + card fade). Edit is a server-rendered link to the WordPress
+ * editor and needs no JS.
  */
 ( function () {
 	const cfg = window.quickpostrPostActions ?? {};
@@ -64,53 +64,8 @@ import { __ } from '@wordpress/i18n';
 			}
 		}
 
-		// ── Edit action ───────────────────────────────────────────────────────
-
-		const editBtn = wrapper.querySelector( '.qp-post-actions__item--edit' );
-		if ( editBtn ) {
-			editBtn.addEventListener( 'click', function () {
-				closeMenu();
-				editBtn.disabled = true;
-				editBtn.textContent = __( 'Loading…', 'quickpostr' );
-
-				const url =
-					cfg.restUrl +
-					'wp/v2/posts/' +
-					postId +
-					'?context=edit&_fields=id,title,content,format,status,featured_media,tags,categories';
-
-				fetch( url, {
-					headers: { 'X-WP-Nonce': cfg.nonce },
-				} )
-					.then( function ( res ) {
-						if ( ! res.ok ) {
-							throw new Error( 'Failed to fetch post.' );
-						}
-						return res.json();
-					} )
-					.then( function ( post ) {
-						const event = new CustomEvent( 'quickpostr:edit-post', {
-							bubbles: true,
-							cancelable: true,
-							detail: { post },
-						} );
-						document.dispatchEvent( event );
-
-						if ( ! event.defaultPrevented ) {
-							window.location.href =
-								( cfg.homeUrl || '/' ) + '?qp-edit=' + postId;
-						} else {
-							window.scrollTo( { top: 0, behavior: 'smooth' } );
-							editBtn.disabled = false;
-							editBtn.textContent = __( 'Edit', 'quickpostr' );
-						}
-					} )
-					.catch( function () {
-						editBtn.disabled = false;
-						editBtn.textContent = __( 'Edit', 'quickpostr' );
-					} );
-			} );
-		}
+		// Edit is a plain link to the WordPress editor (rendered server-side),
+		// so it needs no JS here.
 
 		// ── Delete action ─────────────────────────────────────────────────────
 
