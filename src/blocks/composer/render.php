@@ -48,7 +48,6 @@ $qp_config = array(
 		'defaultStatus'   => $qp_settings['default_status'],
 		'defaultCategory' => (int) $qp_settings['default_category'],
 		'showSlugPreview' => (bool) $qp_settings['show_slug_preview'],
-		'frontEndEdit'    => (bool) $qp_settings['front_end_edit'],
 	),
 	'blockAttrs'       => array(
 		'defaultMode'     => $attributes['defaultMode'] ?? 'status',

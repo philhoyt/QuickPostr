@@ -302,7 +302,7 @@ class QuickPostr_Settings {
 			'<input type="checkbox" name="%1$s[front_end_edit]" value="1"%2$s> <span class="description">%3$s</span>',
 			esc_attr( self::OPTION_KEY ),
 			checked( $settings['front_end_edit'], true, false ),
-			esc_html__( 'Allow post editing and deletion from the front end.', 'quickpostr' )
+			esc_html__( 'Show Edit (opens the WordPress editor) and Delete actions on posts from the front end.', 'quickpostr' )
 		);
 	}
 

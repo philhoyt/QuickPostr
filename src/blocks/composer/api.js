@@ -303,21 +303,6 @@ export function getCategory( id ) {
 }
 
 /**
- * Fetch a single post in edit context (raw content).
- *
- * @param {number} id
- * @return {Promise<object>} Post object in edit context.
- */
-export function getPost( id ) {
-	const qs = new URLSearchParams( {
-		context: 'edit',
-		_fields:
-			'id,title,content,format,status,featured_media,tags,categories',
-	} );
-	return request( 'GET', `/wp/v2/posts/${ id }?${ qs }` );
-}
-
-/**
  * Fetch a single tag by ID.
  *
  * @param {number} id
@@ -325,20 +310,6 @@ export function getPost( id ) {
  */
 export function getTag( id ) {
 	return request( 'GET', `/wp/v2/tags/${ id }?_fields=id,name` );
-}
-
-/**
- * Fetch the source URL for a media item.
- *
- * @param {number} id
- * @return {Promise<string>} Source URL of the media item.
- */
-export async function getMediaUrl( id ) {
-	const data = await request(
-		'GET',
-		`/wp/v2/media/${ id }?_fields=source_url`
-	);
-	return data.source_url ?? '';
 }
 
 /**

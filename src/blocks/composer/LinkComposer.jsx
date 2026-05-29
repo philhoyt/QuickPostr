@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { createPost, createGeoPost, updatePost, fetchLinkPreview } from './api.js';
+import { createPost, createGeoPost, fetchLinkPreview } from './api.js';
 import TagInput from './TagInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
@@ -21,41 +21,6 @@ function serializeLinkCard( attrs ) {
 }
 
 /**
- * Extract URL and OG attributes from stored post content.
- *
- * Handles two formats:
- *   1. BB block:  <!-- wp:better-bookmarks/link-card {...} /-->
- *   2. Plain link: <p><a href="url">...</a></p>
- *
- * Returns an attrs object suitable for pre-filling the composer,
- * or null if nothing recognisable is found.
- *
- * @param {string} raw
- * @return {{url: string, title?: string, description?: string, image?: string, domain?: string}|null} Parsed attrs or null.
- */
-function parsePostContent( raw ) {
-	// BB block comment
-	const bbMatch = raw.match(
-		/<!-- wp:better-bookmarks\/link-card ({.*?}) \/-->/
-	);
-	if ( bbMatch ) {
-		try {
-			return JSON.parse( bbMatch[ 1 ] );
-		} catch {
-			// fall through
-		}
-	}
-
-	// Plain <a> fallback
-	const aMatch = raw.match( /<a\s[^>]*href="([^"]+)"/ );
-	if ( aMatch ) {
-		return { url: aMatch[ 1 ] };
-	}
-
-	return null;
-}
-
-/**
  * Link / bookmark composer.
  *
  * If Better Bookmarks is installed, fetches OG preview data and serializes a
@@ -64,12 +29,12 @@ function parsePostContent( raw ) {
  *
  * Props:
  *   onSuccess (wpPost) => void
- *   editPost  object|undefined — WP post object when in edit mode
- * @param {Object}           root0
- * @param {Function}         root0.onSuccess
- * @param {object|undefined} root0.editPost
+ *   geoData   {object} — location data from the composer root
+ * @param {Object}   root0
+ * @param {Function} root0.onSuccess
+ * @param {object}   root0.geoData
  */
-export default function LinkComposer( { onSuccess, editPost, geoData } ) {
+export default function LinkComposer( { onSuccess, geoData } ) {
 	const [ url, setUrl ] = useState( '' );
 	const [ preview, setPreview ] = useState( null );
 	const [ fetching, setFetching ] = useState( false );
@@ -86,29 +51,6 @@ export default function LinkComposer( { onSuccess, editPost, geoData } ) {
 
 	const bbAvailable = config.betterBookmarks ?? false;
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
-
-	// Pre-populate from editPost.
-	useEffect( () => {
-		if ( ! editPost ) {
-			return;
-		}
-
-		const raw = editPost.content?.raw ?? '';
-		const parsed = parsePostContent( raw );
-
-		if ( parsed?.url ) {
-			setUrl( parsed.url );
-			// Use the stored attrs directly as preview — no re-fetch needed.
-			setPreview( parsed );
-		}
-
-		if ( editPost.tags?.length ) {
-			setSelectedTags( editPost.tags );
-		}
-		if ( editPost.categories?.length ) {
-			setSelectedCategories( editPost.categories );
-		}
-	}, [ editPost ] );
 
 	async function handleFetch() {
 		const trimmed = url.trim();
@@ -170,35 +112,28 @@ export default function LinkComposer( { onSuccess, editPost, geoData } ) {
 				categories: selectedCategories,
 			};
 
-			let wpPost;
-			if ( editPost ) {
-				wpPost = await updatePost( editPost.id, fields );
-			} else {
-				const baseFields = {
-					...fields,
-					title: '',
-					status: defaultStatus,
-					meta: { _quickpostr_post: '1' },
-				};
-				wpPost = await ( geoData?.active && geoData?.lat !== null
-					? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-					: createPost( baseFields ) );
-			}
+			const baseFields = {
+				...fields,
+				title: '',
+				status: defaultStatus,
+				meta: { _quickpostr_post: '1' },
+			};
+			const wpPost = await ( geoData?.active && geoData?.lat !== null
+				? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
+				: createPost( baseFields ) );
 
 			onSuccess?.( wpPost );
 
-			if ( ! editPost ) {
-				setUrl( '' );
-				setPreview( null );
-				setSelectedTags( [] );
-				setSelectedCategories(
-					config.settings?.defaultCategory
-						? [ config.settings.defaultCategory ]
-						: []
-				);
-				setFlash( true );
-				setTimeout( () => setFlash( false ), 2500 );
-			}
+			setUrl( '' );
+			setPreview( null );
+			setSelectedTags( [] );
+			setSelectedCategories(
+				config.settings?.defaultCategory
+					? [ config.settings.defaultCategory ]
+					: []
+			);
+			setFlash( true );
+			setTimeout( () => setFlash( false ), 2500 );
 		} catch ( err ) {
 			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
 		} finally {
@@ -213,19 +148,14 @@ export default function LinkComposer( { onSuccess, editPost, geoData } ) {
 		defaultStatus,
 		onSuccess,
 		bbAvailable,
-		editPost,
 		geoData,
 	] );
 
 	const canSubmit = url.trim() && ! submitting;
-	let submitLabel;
-	if ( editPost ) {
-		submitLabel = __( 'Update', 'quickpostr' );
-	} else if ( defaultStatus === 'draft' ) {
-		submitLabel = __( 'Save Draft', 'quickpostr' );
-	} else {
-		submitLabel = __( 'Post', 'quickpostr' );
-	}
+	const submitLabel =
+		defaultStatus === 'draft'
+			? __( 'Save Draft', 'quickpostr' )
+			: __( 'Post', 'quickpostr' );
 
 	return (
 		<div className="qp-link-composer">

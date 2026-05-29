@@ -1,12 +1,9 @@
 import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { createPost, createGeoPost, updatePost, uploadMedia, getMediaUrl } from './api.js';
+import { createPost, createGeoPost, uploadMedia } from './api.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
-import {
-	buildSinglePhotoContent,
-	parseSinglePhotoContent,
-} from './photoContent.js';
+import { buildSinglePhotoContent } from './photoContent.js';
 
 const config = window.quickpostrConfig ?? {};
 const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
@@ -72,29 +69,20 @@ function validateImageFile( f ) {
  * Flow: pick/drop one or more images → optional caption → upload → create post.
  * Single image → format:image + a core/image block in content (no featured image).
  * Multiple images (2+) → format:gallery + core/gallery block content.
- * Editing a legacy featured-image post keeps it as featured-image (not migrated).
  *
  * Each photo is tracked as a unified object:
  *   { file: File|null, preview: string, mediaId: number|null, sourceUrl: string|null }
  *
  * Props:
  *   onSuccess (wpPost, mediaUrl) => void
- *   editPost  {object|undefined} — when set, the composer is in edit mode
  *   geoData   {object} — location data from Composer root
- * @param {Object}           root0
- * @param {Function}         root0.onSuccess
- * @param {object|undefined} root0.editPost
- * @param {object}           root0.geoData
+ * @param {Object}   root0
+ * @param {Function} root0.onSuccess
+ * @param {object}   root0.geoData
  */
-export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
+export default function PhotoComposer( { onSuccess, geoData } ) {
 	// Unified per-photo state: { file, preview, mediaId, sourceUrl }
 	const [ photos, setPhotos ] = useState( [] );
-	const [ existingPhotoUrl, setExistingPhotoUrl ] = useState( null );
-	const [ existingPhotoId, setExistingPhotoId ] = useState( null );
-	// True when editing a legacy featured-image post (vs a new image-block post).
-	const [ editIsFeatured, setEditIsFeatured ] = useState(
-		!! editPost?.featured_media
-	);
 	const [ caption, setCaption ] = useState( '' );
 	const [ dragging, setDragging ] = useState( false );
 	const [ dragOverIndex, setDragOverIndex ] = useState( null );
@@ -103,9 +91,6 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 		config.settings?.defaultCategory
 			? [ config.settings.defaultCategory ]
 			: []
-	);
-	const [ loadingExisting, setLoadingExisting ] = useState(
-		!! ( editPost?.featured_media )
 	);
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
@@ -126,48 +111,6 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 		};
 	}, [ photos ] );
 
-	// Pre-fill caption, terms, and load existing photo from editPost.
-	useEffect( () => {
-		if ( ! editPost ) {
-			return;
-		}
-		setSelectedTags( editPost.tags ?? [] );
-		let defaultCats;
-		if ( editPost.categories?.length ) {
-			defaultCats = editPost.categories;
-		} else if ( config.settings?.defaultCategory ) {
-			defaultCats = [ config.settings.defaultCategory ];
-		} else {
-			defaultCats = [];
-		}
-		setSelectedCategories( defaultCats );
-
-		if ( editPost.featured_media ) {
-			// Legacy featured-image post: image lives in featured media, the
-			// caption is the raw content.
-			setEditIsFeatured( true );
-			setCaption( editPost.content?.raw ?? '' );
-			getMediaUrl( editPost.featured_media )
-				.then( ( url ) => {
-					setExistingPhotoUrl( url );
-					setLoadingExisting( false );
-				} )
-				.catch( () => setLoadingExisting( false ) );
-			return;
-		}
-
-		// New image-block post: pull the image and caption out of the content.
-		setEditIsFeatured( false );
-		const parsed = parseSinglePhotoContent( editPost.content?.raw ?? '' );
-		if ( parsed ) {
-			setExistingPhotoId( parsed.mediaId );
-			setExistingPhotoUrl( parsed.mediaUrl );
-			setCaption( parsed.caption );
-		} else {
-			setCaption( editPost.content?.raw ?? '' );
-		}
-	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
-
 	function pickFiles( fileList ) {
 		if ( ! fileList || fileList.length === 0 ) {
 			return;
@@ -183,7 +126,6 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 		}
 
 		setError( null );
-		setExistingPhotoUrl( null );
 		setPhotos(
 			incoming.map( ( f ) => ( {
 				file: f,
@@ -218,7 +160,6 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 
 	function clearFiles() {
 		setPhotos( [] );
-		setExistingPhotoUrl( null );
 		if ( fileInputRef.current ) {
 			fileInputRef.current.value = '';
 		}
@@ -242,7 +183,6 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 				.get( 'selection' )
 				.toJSON();
 			setError( null );
-			setExistingPhotoUrl( null );
 			setPhotos(
 				attachments.map( ( a ) => ( {
 					file: null,
@@ -269,10 +209,7 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 	}
 
 	async function handleSubmit() {
-		if ( ! editPost && photos.length === 0 ) {
-			return;
-		}
-		if ( submitting ) {
+		if ( photos.length === 0 || submitting ) {
 			return;
 		}
 
@@ -284,78 +221,36 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 			const isGallery = photos.length >= 2;
 			const isFromFiles = photos.length > 0 && photos[ 0 ].file !== null;
 
-			if ( editPost && photos.length === 0 ) {
-				// Edit mode, photo unchanged: update caption/tags only. Legacy
-				// featured-image posts keep the bare caption as content; image-
-				// block posts rebuild the block so the image is not wiped out.
-				const editedContent =
-					editIsFeatured || existingPhotoId === null
-						? caption
-						: buildSinglePhotoContent(
-								existingPhotoId,
-								existingPhotoUrl,
-								caption
-						  );
-				wpPost = await updatePost( editPost.id, {
-					content: editedContent,
+			if ( isGallery ) {
+				// Gallery: use uploaded files or already-uploaded library items.
+				const mediaItems = isFromFiles
+					? await Promise.all(
+							photos.map( ( p ) => uploadMedia( p.file ) )
+					  )
+					: photos.map( ( p ) => ( {
+							id: p.mediaId,
+							source_url: p.sourceUrl,
+					  } ) );
+
+				const baseFields = {
+					title: generateTitle( 'gallery', '', caption ),
+					content: buildGalleryContent( mediaItems, caption ),
 					status: defaultStatus,
+					format: 'gallery',
 					tags: selectedTags,
 					categories: selectedCategories,
-				} );
-				onSuccess?.( wpPost, '' );
-			} else if ( isGallery && isFromFiles ) {
-				// Gallery: upload all files, then create or update post.
-				const mediaItems = await Promise.all(
-					photos.map( ( p ) => uploadMedia( p.file ) )
+					meta: { _quickpostr_post: '1' },
+				};
+				wpPost = await ( geoData?.active && geoData?.lat !== null
+					? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
+					: createPost( baseFields ) );
+
+				onSuccess?.(
+					wpPost,
+					mediaItems[ 0 ]?.source_url ?? photos[ 0 ]?.preview ?? ''
 				);
-				const galleryPayload = {
-					content: buildGalleryContent( mediaItems, caption ),
-					status: defaultStatus,
-					format: 'gallery',
-					tags: selectedTags,
-					categories: selectedCategories,
-				};
-				if ( editPost ) {
-					wpPost = await updatePost( editPost.id, galleryPayload );
-				} else {
-					const baseFields = {
-						title: generateTitle( 'gallery', '', caption ),
-						...galleryPayload,
-						meta: { _quickpostr_post: '1' },
-					};
-					wpPost = await ( geoData?.active && geoData?.lat !== null
-						? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-						: createPost( baseFields ) );
-				}
-				onSuccess?.( wpPost, mediaItems[ 0 ]?.source_url ?? '' );
-			} else if ( isGallery && ! isFromFiles ) {
-				// Gallery from library: media already uploaded.
-				const mediaItems = photos.map( ( p ) => ( {
-					id: p.mediaId,
-					source_url: p.sourceUrl,
-				} ) );
-				const galleryPayload = {
-					content: buildGalleryContent( mediaItems, caption ),
-					status: defaultStatus,
-					format: 'gallery',
-					tags: selectedTags,
-					categories: selectedCategories,
-				};
-				if ( editPost ) {
-					wpPost = await updatePost( editPost.id, galleryPayload );
-				} else {
-					const baseFields = {
-						title: generateTitle( 'gallery', '', caption ),
-						...galleryPayload,
-						meta: { _quickpostr_post: '1' },
-					};
-					wpPost = await ( geoData?.active && geoData?.lat !== null
-						? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-						: createPost( baseFields ) );
-				}
-				onSuccess?.( wpPost, photos[ 0 ]?.preview ?? '' );
 			} else {
-				// Single image: library pick or file upload.
+				// Single image: upload the file or use the library item.
 				let mediaId, mediaUrl;
 
 				if ( isFromFiles ) {
@@ -367,40 +262,18 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 					mediaUrl = photos[ 0 ].sourceUrl;
 				}
 
-				const imageContent = buildSinglePhotoContent( mediaId, mediaUrl, caption );
-
-				if ( editPost ) {
-					// Legacy featured-image posts stay as featured-image posts
-					// (new posts only — see plan); new image-block posts are
-					// rebuilt as a core/image block with no featured media.
-					wpPost = editIsFeatured
-						? await updatePost( editPost.id, {
-								content: caption,
-								status: defaultStatus,
-								featured_media: mediaId,
-								tags: selectedTags,
-								categories: selectedCategories,
-						  } )
-						: await updatePost( editPost.id, {
-								content: imageContent,
-								status: defaultStatus,
-								tags: selectedTags,
-								categories: selectedCategories,
-						  } );
-				} else {
-					const baseFields = {
-						title: generateTitle( 'photo', '', caption ),
-						content: imageContent,
-						status: defaultStatus,
-						format: 'image',
-						tags: selectedTags,
-						categories: selectedCategories,
-						meta: { _quickpostr_post: '1' },
-					};
-					wpPost = await ( geoData?.active && geoData?.lat !== null
-						? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-						: createPost( baseFields ) );
-				}
+				const baseFields = {
+					title: generateTitle( 'photo', '', caption ),
+					content: buildSinglePhotoContent( mediaId, mediaUrl, caption ),
+					status: defaultStatus,
+					format: 'image',
+					tags: selectedTags,
+					categories: selectedCategories,
+					meta: { _quickpostr_post: '1' },
+				};
+				wpPost = await ( geoData?.active && geoData?.lat !== null
+					? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
+					: createPost( baseFields ) );
 
 				onSuccess?.( wpPost, mediaUrl );
 			}
@@ -443,10 +316,8 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 		.filter( Boolean )
 		.join( ' ' );
 
-	const showDropzone =
-		photos.length === 0 && ! existingPhotoUrl && ! loadingExisting;
-	const showSinglePreview =
-		photos.length === 1 || ( photos.length === 0 && !! existingPhotoUrl );
+	const showDropzone = photos.length === 0;
+	const showSinglePreview = photos.length === 1;
 	const showStrip = photos.length >= 2;
 
 	return (
@@ -517,16 +388,10 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 				</div>
 			) }
 
-			{ loadingExisting && (
-				<p className="qp-composer-loading">
-					{ __( 'Loading…', 'quickpostr' ) }
-				</p>
-			) }
-
 			{ showSinglePreview && (
 				<div className="qp-photo-preview">
 					<img
-						src={ photos[ 0 ]?.preview ?? existingPhotoUrl }
+						src={ photos[ 0 ].preview }
 						alt={ __( 'Preview', 'quickpostr' ) }
 						className="qp-photo-preview__img"
 					/>
@@ -615,7 +480,7 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 				</div>
 			) }
 
-			{ ( photos.length > 0 || ( editPost && ! loadingExisting ) ) && (
+			{ photos.length > 0 && (
 				<>
 					<textarea
 						className="qp-photo-caption"
@@ -649,7 +514,7 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 				<button
 					className="qp-composer-submit"
 					onClick={ handleSubmit }
-					disabled={ ( ! editPost && photos.length === 0 ) || submitting }
+					disabled={ photos.length === 0 || submitting }
 					aria-label={
 						submitting
 							? __( 'Publishing…', 'quickpostr' )
@@ -660,9 +525,6 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 					{ ( () => {
 						if ( submitting ) {
 							return __( 'Publishing…', 'quickpostr' );
-						}
-						if ( editPost ) {
-							return __( 'Update', 'quickpostr' );
 						}
 						return defaultStatus === 'draft'
 							? __( 'Save Draft', 'quickpostr' )

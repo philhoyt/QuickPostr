@@ -54,12 +54,14 @@
 .qp-post-actions__item {
 	display: block;
 	width: 100%;
+	box-sizing: border-box;
 	padding: 7px 14px;
 	background: none;
 	border: none;
 	font-family: inherit;
 	font-size: 0.8125rem;
 	text-align: left;
+	text-decoration: none;
 	cursor: pointer;
 	transition: background 120ms ease;
 	color: var( --wp--preset--color--contrast, #333 );
