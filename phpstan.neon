@@ -7,8 +7,11 @@ parameters:
         - includes
     bootstrapFiles:
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+        # Declares QUICKPOSTR_PATH/URL/VERSION (function-valued defines PHPStan
+        # can't evaluate statically from quickpostr.php).
+        - .phpstan/bootstrap.php
     excludePaths:
         - vendor
         - node_modules
         - build
-        - tests
+        - tests (?)
