@@ -3,6 +3,10 @@ import { __, sprintf } from '@wordpress/i18n';
 import { createPost, createGeoPost, updatePost, uploadMedia, getMediaUrl } from './api.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
+import {
+	buildSinglePhotoContent,
+	parseSinglePhotoContent,
+} from './photoContent.js';
 
 const config = window.quickpostrConfig ?? {};
 const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
@@ -66,8 +70,9 @@ function validateImageFile( f ) {
  * Photo post composer.
  *
  * Flow: pick/drop one or more images → optional caption → upload → create post.
- * Single image → format:image + featured_media.
+ * Single image → format:image + a core/image block in content (no featured image).
  * Multiple images (2+) → format:gallery + core/gallery block content.
+ * Editing a legacy featured-image post keeps it as featured-image (not migrated).
  *
  * Each photo is tracked as a unified object:
  *   { file: File|null, preview: string, mediaId: number|null, sourceUrl: string|null }
@@ -85,6 +90,11 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 	// Unified per-photo state: { file, preview, mediaId, sourceUrl }
 	const [ photos, setPhotos ] = useState( [] );
 	const [ existingPhotoUrl, setExistingPhotoUrl ] = useState( null );
+	const [ existingPhotoId, setExistingPhotoId ] = useState( null );
+	// True when editing a legacy featured-image post (vs a new image-block post).
+	const [ editIsFeatured, setEditIsFeatured ] = useState(
+		!! editPost?.featured_media
+	);
 	const [ caption, setCaption ] = useState( '' );
 	const [ dragging, setDragging ] = useState( false );
 	const [ dragOverIndex, setDragOverIndex ] = useState( null );
@@ -132,14 +142,29 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 		}
 		setSelectedCategories( defaultCats );
 
-		setCaption( editPost.content?.raw ?? '' );
 		if ( editPost.featured_media ) {
+			// Legacy featured-image post: image lives in featured media, the
+			// caption is the raw content.
+			setEditIsFeatured( true );
+			setCaption( editPost.content?.raw ?? '' );
 			getMediaUrl( editPost.featured_media )
 				.then( ( url ) => {
 					setExistingPhotoUrl( url );
 					setLoadingExisting( false );
 				} )
 				.catch( () => setLoadingExisting( false ) );
+			return;
+		}
+
+		// New image-block post: pull the image and caption out of the content.
+		setEditIsFeatured( false );
+		const parsed = parseSinglePhotoContent( editPost.content?.raw ?? '' );
+		if ( parsed ) {
+			setExistingPhotoId( parsed.mediaId );
+			setExistingPhotoUrl( parsed.mediaUrl );
+			setCaption( parsed.caption );
+		} else {
+			setCaption( editPost.content?.raw ?? '' );
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -260,9 +285,19 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 			const isFromFiles = photos.length > 0 && photos[ 0 ].file !== null;
 
 			if ( editPost && photos.length === 0 ) {
-				// Edit mode: update caption/tags only, keep existing featured media.
+				// Edit mode, photo unchanged: update caption/tags only. Legacy
+				// featured-image posts keep the bare caption as content; image-
+				// block posts rebuild the block so the image is not wiped out.
+				const editedContent =
+					editIsFeatured || existingPhotoId === null
+						? caption
+						: buildSinglePhotoContent(
+								existingPhotoId,
+								existingPhotoUrl,
+								caption
+						  );
 				wpPost = await updatePost( editPost.id, {
-					content: caption,
+					content: editedContent,
 					status: defaultStatus,
 					tags: selectedTags,
 					categories: selectedCategories,
@@ -332,21 +367,32 @@ export default function PhotoComposer( { onSuccess, editPost, geoData } ) {
 					mediaUrl = photos[ 0 ].sourceUrl;
 				}
 
+				const imageContent = buildSinglePhotoContent( mediaId, mediaUrl, caption );
+
 				if ( editPost ) {
-					wpPost = await updatePost( editPost.id, {
-						content: caption,
-						status: defaultStatus,
-						featured_media: mediaId,
-						tags: selectedTags,
-						categories: selectedCategories,
-					} );
+					// Legacy featured-image posts stay as featured-image posts
+					// (new posts only — see plan); new image-block posts are
+					// rebuilt as a core/image block with no featured media.
+					wpPost = editIsFeatured
+						? await updatePost( editPost.id, {
+								content: caption,
+								status: defaultStatus,
+								featured_media: mediaId,
+								tags: selectedTags,
+								categories: selectedCategories,
+						  } )
+						: await updatePost( editPost.id, {
+								content: imageContent,
+								status: defaultStatus,
+								tags: selectedTags,
+								categories: selectedCategories,
+						  } );
 				} else {
 					const baseFields = {
 						title: generateTitle( 'photo', '', caption ),
-						content: caption,
+						content: imageContent,
 						status: defaultStatus,
 						format: 'image',
-						featured_media: mediaId,
 						tags: selectedTags,
 						categories: selectedCategories,
 						meta: { _quickpostr_post: '1' },
