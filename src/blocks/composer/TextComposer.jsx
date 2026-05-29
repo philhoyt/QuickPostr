@@ -138,15 +138,14 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  *
  * Props:
  *   onSuccess (wpPost) => void
- *   editPost  {object|undefined} — when set, the composer is in edit mode
- * @param {Object}           root0
- * @param {Function}         root0.onSuccess
- * @param {object|undefined} root0.editPost
+ *   geoData   {object} — location data from the composer root
+ * @param {Object}   root0
+ * @param {Function} root0.onSuccess
+ * @param {object}   root0.geoData
  */
-export default function TextComposer( { onSuccess, editPost, geoData } ) {
+export default function TextComposer( { onSuccess, geoData } ) {
 	const editorRef = useRef( null );
 	const draftTimer = useRef( null );
-	const wasEditingRef = useRef( false );
 
 	const [ html, setHtml ] = useState( '' );
 	const [ selectedTags, setSelectedTags ] = useState( [] );
@@ -172,10 +171,6 @@ export default function TextComposer( { onSuccess, editPost, geoData } ) {
 
 	// On mount: check for an existing draft.
 	useEffect( () => {
-		if ( editPost ) {
-			return; // handled by the editPost effect below
-		}
-
 		getDraft()
 			.then( ( draft ) => {
 				if ( draft && draft.format !== 'image' ) {
@@ -186,60 +181,11 @@ export default function TextComposer( { onSuccess, editPost, geoData } ) {
 			.catch( () => {} );
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
-	// Pre-fill or clear the editor when editPost changes.
-	useEffect( () => {
-		if ( ! editPost ) {
-			// Cancel edit — reset only if we were previously editing.
-			if ( wasEditingRef.current ) {
-				wasEditingRef.current = false;
-				setDraftId( null );
-				setHtml( '' );
-				setSelectedTags( [] );
-				setSelectedCategories(
-					config.settings?.defaultCategory
-						? [ config.settings.defaultCategory ]
-						: []
-				);
-				if ( editorRef.current ) {
-					editorRef.current.innerHTML = '';
-					editorRef.current.dispatchEvent(
-						new Event( 'input', { bubbles: true } )
-					);
-				}
-			}
-			return;
-		}
-		wasEditingRef.current = true;
-		const raw = editPost.content?.raw ?? '';
-		setDraftId( editPost.id );
-		setHtml( raw );
-		setSelectedTags( editPost.tags ?? [] );
-		let defaultCats;
-		if ( editPost.categories?.length ) {
-			defaultCats = editPost.categories;
-		} else if ( config.settings?.defaultCategory ) {
-			defaultCats = [ config.settings.defaultCategory ];
-		} else {
-			defaultCats = [];
-		}
-		setSelectedCategories( defaultCats );
-		if ( editorRef.current ) {
-			editorRef.current.innerHTML = raw;
-			// Trigger RichEditor's handleInput so isEmpty state clears the placeholder.
-			editorRef.current.dispatchEvent(
-				new Event( 'input', { bubbles: true } )
-			);
-		}
-	}, [ editPost ] );
-
 	/**
 	 * Schedule a debounced draft save whenever content changes.
 	 * @param {string} content
 	 */
 	function scheduleDraftSave( content ) {
-		if ( editPost ) {
-			return;
-		} // Edit mode: no auto-save as draft.
 		clearTimeout( draftTimer.current );
 		draftTimer.current = setTimeout( async () => {
 			if ( ! content ) {
@@ -303,15 +249,7 @@ export default function TextComposer( { onSuccess, editPost, geoData } ) {
 		try {
 			let wpPost;
 
-			if ( editPost ) {
-				// Edit mode: update the existing post.
-				wpPost = await updatePost( editPost.id, {
-					content: html,
-					status: defaultStatus,
-					tags: selectedTags,
-					categories: selectedCategories,
-				} );
-			} else if ( draftId ) {
+			if ( draftId ) {
 				// Publish the auto-saved draft.
 				const draftFields = {
 					title: '',
@@ -385,7 +323,6 @@ export default function TextComposer( { onSuccess, editPost, geoData } ) {
 		submitting,
 		defaultStatus,
 		onSuccess,
-		editPost,
 		draftId,
 		geoData,
 	] );
@@ -398,14 +335,10 @@ export default function TextComposer( { onSuccess, editPost, geoData } ) {
 
 	const hasContent =
 		( editorRef.current?.innerText?.trim() ?? '' ).length > 0;
-	let submitLabel;
-	if ( editPost ) {
-		submitLabel = __( 'Update', 'quickpostr' );
-	} else if ( defaultStatus === 'draft' ) {
-		submitLabel = __( 'Save Draft', 'quickpostr' );
-	} else {
-		submitLabel = __( 'Post', 'quickpostr' );
-	}
+	const submitLabel =
+		defaultStatus === 'draft'
+			? __( 'Save Draft', 'quickpostr' )
+			: __( 'Post', 'quickpostr' );
 
 	return (
 		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
@@ -478,7 +411,7 @@ export default function TextComposer( { onSuccess, editPost, geoData } ) {
 					role="status"
 					aria-live="assertive"
 				>
-					{ editPost ? __( 'Updated!', 'quickpostr' ) : __( 'Posted!', 'quickpostr' ) }
+					{ __( 'Posted!', 'quickpostr' ) }
 				</div>
 			) }
 		</div>
