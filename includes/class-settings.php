@@ -387,6 +387,44 @@ class QuickPostr_Settings {
 				</p>
 			</div>
 			<?php endif; ?>
+
+			<?php if ( function_exists( 'videomuxr_is_configured' ) && videomuxr_is_configured() ) : ?>
+			<div class="notice notice-success inline" style="margin:8px 0 0">
+				<p>
+					<strong><?php esc_html_e( 'VideoMuxr', 'quickpostr' ); ?></strong>
+					&mdash;
+					<?php esc_html_e( 'Active. Video uploads route through Mux for transcoding and CDN-hosted playback.', 'quickpostr' ); ?>
+				</p>
+			</div>
+			<?php elseif ( function_exists( 'videomuxr_is_configured' ) ) : ?>
+			<div class="notice notice-warning inline" style="margin:8px 0 0">
+				<p>
+					<strong><?php esc_html_e( 'VideoMuxr', 'quickpostr' ); ?></strong>
+					&mdash;
+					<?php
+					printf(
+						/* translators: %s: link to the VideoMuxr settings page */
+						esc_html__( 'Active but not configured. Add your Mux API credentials in %s to route video uploads through Mux.', 'quickpostr' ),
+						'<a href="' . esc_url( admin_url( 'options-general.php?page=videomuxr' ) ) . '">' . esc_html__( 'Settings → VideoMuxr', 'quickpostr' ) . '</a>'
+					);
+					?>
+				</p>
+			</div>
+			<?php else : ?>
+			<div class="notice notice-info inline" style="margin:8px 0 0">
+				<p>
+					<strong><?php esc_html_e( 'VideoMuxr', 'quickpostr' ); ?></strong>
+					&mdash;
+					<?php
+					printf(
+						/* translators: %s: link to VideoMuxr releases page */
+						esc_html__( 'Install and activate %s to route video uploads through Mux for transcoding and CDN-hosted playback.', 'quickpostr' ),
+						'<a href="https://github.com/philhoyt/VideoMuxr/releases/latest" target="_blank" rel="noopener noreferrer">' . esc_html__( 'VideoMuxr', 'quickpostr' ) . '</a>'
+					);
+					?>
+				</p>
+			</div>
+			<?php endif; ?>
 		</div>
 		<?php
 	}

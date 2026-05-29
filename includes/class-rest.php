@@ -53,54 +53,62 @@ class QuickPostr_Rest {
 		);
 
 		$geo_args = array(
-			'title'          => array(
+			'title'                 => array(
 				'type'    => 'string',
 				'default' => '',
 			),
-			'content'        => array(
+			'content'               => array(
 				'type'    => 'string',
 				'default' => '',
 			),
-			'status'         => array(
+			'status'                => array(
 				'type'    => 'string',
 				'default' => 'publish',
 				'enum'    => array( 'publish', 'draft', 'pending', 'private' ),
 			),
-			'format'         => array(
+			'format'                => array(
 				'type'    => 'string',
 				'default' => 'standard',
 			),
-			'tags'           => array(
+			'tags'                  => array(
 				'type'    => 'array',
 				'items'   => array( 'type' => 'integer' ),
 				'default' => array(),
 			),
-			'categories'     => array(
+			'categories'            => array(
 				'type'    => 'array',
 				'items'   => array( 'type' => 'integer' ),
 				'default' => array(),
 			),
-			'meta'           => array(
+			'meta'                  => array(
 				'type'    => 'object',
 				'default' => array(),
 			),
-			'featured_media' => array(
+			'featured_media'        => array(
 				'type'    => 'integer',
 				'default' => 0,
 			),
-			'geo_lat'        => array(
-				'type'              => 'number',
-				'sanitize_callback' => fn( $v ) => (float) $v,
-			),
-			'geo_lng'        => array(
-				'type'              => 'number',
-				'sanitize_callback' => fn( $v ) => (float) $v,
-			),
-			'geo_place'      => array(
+			'videomuxr_playback_id' => array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'geo_address'    => array(
+			'videomuxr_asset_id'    => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'geo_lat'               => array(
+				'type'              => 'number',
+				'sanitize_callback' => fn( $v ) => (float) $v,
+			),
+			'geo_lng'               => array(
+				'type'              => 'number',
+				'sanitize_callback' => fn( $v ) => (float) $v,
+			),
+			'geo_place'             => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'geo_address'           => array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
@@ -170,6 +178,10 @@ class QuickPostr_Rest {
 		$data     = $response->get_data();
 		$post_id  = is_array( $data ) ? ( $data['id'] ?? 0 ) : 0;
 
+		if ( $post_id ) {
+			$this->save_videomuxr_meta( $post_id, $request );
+		}
+
 		if ( $post_id && function_exists( 'geo_tagr_get_post_meta' ) ) {
 			$geo_map = array(
 				'_geo_tagr_lat'     => $request->get_param( 'geo_lat' ),
@@ -213,6 +225,10 @@ class QuickPostr_Rest {
 		$data       = $response->get_data();
 		$updated_id = is_array( $data ) ? ( $data['id'] ?? 0 ) : 0;
 
+		if ( $updated_id ) {
+			$this->save_videomuxr_meta( $updated_id, $request );
+		}
+
 		if ( $updated_id && function_exists( 'geo_tagr_get_post_meta' ) ) {
 			$geo_map = array(
 				'_geo_tagr_lat'     => $request->get_param( 'geo_lat' ),
@@ -228,6 +244,30 @@ class QuickPostr_Rest {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Persist VideoMuxr playback/asset IDs as post meta when present.
+	 *
+	 * The composer submits these when VideoMuxr handled the video upload. The
+	 * meta keys are owned by VideoMuxr (registered show_in_rest => false, so they
+	 * cannot be set through the core REST meta param) and drive its front-end
+	 * player render and its before_delete_post asset cleanup.
+	 *
+	 * @param int              $post_id The post the meta belongs to.
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return void
+	 */
+	private function save_videomuxr_meta( int $post_id, \WP_REST_Request $request ): void {
+		$playback_id = $request->get_param( 'videomuxr_playback_id' );
+		$asset_id    = $request->get_param( 'videomuxr_asset_id' );
+
+		if ( is_string( $playback_id ) && '' !== $playback_id ) {
+			update_post_meta( $post_id, '_videomuxr_playback_id', $playback_id );
+		}
+		if ( is_string( $asset_id ) && '' !== $asset_id ) {
+			update_post_meta( $post_id, '_videomuxr_asset_id', $asset_id );
+		}
 	}
 
 	/**
