@@ -108,8 +108,9 @@
 }
 
 .wp-block-gallery.is-style-quickpostr-slider {
-	display: flex;
-	flex-wrap: nowrap;
+	display: flex !important;
+	flex-wrap: nowrap !important;
+	align-items: stretch !important;
 	overflow-x: auto;
 	scroll-snap-type: x mandatory;
 	scrollbar-width: none;
@@ -127,15 +128,21 @@
 }
 
 .wp-block-gallery.is-style-quickpostr-slider > .wp-block-image {
-	flex: 0 0 100%;
-	margin: 0;
-	padding: 0;
+	flex: 0 0 100% !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	margin: 0 !important;
+	padding: 0 !important;
 	scroll-snap-align: start;
 }
 
 .wp-block-gallery.is-style-quickpostr-slider > .wp-block-image img {
-	width: 100%;
-	height: auto;
+	width: 100% !important;
+	height: 100% !important;
+	max-height: none !important;
+	object-fit: contain !important;
+	object-position: center !important;
 	display: block;
 	pointer-events: none;
 }
