@@ -33,6 +33,15 @@ import { __, sprintf } from '@wordpress/i18n';
 		let pillTimer = null;
 		let scrollTimer = null;
 
+		// Touch-drag state. We take over horizontal swipes so each gesture
+		// follows the finger without native momentum and advances at most one
+		// slide — a fast flick can no longer skip past the photos in between.
+		let touchStartX = 0;
+		let touchStartY = 0;
+		let touchStartScroll = 0;
+		let dragging = false;
+		let isHorizontal = null;
+
 		// Wrap the gallery in a positioning context so arrows/pill are
 		// positioned relative to it rather than the scroll container.
 		const wrapper = document.createElement( 'div' );
@@ -137,6 +146,12 @@ import { __, sprintf } from '@wordpress/i18n';
 		gallery.addEventListener(
 			'scroll',
 			function () {
+				// While a touch drag is in progress we drive scrollLeft and
+				// `current` ourselves; ignore native scroll events so the two
+				// don't fight.
+				if ( dragging ) {
+					return;
+				}
 				clearTimeout( scrollTimer );
 				scrollTimer = setTimeout( function () {
 					const snapped = Math.round(
@@ -147,6 +162,88 @@ import { __, sprintf } from '@wordpress/i18n';
 						updateControls();
 					}
 				}, 50 );
+			},
+			{ passive: true }
+		);
+
+		// Touch handling — one slide per swipe, no momentum fling.
+		gallery.addEventListener(
+			'touchstart',
+			function ( e ) {
+				if ( e.touches.length !== 1 ) {
+					return;
+				}
+				touchStartX = e.touches[ 0 ].clientX;
+				touchStartY = e.touches[ 0 ].clientY;
+				touchStartScroll = gallery.scrollLeft;
+				dragging = true;
+				isHorizontal = null;
+				// Disable native snapping so our manual scrollLeft isn't fought.
+				gallery.style.scrollSnapType = 'none';
+			},
+			{ passive: true }
+		);
+
+		gallery.addEventListener(
+			'touchmove',
+			function ( e ) {
+				if ( ! dragging ) {
+					return;
+				}
+				const dx = e.touches[ 0 ].clientX - touchStartX;
+				const dy = e.touches[ 0 ].clientY - touchStartY;
+
+				// Lock the gesture axis on first move. A mostly-vertical
+				// gesture is left to the page (normal scrolling).
+				if ( isHorizontal === null ) {
+					isHorizontal = Math.abs( dx ) > Math.abs( dy );
+				}
+				if ( ! isHorizontal ) {
+					return;
+				}
+
+				// Take over horizontal scrolling so there is no native
+				// momentum to carry past the neighbouring photo.
+				e.preventDefault();
+
+				const width = gallery.offsetWidth;
+				// Clamp the drag to one slide either side of the current photo
+				// so even a long, fast swipe can only ever reach the neighbour.
+				const min = ( current - 1 ) * width;
+				const max = ( current + 1 ) * width;
+				gallery.scrollLeft = Math.max(
+					min,
+					Math.min( max, touchStartScroll - dx )
+				);
+			},
+			{ passive: false }
+		);
+
+		gallery.addEventListener(
+			'touchend',
+			function () {
+				if ( ! dragging ) {
+					return;
+				}
+				dragging = false;
+				// Restore CSS-driven snapping.
+				gallery.style.scrollSnapType = '';
+				if ( ! isHorizontal ) {
+					return;
+				}
+
+				const width = gallery.offsetWidth;
+				const moved = gallery.scrollLeft - current * width;
+				// Need to drag at least 20% of the width to commit to a move;
+				// anything less snaps back to the current photo.
+				const threshold = width * 0.2;
+				if ( moved > threshold ) {
+					goTo( current + 1 );
+				} else if ( moved < -threshold ) {
+					goTo( current - 1 );
+				} else {
+					goTo( current );
+				}
 			},
 			{ passive: true }
 		);
