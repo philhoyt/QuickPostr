@@ -34,3 +34,6 @@ wp-content/
 
 # Claude Code — machine-specific session permissions, not shared
 .claude/settings.local.json
+
+# PHPUnit
+.phpunit.result.cache

@@ -248,7 +248,7 @@ class QuickPostr_Settings {
 				'name'              => self::OPTION_KEY . '[default_category]',
 				'selected'          => (int) $settings['default_category'],
 				'show_option_none'  => esc_html__( '— Uncategorized —', 'quickpostr' ),
-				'option_none_value' => 0,
+				'option_none_value' => '0',
 				'hide_empty'        => false,
 			)
 		);

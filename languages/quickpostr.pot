@@ -1,85 +1,869 @@
-# Copyright (C) 2024 QuickPostr Contributors
-# This file is distributed under the GPL-2.0-or-later license.
+# Copyright (C) 2026 Phil Hoyt
+# This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: QuickPostr 1.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/quickpostr\n"
-"POT-Creation-Date: 2024-01-01T00:00:00+00:00\n"
+"Project-Id-Version: QuickPostr 0.13.4\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/QuickPostr\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2024-01-01T00:00:00+00:00\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
-"X-Generator: QuickPostr\n"
+"POT-Creation-Date: 2026-05-29T15:50:13+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: quickpostr\n"
 
-#. Plugin Name of the plugin.
+#. Plugin Name of the plugin
+#: quickpostr.php
+#: includes/class-quickpostr.php:185
+#: includes/class-quickpostr.php:199
+#: includes/class-settings.php:66
 msgid "QuickPostr"
 msgstr ""
 
-#. Plugin URI of the plugin.
-msgid "https://wordpress.org/plugins/quickpostr/"
+#. Plugin URI of the plugin
+#: quickpostr.php
+msgid "https://github.com/philhoyt/QuickPostr"
 msgstr ""
 
-#. Description of the plugin.
-msgid "A mobile-first, social-style composer for WordPress. Compose, tap, done."
+#. Description of the plugin
+#: quickpostr.php
+msgid "A front-end, social-style post composer for WordPress. Place the Composer block anywhere, post like it's social media."
 msgstr ""
 
-#: includes/class-settings.php
+#. Author of the plugin
+#: quickpostr.php
+msgid "Phil Hoyt"
+msgstr ""
+
+#: includes/class-quickpostr.php:151
+msgid "QuickPostr Slider"
+msgstr ""
+
+#: includes/class-quickpostr.php:233
+msgid "QuickPostr Source"
+msgstr ""
+
+#: includes/class-quickpostr.php:322
+#: src/blocks/composer/Composer.jsx:191
+#: src/blocks/composer/edit.jsx:36
+#: src/blocks/composer/edit.jsx:94
+msgid "Photo"
+msgstr ""
+
+#: includes/class-quickpostr.php:324
+#: src/blocks/composer/Composer.jsx:193
+#: src/blocks/composer/TextComposer.jsx:113
+msgid "Link"
+msgstr ""
+
+#: includes/class-quickpostr.php:326
+#: src/blocks/composer/Composer.jsx:192
+msgid "Video"
+msgstr ""
+
+#: includes/class-quickpostr.php:328
+msgid "Gallery"
+msgstr ""
+
+#: includes/class-quickpostr.php:330
+#: src/blocks/composer/Composer.jsx:190
+#: src/blocks/composer/edit.jsx:32
+#: src/blocks/composer/edit.jsx:87
+msgid "Status"
+msgstr ""
+
+#: includes/class-rest.php:326
+msgid "Post not found."
+msgstr ""
+
+#: includes/class-rest.php:347
+#: includes/class-rest.php:388
+msgid " liked this post"
+msgstr ""
+
+#: includes/class-rest.php:361
+msgid "Name is required to like this post."
+msgstr ""
+
+#: includes/class-rest.php:516
+msgid "You must be logged in to access QuickPostr settings."
+msgstr ""
+
+#: includes/class-settings.php:65
 msgid "QuickPostr Settings"
 msgstr ""
 
-#: includes/class-settings.php
-msgid "QuickPostr"
-msgstr ""
-
-#: includes/class-settings.php
+#: includes/class-settings.php:87
 msgid "General"
 msgstr ""
 
-#: includes/class-settings.php
+#: includes/class-settings.php:94
 msgid "Allowed Roles"
 msgstr ""
 
-#: includes/class-settings.php
+#: includes/class-settings.php:102
 msgid "Default Post Status"
 msgstr ""
 
-#: includes/class-settings.php
+#: includes/class-settings.php:110
 msgid "Default Category"
 msgstr ""
 
-#: includes/class-settings.php
+#: includes/class-settings.php:118
+#: src/blocks/composer/edit.jsx:52
 msgid "Show Slug Preview"
 msgstr ""
 
-#: includes/class-settings.php
-msgid "App URL Slug"
+#: includes/class-settings.php:126
+msgid "Hide Admin Bar"
 msgstr ""
 
-#: includes/class-settings.php
+#: includes/class-settings.php:134
+msgid "Hide Admin Bar (Administrators)"
+msgstr ""
+
+#: includes/class-settings.php:142
+msgid "Front-End Post Management"
+msgstr ""
+
+#: includes/class-settings.php:150
+msgid "Strip Photo Metadata"
+msgstr ""
+
+#: includes/class-settings.php:225
 msgid "Published"
 msgstr ""
 
-#: includes/class-settings.php
+#: includes/class-settings.php:226
 msgid "Draft"
 msgstr ""
 
-#: includes/class-settings.php
+#: includes/class-settings.php:250
 msgid "— Uncategorized —"
 msgstr ""
 
-#: includes/class-settings.php
+#: includes/class-settings.php:266
 msgid "Show the auto-generated title preview below the composer input."
 msgstr ""
 
-#: includes/class-settings.php
-msgid "The app will be available at"
+#: includes/class-settings.php:279
+msgid "Hide the WordPress admin bar for non-administrator roles."
 msgstr ""
 
-#: includes/class-rest.php
-msgid "You must be logged in to access QuickPostr settings."
+#: includes/class-settings.php:292
+msgid "Also hide the WordPress admin bar for administrators."
+msgstr ""
+
+#: includes/class-settings.php:305
+msgid "Allow post editing and deletion from the front end."
+msgstr ""
+
+#: includes/class-settings.php:318
+msgid "Strip EXIF metadata (GPS, camera info) from uploaded images. Requires the Imagick PHP extension."
+msgstr ""
+
+#: includes/class-settings.php:341
+msgid "Companion Plugins"
+msgstr ""
+
+#: includes/class-settings.php:346
+#: includes/class-settings.php:354
+#: includes/class-settings.php:360
+msgid "GeoTagr"
+msgstr ""
+
+#: includes/class-settings.php:348
+msgid "Active. Users can tag a location on their posts from the composer."
+msgstr ""
+
+#. translators: %s: link to GeoTagr releases page
+#: includes/class-settings.php:359
+#, php-format
+msgid "Install and activate %s to let users tag a location on their posts directly from the composer."
+msgstr ""
+
+#: includes/class-settings.php:370
+#: includes/class-settings.php:378
+#: includes/class-settings.php:384
+msgid "Better Bookmarks"
+msgstr ""
+
+#: includes/class-settings.php:372
+msgid "Active. The Link composer will display a rich preview card when users paste a URL."
+msgstr ""
+
+#. translators: %s: link to Better Bookmarks releases page
+#: includes/class-settings.php:383
+#, php-format
+msgid "Install and activate %s to display a rich Open Graph preview card when users paste a URL in the Link composer."
+msgstr ""
+
+#: includes/class-settings.php:394
+#: includes/class-settings.php:402
+#: includes/class-settings.php:416
+#: includes/class-settings.php:422
+msgid "VideoMuxr"
+msgstr ""
+
+#: includes/class-settings.php:396
+msgid "Active. Video uploads route through Mux for transcoding and CDN-hosted playback."
+msgstr ""
+
+#. translators: %s: link to the VideoMuxr settings page
+#: includes/class-settings.php:407
+#, php-format
+msgid "Active but not configured. Add your Mux API credentials in %s to route video uploads through Mux."
+msgstr ""
+
+#: includes/class-settings.php:408
+msgid "Settings → VideoMuxr"
+msgstr ""
+
+#. translators: %s: link to VideoMuxr releases page
+#: includes/class-settings.php:421
+#, php-format
+msgid "Install and activate %s to route video uploads through Mux for transcoding and CDN-hosted playback."
+msgstr ""
+
+#: src/blocks/composer/render.php:56
+msgid "What's on your mind?"
+msgstr ""
+
+#: src/blocks/like-post/render.php:64
+#: src/blocks/like-post/view.js:209
+#: src/blocks/like-post/view.js:243
+#: src/blocks/like-post/view.js:303
+#: src/blocks/like-post/view.js:319
+msgid "Unlike this post"
+msgstr ""
+
+#: src/blocks/like-post/render.php:64
+#: src/blocks/like-post/view.js:60
+#: src/blocks/like-post/view.js:79
+#: src/blocks/like-post/view.js:210
+#: src/blocks/like-post/view.js:304
+#: src/blocks/like-post/view.js:320
+msgid "Like this post"
+msgstr ""
+
+#: src/blocks/post-actions/render.php:73
+msgid "Post actions"
+msgstr ""
+
+#: src/blocks/post-actions/render.php:87
+#: src/blocks/post-actions/view.js:105
+#: src/blocks/post-actions/view.js:110
+msgid "Edit"
+msgstr ""
+
+#: src/blocks/post-actions/render.php:93
+msgid "Delete"
+msgstr ""
+
+#: src/blocks/post-actions/render.php:96
+msgid "Delete this post?"
+msgstr ""
+
+#: src/blocks/post-actions/render.php:98
+#: src/blocks/post-actions/view.js:138
+msgid "Yes, delete"
+msgstr ""
+
+#: src/blocks/post-actions/render.php:101
+#: src/blocks/composer/components/LocationChip.jsx:145
+msgid "Cancel"
+msgstr ""
+
+#: src/blocks/share-post/render.php:48
+#: src/blocks/share-post/edit.jsx:32
+msgid "Share"
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:30
+msgid "Could not detect your location. Enter an address below."
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:32
+msgid "Location permission denied. Enter an address below."
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:34
+msgid "Location unavailable. Enter an address below."
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:36
+msgid "Location request timed out. Enter an address below."
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:38
+msgid "Geolocation is not supported by your browser. Enter an address below."
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:50
+msgid "Detecting location…"
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:50
+msgid "Add location"
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:68
+msgid "Detecting…"
+msgstr ""
+
+#: src/blocks/composer/components/GeoTagButton.jsx:68
+msgid "Location"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:97
+msgid "Add a name…"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:103
+msgid "Change location"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:105
+msgid "Change"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:111
+#: src/blocks/composer/components/LocationChip.jsx:152
+msgid "Remove location"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:132
+msgid "Search for a place…"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:135
+msgid "Search location"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:143
+msgid "Cancel location change"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:159
+msgid "Searching…"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:164
+msgid "No results found."
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:171
+msgid "Location suggestions"
+msgstr ""
+
+#. translators: %s: typed place name
+#: src/blocks/composer/components/LocationChip.jsx:207
+#, js-format
+msgid "Use \"%s\" as place name"
+msgstr ""
+
+#: src/blocks/composer/Composer.jsx:132
+#: src/blocks/composer/PhotoComposer.jsx:476
+#: src/blocks/post-actions/view.js:74
+msgid "Loading…"
+msgstr ""
+
+#: src/blocks/composer/Composer.jsx:164
+msgid "Cancel edit"
+msgstr ""
+
+#: src/blocks/composer/Composer.jsx:173
+msgid "Post type"
+msgstr ""
+
+#: src/blocks/composer/Composer.jsx:203
+msgid "Editing post"
+msgstr ""
+
+#: src/blocks/composer/edit.jsx:26
+msgid "Composer Settings"
+msgstr ""
+
+#: src/blocks/composer/edit.jsx:28
+msgid "Default Mode"
+msgstr ""
+
+#: src/blocks/composer/edit.jsx:45
+msgid "Placeholder Text"
+msgstr ""
+
+#: src/blocks/composer/edit.jsx:53
+msgid "Display the auto-generated title preview below the composer."
+msgstr ""
+
+#: src/blocks/composer/edit.jsx:71
+msgid "QuickPostr Composer — front-end only. Logged-in users with posting capability will see the composer here."
+msgstr ""
+
+#: src/blocks/composer/edit.jsx:108
+msgid "Tap to add a photo"
+msgstr ""
+
+#: src/blocks/composer/edit.jsx:115
+#: src/blocks/composer/LinkComposer.jsx:227
+#: src/blocks/composer/PhotoComposer.jsx:623
+#: src/blocks/composer/TextComposer.jsx:407
+#: src/blocks/composer/VideoComposer.jsx:302
+msgid "Post"
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:126
+msgid "Could not fetch preview. Check the URL and try again."
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:203
+#: src/blocks/composer/PhotoComposer.jsx:379
+#: src/blocks/composer/TextComposer.jsx:377
+#: src/blocks/composer/VideoComposer.jsx:265
+msgid "Failed to publish. Please try again."
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:223
+#: src/blocks/composer/PhotoComposer.jsx:619
+#: src/blocks/composer/TextComposer.jsx:403
+msgid "Update"
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:225
+#: src/blocks/composer/PhotoComposer.jsx:622
+#: src/blocks/composer/TextComposer.jsx:405
+#: src/blocks/composer/VideoComposer.jsx:301
+msgid "Save Draft"
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:238
+msgid "Paste a URL and press Enter…"
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:239
+msgid "Paste a URL…"
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:245
+msgid "URL"
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:254
+#: src/blocks/composer/PhotoComposer.jsx:484
+msgid "Preview"
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:312
+msgid "Saving…"
+msgstr ""
+
+#: src/blocks/composer/LinkComposer.jsx:322
+#: src/blocks/composer/PhotoComposer.jsx:634
+#: src/blocks/composer/TextComposer.jsx:481
+#: src/blocks/composer/VideoComposer.jsx:491
+msgid "Posted!"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:52
+msgid "Please select image files only."
+msgstr ""
+
+#. translators: %d: maximum file size in MB
+#: src/blocks/composer/PhotoComposer.jsx:58
+#: src/blocks/composer/VideoComposer.jsx:79
+#, js-format
+msgid "File too large — maximum size is %d MB."
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:204
+msgid "Select Photos"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:205
+msgid "Use selected photos"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:418
+msgid "Choose photos to upload"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:441
+msgid "Drop photos here,"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:443
+#: src/blocks/composer/VideoComposer.jsx:348
+msgid "browse"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:447
+#: src/blocks/composer/VideoComposer.jsx:352
+msgid ", or"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:456
+#: src/blocks/composer/VideoComposer.jsx:361
+msgid "choose from library"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:491
+msgid "Remove photo"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:541
+msgid "Move photo left"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:552
+msgid "Move photo right"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:564
+msgid "Clear all photos"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:567
+msgid "Clear"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:576
+#: src/blocks/composer/VideoComposer.jsx:402
+msgid "Add a caption… (optional)"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:584
+msgid "Photo caption"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:609
+#: src/blocks/composer/PhotoComposer.jsx:616
+#: src/blocks/composer/TextComposer.jsx:468
+#: src/blocks/composer/TextComposer.jsx:471
+#: src/blocks/composer/VideoComposer.jsx:298
+#: src/blocks/composer/VideoComposer.jsx:476
+msgid "Publishing…"
+msgstr ""
+
+#: src/blocks/composer/PhotoComposer.jsx:610
+#: src/blocks/composer/VideoComposer.jsx:477
+msgid "Submit"
+msgstr ""
+
+#: src/blocks/composer/SlugPreview.jsx:28
+msgid "Auto-generated title preview"
+msgstr ""
+
+#: src/blocks/composer/SlugPreview.jsx:30
+msgid "Title"
+msgstr ""
+
+#. translators: %s: tag name
+#: src/blocks/composer/TagInput.jsx:279
+#, js-format
+msgid "Remove tag %s"
+msgstr ""
+
+#: src/blocks/composer/TagInput.jsx:298
+msgid "Add tags…"
+msgstr ""
+
+#: src/blocks/composer/TagInput.jsx:299
+msgid "Search tags"
+msgstr ""
+
+#: src/blocks/composer/TagInput.jsx:316
+#: src/blocks/composer/TagInput.jsx:476
+msgid "Popular"
+msgstr ""
+
+#: src/blocks/composer/TagInput.jsx:382
+#: src/blocks/composer/TagInput.jsx:544
+msgid "Already added"
+msgstr ""
+
+#: src/blocks/composer/TagInput.jsx:402
+#: src/blocks/composer/TagInput.jsx:564
+msgid "Creating…"
+msgstr ""
+
+#. translators: %s: tag name
+#. translators: %s: category name
+#: src/blocks/composer/TagInput.jsx:408
+#: src/blocks/composer/TagInput.jsx:570
+#, js-format
+msgid "Create \"%s\""
+msgstr ""
+
+#. translators: %s: category name
+#: src/blocks/composer/TagInput.jsx:439
+#, js-format
+msgid "Remove category %s"
+msgstr ""
+
+#: src/blocks/composer/TagInput.jsx:458
+msgid "Add categories…"
+msgstr ""
+
+#: src/blocks/composer/TagInput.jsx:459
+msgid "Search categories"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:86
+msgid "Enter URL:"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:99
+msgid "Formatting"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:102
+msgid "Bold"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:108
+msgid "Italic"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:129
+msgid "Post content"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:415
+msgid "Resume your saved draft?"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:422
+msgid "Resume"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:429
+msgid "Discard"
+msgstr ""
+
+#: src/blocks/composer/TextComposer.jsx:481
+msgid "Updated!"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:69
+msgid "Please select a video file."
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:112
+msgid "Select Video"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:113
+msgid "Use this video"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:292
+msgid "Uploading…"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:295
+msgid "Processing…"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:331
+msgid "Choose a video to upload"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:346
+msgid "Drop a video here,"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:390
+msgid "Remove video"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:407
+msgid "Video caption"
+msgstr ""
+
+#. translators: %d: upload progress percentage
+#: src/blocks/composer/VideoComposer.jsx:440
+#, js-format
+msgid "Uploading… %d%%"
+msgstr ""
+
+#: src/blocks/composer/VideoComposer.jsx:455
+msgid "Processing video… this can take a minute."
+msgstr ""
+
+#: src/blocks/like-post/view.js:37
+msgid "Log in to like and unlike posts on future visits."
+msgstr ""
+
+#: src/blocks/like-post/view.js:43
+msgid "Log In"
+msgstr ""
+
+#: src/blocks/like-post/view.js:47
+msgid "or"
+msgstr ""
+
+#: src/blocks/like-post/view.js:55
+msgid "Close"
+msgstr ""
+
+#: src/blocks/like-post/view.js:66
+msgid "Name"
+msgstr ""
+
+#: src/blocks/like-post/view.js:70
+msgid "Email"
+msgstr ""
+
+#: src/blocks/like-post/view.js:72
+msgid "(optional)"
+msgstr ""
+
+#: src/blocks/like-post/view.js:165
+msgid "Request failed"
+msgstr ""
+
+#: src/blocks/like-post/view.js:183
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: src/blocks/post-actions/view.js:154
+msgid "Deleting…"
+msgstr ""
+
+#: src/blocks/share-post/view.js:17
+msgid "Copy link"
+msgstr ""
+
+#: src/blocks/share-post/view.js:18
+msgid "Copied!"
+msgstr ""
+
+#: src/blocks/share-post/view.js:51
+msgid "X / Twitter"
+msgstr ""
+
+#: src/blocks/share-post/view.js:60
+msgid "Facebook"
+msgstr ""
+
+#: src/gallery-slider/view.js:57
+msgid "Previous image"
+msgstr ""
+
+#: src/gallery-slider/view.js:70
+msgid "Next image"
+msgstr ""
+
+#: src/gallery-slider/view.js:82
+msgid "Gallery navigation"
+msgstr ""
+
+#. translators: 1: current image number, 2: total number of images
+#: src/gallery-slider/view.js:96
+#, js-format
+msgid "Image %1$d of %2$d"
+msgstr ""
+
+#: src/blocks/composer/block.json
+msgctxt "block title"
+msgid "QuickPostr Composer"
+msgstr ""
+
+#: src/blocks/composer/block.json
+msgctxt "block description"
+msgid "Social-style post composer. Visible only to logged-in users with posting capability."
+msgstr ""
+
+#: src/blocks/composer/block.json
+msgctxt "block keyword"
+msgid "composer"
+msgstr ""
+
+#: src/blocks/composer/block.json
+msgctxt "block keyword"
+msgid "post"
+msgstr ""
+
+#: src/blocks/composer/block.json
+msgctxt "block keyword"
+msgid "social"
+msgstr ""
+
+#: src/blocks/like-post/block.json
+msgctxt "block title"
+msgid "Like Post"
+msgstr ""
+
+#: src/blocks/like-post/block.json
+msgctxt "block description"
+msgid "Heart button that lets logged-in users like a post. Stores likes as comments; shows the like count. Place inside a Query Loop post template."
+msgstr ""
+
+#: src/blocks/like-post/block.json
+msgctxt "block keyword"
+msgid "like"
+msgstr ""
+
+#: src/blocks/like-post/block.json
+msgctxt "block keyword"
+msgid "heart"
+msgstr ""
+
+#: src/blocks/like-post/block.json
+msgctxt "block keyword"
+msgid "react"
+msgstr ""
+
+#: src/blocks/like-post/block.json
+#: src/blocks/post-actions/block.json
+#: src/blocks/share-post/block.json
+msgctxt "block keyword"
+msgid "quickpostr"
+msgstr ""
+
+#: src/blocks/post-actions/block.json
+msgctxt "block title"
+msgid "Post Actions"
+msgstr ""
+
+#: src/blocks/post-actions/block.json
+msgctxt "block description"
+msgid "Kebab menu (⋮) with Edit and Delete actions for the current post. Place inside a Query Loop post template."
+msgstr ""
+
+#: src/blocks/post-actions/block.json
+msgctxt "block keyword"
+msgid "edit"
+msgstr ""
+
+#: src/blocks/post-actions/block.json
+msgctxt "block keyword"
+msgid "delete"
+msgstr ""
+
+#: src/blocks/post-actions/block.json
+msgctxt "block keyword"
+msgid "actions"
+msgstr ""
+
+#: src/blocks/post-actions/block.json
+msgctxt "block keyword"
+msgid "menu"
+msgstr ""
+
+#: src/blocks/share-post/block.json
+msgctxt "block title"
+msgid "Share Post"
+msgstr ""
+
+#: src/blocks/share-post/block.json
+msgctxt "block description"
+msgid "Share button using the Web Share API. Place inside a Query Loop post template."
+msgstr ""
+
+#: src/blocks/share-post/block.json
+msgctxt "block keyword"
+msgid "share"
 msgstr ""

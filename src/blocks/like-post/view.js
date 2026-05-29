@@ -1,4 +1,5 @@
 import MicroModal from 'micromodal';
+import { __ } from '@wordpress/i18n';
 
 /**
  * Like Post — front-end view script.
@@ -32,31 +33,50 @@ import MicroModal from 'micromodal';
 
 		const loginSection = config.showLogin
 			? '<div class="qp-like-modal__login-section">' +
-			  '<p class="qp-like-modal__login-desc">Log in to like and unlike posts on future visits.</p>' +
-			  '<a href="" class="qp-like-modal__login-btn">Log In</a>' +
+			  '<p class="qp-like-modal__login-desc">' +
+			  __(
+					'Log in to like and unlike posts on future visits.',
+					'quickpostr'
+			  ) +
+			  '</p>' +
+			  '<a href="" class="qp-like-modal__login-btn">' +
+			  __( 'Log In', 'quickpostr' ) +
+			  '</a>' +
 			  '</div>' +
-			  '<div class="qp-like-modal__divider" aria-hidden="true"><span>or</span></div>'
+			  '<div class="qp-like-modal__divider" aria-hidden="true"><span>' +
+			  __( 'or', 'quickpostr' ) +
+			  '</span></div>'
 			: '';
 
 		el.innerHTML =
 			'<div class="qp-like-modal__backdrop" tabindex="-1" data-micromodal-close>' +
 			'<div class="qp-like-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="qp-like-modal-title">' +
-			'<button type="button" class="qp-like-modal__close" aria-label="Close" data-micromodal-close>' +
+			'<button type="button" class="qp-like-modal__close" aria-label="' +
+			__( 'Close', 'quickpostr' ) +
+			'" data-micromodal-close>' +
 			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
 			'</button>' +
-			'<h2 id="qp-like-modal-title" class="qp-like-modal__title">Like this post</h2>' +
+			'<h2 id="qp-like-modal-title" class="qp-like-modal__title">' +
+			__( 'Like this post', 'quickpostr' ) +
+			'</h2>' +
 			loginSection +
 			'<form class="qp-like-modal__form" novalidate>' +
 			'<div class="qp-like-modal__error" hidden></div>' +
-			'<label class="qp-like-modal__label" for="qp-like-name">Name</label>' +
+			'<label class="qp-like-modal__label" for="qp-like-name">' +
+			__( 'Name', 'quickpostr' ) +
+			'</label>' +
 			'<input class="qp-like-modal__input" id="qp-like-name" type="text" name="name" required autocomplete="name">' +
 			'<label class="qp-like-modal__label" for="qp-like-email">' +
-			'Email <span class="qp-like-modal__optional">(optional)</span>' +
+			__( 'Email', 'quickpostr' ) +
+			' <span class="qp-like-modal__optional">' +
+			__( '(optional)', 'quickpostr' ) +
+			'</span>' +
 			'</label>' +
 			'<input class="qp-like-modal__input" id="qp-like-email" type="email" name="email" autocomplete="email">' +
 			'<button type="submit" class="qp-like-modal__submit">' +
 			HEART_SVG +
-			' Like this post' +
+			' ' +
+			__( 'Like this post', 'quickpostr' ) +
 			'</button>' +
 			'</form>' +
 			'</div>' +
@@ -141,7 +161,9 @@ import MicroModal from 'micromodal';
 			.then( function ( response ) {
 				if ( ! response.ok ) {
 					return response.json().then( function ( d ) {
-						throw new Error( d.message || 'Request failed' );
+						throw new Error(
+							d.message || __( 'Request failed', 'quickpostr' )
+						);
 					} );
 				}
 				return response.json();
@@ -157,7 +179,11 @@ import MicroModal from 'micromodal';
 			} )
 			.catch( function ( err ) {
 				errorEl.textContent =
-					err.message || 'Something went wrong. Please try again.';
+					err.message ||
+					__(
+						'Something went wrong. Please try again.',
+						'quickpostr'
+					);
 				errorEl.hidden = false;
 			} )
 			.finally( function () {
@@ -179,7 +205,9 @@ import MicroModal from 'micromodal';
 					);
 					button.setAttribute(
 						'aria-label',
-						liked ? 'Unlike this post' : 'Like this post'
+						liked
+							? __( 'Unlike this post', 'quickpostr' )
+							: __( 'Like this post', 'quickpostr' )
 					);
 				}
 				if ( countEl ) {
@@ -210,7 +238,10 @@ import MicroModal from 'micromodal';
 					liked = true;
 					button.classList.add( 'is-liked' );
 					button.setAttribute( 'aria-pressed', 'true' );
-					button.setAttribute( 'aria-label', 'Unlike this post' );
+					button.setAttribute(
+						'aria-label',
+						__( 'Unlike this post', 'quickpostr' )
+					);
 				}
 			} catch ( e ) {
 				// localStorage unavailable.
@@ -268,7 +299,9 @@ import MicroModal from 'micromodal';
 					);
 					button.setAttribute(
 						'aria-label',
-						liked ? 'Unlike this post' : 'Like this post'
+						liked
+							? __( 'Unlike this post', 'quickpostr' )
+							: __( 'Like this post', 'quickpostr' )
 					);
 					countEl.textContent = count;
 				} )
@@ -282,7 +315,9 @@ import MicroModal from 'micromodal';
 					);
 					button.setAttribute(
 						'aria-label',
-						prevLiked ? 'Unlike this post' : 'Like this post'
+						prevLiked
+							? __( 'Unlike this post', 'quickpostr' )
+							: __( 'Like this post', 'quickpostr' )
 					);
 					countEl.textContent = prevCount;
 				} )

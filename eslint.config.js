@@ -21,4 +21,14 @@ module.exports = [
 			'no-unused-vars': [ 'error', { caughtErrors: 'none' } ],
 		},
 	},
+	{
+		// Jest unit tests run in Node with the jest preset's globals.
+		files: [ '**/*.test.js' ],
+		languageOptions: {
+			globals: {
+				...globals.node,
+				...globals.jest,
+			},
+		},
+	},
 ];

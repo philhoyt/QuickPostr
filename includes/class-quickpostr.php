@@ -113,6 +113,7 @@ class QuickPostr {
 			$like_post_asset['version'],
 			array( 'in_footer' => true )
 		);
+		wp_set_script_translations( 'quickpostr-like-post-view', 'quickpostr' );
 
 		$gallery_slider_asset_file = QUICKPOSTR_PATH . 'build/gallery-slider/view.asset.php';
 		$gallery_slider_asset      = file_exists( $gallery_slider_asset_file )
@@ -129,6 +130,7 @@ class QuickPostr {
 			$gallery_slider_asset['version'],
 			array( 'in_footer' => true )
 		);
+		wp_set_script_translations( 'quickpostr-gallery-slider-view', 'quickpostr' );
 
 		wp_register_style(
 			'quickpostr-gallery-slider-style',

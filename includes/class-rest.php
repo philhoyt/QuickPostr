@@ -310,7 +310,8 @@ class QuickPostr_Rest {
 	 * Toggle or create a like-comment for the current user or visitor.
 	 *
 	 * Logged-in users: toggle (create or delete). Anonymous visitors: create
-	 * only (one-way), requires name, deduplicates by email when provided.
+	 * only (one-way), requires name, deduplicates by email when provided and by
+	 * originating IP otherwise.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return \WP_REST_Response|\WP_Error
@@ -352,6 +353,7 @@ class QuickPostr_Rest {
 		} else {
 			$name  = (string) $request->get_param( 'name' );
 			$email = (string) $request->get_param( 'email' );
+			$ip    = $this->get_request_ip();
 
 			if ( ! $name ) {
 				return new \WP_Error(
@@ -361,8 +363,13 @@ class QuickPostr_Rest {
 				);
 			}
 
-			// Deduplicate by email when provided.
-			if ( $email && $this->get_anonymous_like_exists( $post_id, $email ) ) {
+			// Deduplicate anonymous likes: by email when provided, otherwise by
+			// originating IP. Without this an unauthenticated client could inflate
+			// the count indefinitely by re-posting name-only likes.
+			$already_liked = ( $email && $this->get_anonymous_like_exists( $post_id, $email ) )
+				|| ( ! $email && $this->anonymous_like_exists_by_ip( $post_id, $ip ) );
+
+			if ( $already_liked ) {
 				return rest_ensure_response(
 					array(
 						'liked' => true,
@@ -376,6 +383,7 @@ class QuickPostr_Rest {
 					'comment_post_ID'      => $post_id,
 					'comment_author'       => $name,
 					'comment_author_email' => $email,
+					'comment_author_IP'    => $ip,
 					'comment_type'         => 'quickpostr_like',
 					'comment_content'      => $name . esc_html__( ' liked this post', 'quickpostr' ),
 					'comment_approved'     => 1,
@@ -452,6 +460,48 @@ class QuickPostr_Rest {
 			)
 		);
 		return ! empty( $comments );
+	}
+
+	/**
+	 * Return true if an anonymous like-comment from the given IP exists on a post.
+	 *
+	 * Used to throttle name-only anonymous likes (no email to dedupe on) so the
+	 * like count cannot be inflated by repeated unauthenticated requests.
+	 *
+	 * @param int    $post_id The post ID.
+	 * @param string $ip      The commenter IP address.
+	 * @return bool
+	 */
+	public function anonymous_like_exists_by_ip( int $post_id, string $ip ): bool {
+		if ( '' === $ip ) {
+			return false;
+		}
+		$comments = get_comments(
+			array(
+				'post_id'   => $post_id,
+				'author_ip' => $ip,
+				'user_id'   => 0,
+				'type'      => 'quickpostr_like',
+				'status'    => 'approve',
+				'number'    => 1,
+			)
+		);
+		return ! empty( $comments );
+	}
+
+	/**
+	 * Return the sanitized originating IP for the current request.
+	 *
+	 * Reads REMOTE_ADDR only — forwarded headers are not trusted because they
+	 * are client-spoofable, which would defeat the dedupe.
+	 *
+	 * @return string The IP address, or an empty string when unavailable.
+	 */
+	private function get_request_ip(): string {
+		if ( empty( $_SERVER['REMOTE_ADDR'] ) ) {
+			return '';
+		}
+		return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
 	}
 
 	/**
