@@ -11,6 +11,8 @@
  *     .qp-media-gallery__pill        (injected — absolute)
  *   nav.qp-media-gallery__dots       (injected — sibling after wrapper)
  */
+import { __, sprintf } from '@wordpress/i18n';
+
 ( function () {
 	const CHEVRON_LEFT =
 		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>';
@@ -50,7 +52,10 @@
 		prevBtn.type = 'button';
 		prevBtn.className =
 			'qp-media-gallery__arrow qp-media-gallery__arrow--prev';
-		prevBtn.setAttribute( 'aria-label', 'Previous image' );
+		prevBtn.setAttribute(
+			'aria-label',
+			__( 'Previous image', 'quickpostr' )
+		);
 		prevBtn.innerHTML = CHEVRON_LEFT;
 		prevBtn.disabled = true;
 		prevBtn.addEventListener( 'click', function () {
@@ -62,7 +67,7 @@
 		nextBtn.type = 'button';
 		nextBtn.className =
 			'qp-media-gallery__arrow qp-media-gallery__arrow--next';
-		nextBtn.setAttribute( 'aria-label', 'Next image' );
+		nextBtn.setAttribute( 'aria-label', __( 'Next image', 'quickpostr' ) );
 		nextBtn.innerHTML = CHEVRON_RIGHT;
 		nextBtn.addEventListener( 'click', function () {
 			goTo( current + 1 );
@@ -72,7 +77,10 @@
 		// Dots nav — injected after the wrapper as a sibling.
 		const dotsNav = document.createElement( 'nav' );
 		dotsNav.className = 'qp-media-gallery__dots';
-		dotsNav.setAttribute( 'aria-label', 'Gallery navigation' );
+		dotsNav.setAttribute(
+			'aria-label',
+			__( 'Gallery navigation', 'quickpostr' )
+		);
 		wrapper.insertAdjacentElement( 'afterend', dotsNav );
 
 		slides.forEach( function ( _, i ) {
@@ -83,7 +91,12 @@
 				( i === 0 ? ' qp-media-gallery__dot--active' : '' );
 			btn.setAttribute(
 				'aria-label',
-				'Image ' + ( i + 1 ) + ' of ' + total
+				sprintf(
+					/* translators: 1: current image number, 2: total number of images */
+					__( 'Image %1$d of %2$d', 'quickpostr' ),
+					i + 1,
+					total
+				)
 			);
 			btn.addEventListener( 'click', function () {
 				goTo( i );
