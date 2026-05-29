@@ -8,11 +8,17 @@ const DEBOUNCE_MS = 300;
  *
  * Reads window.quickpostrConfig.geoTagrGeocoding to determine which
  * geocoding backend to use:
- *  - google  → GeoTagr's server-side proxy (/geotagr/v1/geocode), returns 1 result
+ *  - google  → GeoTagr's server-side proxy (/geotagr/v1/geocode), returns up to 5 results
  *  - others  → Nominatim /search, returns up to 5 results
  *
+ * search(query, bias) accepts an optional { lat, lng } bias object. When
+ * provided and the provider is google, the coordinates are forwarded to the
+ * GeoTagr proxy which passes them as a locationBias to the Places API,
+ * ensuring results are anchored to the user's GPS location rather than the
+ * server's IP.
+ *
  * Returns { results, loading, hasSearched, search, clearResults } where:
- *  - search(query) triggers a debounced geocode request
+ *  - search(query, bias?) triggers a debounced geocode request
  *  - hasSearched becomes true after the first completed search (used to
  *    show "No results found" only after the user has actually searched)
  */
@@ -22,7 +28,7 @@ export default function useNominatimSearch() {
 	const [ hasSearched, setHasSearched ] = useState( false );
 	const timerRef = useRef( null );
 
-	const search = useCallback( ( query ) => {
+	const search = useCallback( ( query, bias = null ) => {
 		clearTimeout( timerRef.current );
 
 		if ( ! query.trim() ) {
@@ -43,23 +49,29 @@ export default function useNominatimSearch() {
 					const url = new URL( geoConfig.proxyUrl );
 					url.searchParams.set( 'type', 'forward' );
 					url.searchParams.set( 'query', query );
+					if ( bias?.lat !== undefined && bias?.lng !== undefined ) {
+						url.searchParams.set( 'lat', bias.lat );
+						url.searchParams.set( 'lng', bias.lng );
+					}
 
 					const res = await fetch( url.toString(), {
 						headers: { 'X-WP-Nonce': geoConfig.nonce ?? '' },
 					} );
 					const data = await res.json();
+					let items = [];
+					if ( Array.isArray( data ) ) {
+						items = data;
+					} else if ( data?.lat !== undefined ) {
+						items = [ data ];
+					}
 
 					setResults(
-						data && data.lat !== undefined
-							? [
-									{
-										lat: data.lat,
-										lng: data.lng,
-										place: data.name || '',
-										address: data.address || '',
-									},
-							  ]
-							: []
+						items.map( ( r ) => ( {
+							lat: r.lat,
+							lng: r.lng,
+							place: r.name || '',
+							address: r.address || '',
+						} ) )
 					);
 				} else {
 					// Nominatim (default, also used as Mapbox fallback).

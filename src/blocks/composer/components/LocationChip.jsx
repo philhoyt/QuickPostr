@@ -27,7 +27,8 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 	function handleSearchChange( e ) {
 		const value = e.target.value;
 		setQuery( value );
-		search( value );
+		const bias = geoData.lat !== null ? { lat: geoData.lat, lng: geoData.lng } : null;
+		search( value, bias );
 	}
 
 	function handleSelect( result ) {
@@ -59,7 +60,8 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 	function handleStartEdit() {
 		setQuery( geoData.place );
 		setEditing( true );
-		search( geoData.place );
+		const bias = geoData.lat !== null ? { lat: geoData.lat, lng: geoData.lng } : null;
+		search( geoData.place, bias );
 	}
 
 	function handleCancelEdit() {

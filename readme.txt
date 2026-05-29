@@ -92,6 +92,10 @@ Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
 
+= 0.13.1 =
+* Fix: Location search now works correctly on hosted servers — user GPS coordinates are passed as a location bias to the Places API, preventing server IP location from skewing results.
+* Fix: Forward geocode now returns up to 5 results when using the Google provider.
+
 = 0.13.0 =
 * Add: Geo-tagged posts now retain their location when published from a draft — coordinates and place name are saved correctly on publish.
 * Add: Location chip now supports typing a custom place name directly, without having to pick a search result.
