@@ -56,6 +56,12 @@ $qp_config = array(
 		'placeholderText' => $attributes['placeholderText'] ?? __( "What's on your mind?", 'quickpostr' ),
 	),
 	'maxUploadSize'    => wp_max_upload_size(),
+	'videoMuxr'        => ( function_exists( 'videomuxr_is_configured' ) && videomuxr_is_configured() ) ? array(
+		'active'          => true,
+		'directUploadUrl' => rest_url( 'videomuxr/v1/direct-upload' ),
+		'statusUrl'       => rest_url( 'videomuxr/v1/upload-status' ),
+		'nonce'           => wp_create_nonce( 'wp_rest' ),
+	) : null,
 	'betterBookmarks'  => class_exists( 'Better_Bookmarks' ),
 	'geoTagrActive'    => function_exists( 'geo_tagr_get_post_meta' ),
 	'geoTagrGeocoding' => ( function_exists( 'geo_tagr_get_post_meta' ) && class_exists( '\\GeoTagr\\Settings' ) ) ? array(
