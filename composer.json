@@ -10,7 +10,8 @@
         "phpcsstandards/phpcsextra": "^1.0",
         "phpstan/phpstan": "^2.1",
         "szepeviktor/phpstan-wordpress": "^2.0",
-        "phpunit/phpunit": "^13.1"
+        "phpunit/phpunit": "^13.1",
+        "brain/monkey": "^2.7"
     },
     "config": {
         "allow-plugins": {
