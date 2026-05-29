@@ -313,20 +313,6 @@ export function getTag( id ) {
 }
 
 /**
- * Fetch the source URL for a media item.
- *
- * @param {number} id
- * @return {Promise<string>} Source URL of the media item.
- */
-export async function getMediaUrl( id ) {
-	const data = await request(
-		'GET',
-		`/wp/v2/media/${ id }?_fields=source_url`
-	);
-	return data.source_url ?? '';
-}
-
-/**
  * Update an existing post.
  *
  * @param {number} id
