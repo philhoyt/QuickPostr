@@ -46,14 +46,13 @@ if ( ! $qp_can_edit && ! $qp_can_delete ) {
 	return;
 }
 
-// Single inline script — superset of what edit-post and delete-post each needed.
+// Inline config for the Delete action (Edit is a plain link to the WP editor).
 wp_add_inline_script(
 	'quickpostr-post-actions-view',
 	'window.quickpostrPostActions = ' . wp_json_encode(
 		array(
 			'restUrl' => rest_url(),
 			'nonce'   => wp_create_nonce( 'wp_rest' ),
-			'homeUrl' => home_url( '/' ),
 		)
 	) . ';',
 	'before'
@@ -83,9 +82,9 @@ $qp_wrapper_attributes = get_block_wrapper_attributes(
 
 	<div class="qp-post-actions__menu" hidden>
 		<?php if ( $qp_can_edit ) : ?>
-		<button type="button" class="qp-post-actions__item qp-post-actions__item--edit">
+		<a class="qp-post-actions__item qp-post-actions__item--edit" href="<?php echo esc_url( (string) get_edit_post_link( $quickpostr_post_id ) ); ?>">
 			<?php esc_html_e( 'Edit', 'quickpostr' ); ?>
-		</button>
+		</a>
 		<?php endif; ?>
 
 		<?php if ( $qp_can_delete ) : ?>
