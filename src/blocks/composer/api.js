@@ -358,6 +358,21 @@ export function discardDraft( id ) {
 }
 
 /**
+ * Fetch a single media attachment by ID.
+ *
+ * Used to hydrate the photo composer from a PWA-shared image (?qp_share=ID).
+ *
+ * @param {number} id Attachment ID.
+ * @return {Promise<object>} The media object (includes source_url, media_details).
+ */
+export function getMedia( id ) {
+	return request(
+		'GET',
+		`/wp/v2/media/${ id }?_fields=id,source_url,media_details`
+	);
+}
+
+/**
  * Fetch Open Graph preview data via the Better Bookmarks REST endpoint.
  * Requires Better Bookmarks to be installed and active.
  *

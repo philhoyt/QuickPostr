@@ -55,6 +55,9 @@ $qp_config = array(
 		'placeholderText' => $attributes['placeholderText'] ?? __( "What's on your mind?", 'quickpostr' ),
 	),
 	'maxUploadSize'    => wp_max_upload_size(),
+	'pwa'              => array(
+		'swUrl' => home_url( '/quickpostr-sw.js' ),
+	),
 	'videoMuxr'        => ( function_exists( 'videomuxr_is_configured' ) && videomuxr_is_configured() ) ? array(
 		'active'          => true,
 		'directUploadUrl' => rest_url( 'videomuxr/v1/direct-upload' ),

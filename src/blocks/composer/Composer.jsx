@@ -1,4 +1,4 @@
-import { useState } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
@@ -6,6 +6,7 @@ import VideoComposer from './VideoComposer.jsx';
 import LinkComposer from './LinkComposer.jsx';
 import GeoTagButton from './components/GeoTagButton.jsx';
 import LocationChip from './components/LocationChip.jsx';
+import usePwaShare from './usePwaShare.js';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -21,6 +22,14 @@ const config = window.quickpostrConfig ?? {};
 export default function Composer() {
 	const initialMode = config.blockAttrs?.defaultMode ?? 'status';
 	const [ mode, setMode ] = useState( initialMode );
+	const sharedPhoto = usePwaShare();
+
+	// A photo shared into QuickPostr (via the PWA share target) forces photo mode.
+	useEffect( () => {
+		if ( sharedPhoto ) {
+			setMode( 'photo' );
+		}
+	}, [ sharedPhoto ] );
 	const [ geoData, setGeoData ] = useState( {
 		lat: null,
 		lng: null,
@@ -144,6 +153,7 @@ export default function Composer() {
 					<PhotoComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						initialPhoto={ sharedPhoto }
 					/>
 				) }
 				{ mode === 'video' && (
