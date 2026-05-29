@@ -92,6 +92,10 @@ Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
 
+= 0.13.2 =
+* Fix: Location chip now wraps long place names instead of overflowing the composer.
+* Fix: Gallery photo preview is now vertically centered within the preview area.
+
 = 0.13.1 =
 * Fix: Location search now works correctly on hosted servers — user GPS coordinates are passed as a location bias to the Places API, preventing server IP location from skewing results.
 * Fix: Forward geocode now returns up to 5 results when using the Google provider.
