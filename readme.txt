@@ -8,16 +8,16 @@ Stable tag: 0.15.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Front-end post composer for WordPress. Logged-in users post status updates, photos, videos, and links without visiting /wp-admin.
+Front-end post composer that lets logged-in users post status updates, photos, videos, and links without visiting wp-admin
 
 == Description ==
 
 Place the QuickPostr Composer block on any page. Logged-in users with the appropriate role see a composer with four modes:
 
-* **Status** — Rich text editor with bold, italic, and inline links. Drafts auto-save every 800 ms.
-* **Photo** — Drag-and-drop upload or WordPress media library picker. Optional caption.
-* **Video** — Drag-and-drop video upload. Embeds the uploaded video as a WordPress video block in the post content.
-* **Link** — Paste a URL to fetch Open Graph metadata and post a rich link card. Requires the [Better Bookmarks](https://github.com/philhoyt/BetterBookmarks) plugin for card display; falls back to a plain linked paragraph without it.
+* **Status** -- Rich text editor with bold, italic, and inline links. Drafts auto-save every 800 ms.
+* **Photo** -- Drag-and-drop upload or WordPress media library picker. Optional caption. Selecting multiple images posts a gallery, which can be reordered before submitting.
+* **Video** -- Drag-and-drop video upload. Embeds the uploaded video as a WordPress video block in the post content.
+* **Link** -- Paste a URL to fetch Open Graph metadata and post a rich link card. Requires the [Better Bookmarks](https://github.com/philhoyt/BetterBookmarks) plugin for card display; falls back to a plain linked paragraph without it.
 
 The composer is auth-gated server-side. Logged-out visitors see nothing.
 
@@ -25,14 +25,16 @@ Post titles are generated server-side from content. Titles are suppressed on the
 
 **Additional blocks**
 
-* **Edit Post** — loads a post into the Composer for editing. Place inside a Query Loop template.
-* **Delete Post** — trashes the current post. Place inside a Query Loop template.
-* **Share Post** — calls `navigator.share()`. Requires HTTPS; hides itself on HTTP or when the API is unavailable.
+* **Post Actions** -- a kebab menu with Edit and Delete actions for the current post. Edit opens the post in the WordPress editor. Place inside a Query Loop template.
+* **Like Post** -- a heart button that lets visitors like a post and shows the like count. Place inside a Query Loop template.
+* **Share Post** -- calls `navigator.share()`. Requires HTTPS; hides itself on HTTP or when the API is unavailable.
+
+A **QuickPostr Slider** block style is also registered for `core/gallery`, turning a gallery into a scroll-snap slider with dot navigation, arrows, and swipe gestures.
 
 **Requirements**
 
 * A theme that declares `add_theme_support( 'post-formats', [...] )`
-* PHP Imagick extension — only required for EXIF stripping
+* PHP Imagick extension -- only required for EXIF stripping
 
 == Installation ==
 
@@ -45,14 +47,14 @@ Post titles are generated server-side from content. Titles are suppressed on the
 
 All settings are at **Settings → QuickPostr**.
 
-* **Allowed Roles** — which roles can see and use the Composer block. Default: administrator, editor, author.
-* **Default Post Status** — publish or draft. Set to draft to queue posts for review.
-* **Default Category** — applied to every new post.
-* **Show Slug Preview** — displays the auto-generated title preview below the editor.
-* **Hide Admin Bar** — hides the WordPress admin bar for non-administrator roles.
-* **Hide Admin Bar (Administrators)** — separate toggle for the administrator role.
-* **Front-End Post Management** — enables the Edit Post and Delete Post blocks.
-* **Strip Photo Metadata** — strips EXIF data (GPS, camera info) from JPEG uploads. Applies EXIF orientation to pixel data before stripping so images display correctly. Silently skipped if Imagick is unavailable.
+* **Allowed Roles** -- which roles can see and use the Composer block. Default: administrator, editor, author.
+* **Default Post Status** -- publish or draft. Set to draft to queue posts for review.
+* **Default Category** -- applied to every new post.
+* **Show Slug Preview** -- displays the auto-generated title preview below the editor.
+* **Hide Admin Bar** -- hides the WordPress admin bar for non-administrator roles.
+* **Hide Admin Bar (Administrators)** -- separate toggle for the administrator role.
+* **Front-End Post Management** -- enables the Edit and Delete actions in the Post Actions block.
+* **Strip Photo Metadata** -- strips EXIF data (GPS, camera info) from JPEG uploads. Applies EXIF orientation to pixel data before stripping so images display correctly. Silently skipped if Imagick is unavailable.
 
 Settings are stored in a single `wp_options` row under `quickpostr_settings`.
 
