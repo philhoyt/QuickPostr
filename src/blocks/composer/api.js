@@ -100,6 +100,118 @@ export async function uploadMedia( file ) {
 }
 
 /**
+ * Request a Mux direct-upload URL from VideoMuxr.
+ *
+ * @return {Promise<{upload_id: string, upload_url: string}>} The Mux upload target.
+ */
+export function requestVideoMuxrUpload() {
+	return request( 'POST', '/videomuxr/v1/direct-upload' );
+}
+
+/**
+ * Upload a file directly to a Mux direct-upload URL via XHR PUT.
+ *
+ * The upload URL is a pre-signed storage endpoint — it takes the raw file body
+ * and needs no WordPress auth header (auth was established when the URL was
+ * created). XHR is used instead of fetch() for upload progress events.
+ *
+ * @param {string}   uploadUrl  The Mux direct-upload URL.
+ * @param {File}     file       The video file.
+ * @param {Function} onProgress Called with an integer percentage (0–100).
+ * @return {Promise<void>} Resolves when the upload completes.
+ */
+export function uploadToMux( uploadUrl, file, onProgress ) {
+	return new Promise( ( resolve, reject ) => {
+		const xhr = new XMLHttpRequest();
+		xhr.open( 'PUT', uploadUrl, true );
+		xhr.setRequestHeader(
+			'Content-Type',
+			file.type || 'application/octet-stream'
+		);
+
+		xhr.upload.addEventListener( 'progress', ( e ) => {
+			if ( e.lengthComputable && typeof onProgress === 'function' ) {
+				onProgress( Math.round( ( e.loaded / e.total ) * 100 ) );
+			}
+		} );
+
+		xhr.addEventListener( 'load', () => {
+			if ( xhr.status >= 200 && xhr.status < 300 ) {
+				resolve();
+			} else {
+				reject( new Error( `Upload failed (HTTP ${ xhr.status })` ) );
+			}
+		} );
+
+		xhr.addEventListener( 'error', () =>
+			reject( new Error( 'Upload failed — network error.' ) )
+		);
+		xhr.addEventListener( 'abort', () =>
+			reject( new Error( 'Upload cancelled.' ) )
+		);
+
+		xhr.send( file );
+	} );
+}
+
+/**
+ * Poll VideoMuxr for the upload status until Mux finishes transcoding.
+ *
+ * Polls every 3 seconds, up to 60 attempts (~3 minutes), matching the
+ * video-comments timeout. Resolves once the asset is ready.
+ *
+ * @param {string} uploadId The Mux upload ID returned by requestVideoMuxrUpload.
+ * @return {Promise<{playbackId: string, assetId: string, aspectRatio: string}>} Ready asset details.
+ */
+export function pollVideoMuxrStatus( uploadId ) {
+	const MAX_ATTEMPTS = 60;
+	const INTERVAL_MS = 3000;
+
+	return new Promise( ( resolve, reject ) => {
+		let attempts = 0;
+
+		const tick = async () => {
+			attempts++;
+			try {
+				const qs = new URLSearchParams( { upload_id: uploadId } );
+				const data = await request(
+					'GET',
+					`/videomuxr/v1/upload-status?${ qs }`
+				);
+
+				if ( data.status === 'errored' ) {
+					reject( new Error( 'Mux could not process this video.' ) );
+					return;
+				}
+
+				if ( data.status === 'ready' && data.playback_id ) {
+					resolve( {
+						playbackId: data.playback_id,
+						assetId: data.asset_id ?? '',
+						aspectRatio: data.aspect_ratio ?? '',
+					} );
+					return;
+				}
+			} catch ( err ) {
+				reject( err );
+				return;
+			}
+
+			if ( attempts >= MAX_ATTEMPTS ) {
+				reject(
+					new Error( 'Timed out waiting for the video to process.' )
+				);
+				return;
+			}
+
+			setTimeout( tick, INTERVAL_MS );
+		};
+
+		tick();
+	} );
+}
+
+/**
  * Fetch the most-used tags, ordered by post count descending.
  *
  * @return {Promise<Array>} Popular tags.
