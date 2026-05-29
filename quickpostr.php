@@ -26,6 +26,7 @@ define( 'QUICKPOSTR_URL', plugin_dir_url( __FILE__ ) );
 require_once QUICKPOSTR_PATH . 'includes/class-quickpostr.php';
 require_once QUICKPOSTR_PATH . 'includes/class-settings.php';
 require_once QUICKPOSTR_PATH . 'includes/class-rest.php';
+require_once QUICKPOSTR_PATH . 'includes/class-manifest.php';
 
 // Plugin Update Checker — GitHub release-based updates.
 $quickpostr_puc = QUICKPOSTR_PATH . 'lib/plugin-update-checker/plugin-update-checker.php';
@@ -43,9 +44,15 @@ register_activation_hook( __FILE__, 'quickpostr_activate' );
 register_deactivation_hook( __FILE__, 'quickpostr_deactivate' );
 
 /**
- * Plugin activation: flush rewrite rules.
+ * Plugin activation: register the PWA rewrite rules and flush.
+ *
+ * The QuickPostr_Manifest rules are normally added on `init`, which has not
+ * run for a freshly activated plugin — so they are registered here explicitly
+ * before flushing, otherwise the manifest/share/service-worker routes 404
+ * until permalinks are next saved.
  */
 function quickpostr_activate(): void {
+	( new QuickPostr_Manifest() )->register_rewrite_rules();
 	flush_rewrite_rules();
 }
 
