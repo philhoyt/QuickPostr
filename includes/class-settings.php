@@ -393,7 +393,7 @@ class QuickPostr_Settings {
 				<p>
 					<strong><?php esc_html_e( 'VideoMuxr', 'quickpostr' ); ?></strong>
 					&mdash;
-					<?php esc_html_e( 'Active. Video uploads route through Mux for transcoding and HDR-safe playback.', 'quickpostr' ); ?>
+					<?php esc_html_e( 'Active. Video uploads route through Mux for transcoding and CDN-hosted playback.', 'quickpostr' ); ?>
 				</p>
 			</div>
 			<?php elseif ( function_exists( 'videomuxr_is_configured' ) ) : ?>
@@ -418,7 +418,7 @@ class QuickPostr_Settings {
 					<?php
 					printf(
 						/* translators: %s: link to VideoMuxr releases page */
-						esc_html__( 'Install and activate %s to route video uploads through Mux for transcoding and HDR-safe playback in all browsers.', 'quickpostr' ),
+						esc_html__( 'Install and activate %s to route video uploads through Mux for transcoding and CDN-hosted playback.', 'quickpostr' ),
 						'<a href="https://github.com/philhoyt/VideoMuxr/releases/latest" target="_blank" rel="noopener noreferrer">' . esc_html__( 'VideoMuxr', 'quickpostr' ) . '</a>'
 					);
 					?>
