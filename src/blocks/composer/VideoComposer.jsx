@@ -1,11 +1,23 @@
 import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { createPost, createGeoPost, uploadMedia } from './api.js';
+import {
+	createPost,
+	createGeoPost,
+	uploadMedia,
+	requestVideoMuxrUpload,
+	uploadToMux,
+	pollVideoMuxrStatus,
+} from './api.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 
 const config = window.quickpostrConfig ?? {};
 const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
+
+// VideoMuxr routes new uploads straight to Mux (no PHP upload-size limit) and
+// renders them via the videomuxr/video block. Active only for fresh files —
+// videos picked from the media library stay on the existing WP attachment path.
+const videoMuxr = config.videoMuxr ?? null;
 
 /**
  * Video post composer.
@@ -32,6 +44,9 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
+	// 'idle' | 'uploading' | 'processing' — only used on the VideoMuxr path.
+	const [ phase, setPhase ] = useState( 'idle' );
+	const [ uploadProgress, setUploadProgress ] = useState( 0 );
 
 	const fileInputRef = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
@@ -55,7 +70,8 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 			return;
 		}
 
-		if ( f.size > MAX_BYTES ) {
+		// Mux uploads go directly to Mux storage, bypassing the PHP upload limit.
+		if ( ! videoMuxr?.active && f.size > MAX_BYTES ) {
 			const mb = Math.round( MAX_BYTES / 1024 / 1024 );
 			setError(
 				sprintf(
@@ -148,32 +164,83 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 		setError( null );
 
 		try {
-			let mediaId, mediaUrl;
+			// New file + VideoMuxr active → upload straight to Mux.
+			const useMux = videoMuxr?.active && !! file;
+			let baseFields;
 
-			if ( libraryMediaItem ) {
-				mediaId = libraryMediaItem.id;
-				mediaUrl = libraryMediaItem.source_url;
+			if ( useMux ) {
+				setPhase( 'uploading' );
+				setUploadProgress( 0 );
+
+				const { upload_id: uploadId, upload_url: uploadUrl } =
+					await requestVideoMuxrUpload();
+				await uploadToMux( uploadUrl, file, setUploadProgress );
+
+				setPhase( 'processing' );
+				const { playbackId, assetId, aspectRatio } =
+					await pollVideoMuxrStatus( uploadId );
+
+				baseFields = {
+					title: generateTitle( 'photo', '', caption ),
+					content: buildMuxVideoContent(
+						playbackId,
+						assetId,
+						aspectRatio,
+						caption
+					),
+					status: defaultStatus,
+					format: 'video',
+					tags: selectedTags,
+					categories: selectedCategories,
+					meta: { _quickpostr_post: '1' },
+					videomuxr_playback_id: playbackId,
+					videomuxr_asset_id: assetId,
+				};
 			} else {
-				const media = await uploadMedia( file );
-				mediaId = media.id;
-				mediaUrl = media.source_url;
+				let mediaId, mediaUrl;
+
+				if ( libraryMediaItem ) {
+					mediaId = libraryMediaItem.id;
+					mediaUrl = libraryMediaItem.source_url;
+				} else {
+					const media = await uploadMedia( file );
+					mediaId = media.id;
+					mediaUrl = media.source_url;
+				}
+
+				baseFields = {
+					title: generateTitle( 'photo', '', caption ),
+					content: buildVideoContent( mediaId, mediaUrl, caption ),
+					status: defaultStatus,
+					format: 'video',
+					featured_media: mediaId,
+					tags: selectedTags,
+					categories: selectedCategories,
+					meta: { _quickpostr_post: '1' },
+				};
 			}
 
-			const baseFields = {
-				title: generateTitle( 'photo', '', caption ),
-				content: buildVideoContent( mediaId, mediaUrl, caption ),
-				status: defaultStatus,
-				format: 'video',
-				featured_media: mediaId,
-				tags: selectedTags,
-				categories: selectedCategories,
-				meta: { _quickpostr_post: '1' },
-			};
-			const wpPost = await ( geoData?.active && geoData?.lat !== null
-				? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-				: createPost( baseFields ) );
+			const hasGeo = geoData?.active && geoData?.lat !== null;
+			let fields = baseFields;
+			if ( hasGeo ) {
+				fields = {
+					...baseFields,
+					geo_lat: geoData.lat,
+					geo_lng: geoData.lng,
+					geo_place: geoData.place,
+					geo_address: geoData.address,
+				};
+			}
 
-			onSuccess?.( wpPost, mediaUrl );
+			// VideoMuxr meta can only be written by our own endpoint (the core
+			// REST route cannot set show_in_rest:false meta), so Mux posts always
+			// route through /quickpostr/v1/posts.
+			const wpPost =
+				hasGeo || useMux
+					? await createGeoPost( fields )
+					: await createPost( fields );
+
+			onSuccess?.( wpPost );
 
 			// Reset form.
 			if ( preview ) {
@@ -198,6 +265,8 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
 		} finally {
 			setSubmitting( false );
+			setPhase( 'idle' );
+			setUploadProgress( 0 );
 		}
 	}
 
@@ -207,6 +276,30 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 			return videoBlock;
 		}
 		return `${ videoBlock }\n\n<!-- wp:paragraph --><p>${ captionText }</p><!-- /wp:paragraph -->`;
+	}
+
+	function buildMuxVideoContent( playbackId, assetId, aspectRatio, captionText ) {
+		const attrs = JSON.stringify( { playbackId, assetId, aspectRatio } );
+		const muxBlock = `<!-- wp:videomuxr/video ${ attrs } /-->`;
+		if ( ! captionText.trim() ) {
+			return muxBlock;
+		}
+		return `${ muxBlock }\n\n<!-- wp:paragraph --><p>${ captionText }</p><!-- /wp:paragraph -->`;
+	}
+
+	function submitButtonLabel() {
+		if ( phase === 'uploading' ) {
+			return __( 'Uploading…', 'quickpostr' );
+		}
+		if ( phase === 'processing' ) {
+			return __( 'Processing…', 'quickpostr' );
+		}
+		if ( submitting ) {
+			return __( 'Publishing…', 'quickpostr' );
+		}
+		return defaultStatus === 'draft'
+			? __( 'Save Draft', 'quickpostr' )
+			: __( 'Post', 'quickpostr' );
 	}
 
 	function handleDropzoneKeyDown( e ) {
@@ -323,6 +416,50 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 				</>
 			) }
 
+			{ phase === 'uploading' && (
+				<div
+					className="qp-video-progress"
+					role="status"
+					aria-live="polite"
+				>
+					<div
+						className="qp-video-progress__bar"
+						role="progressbar"
+						aria-valuenow={ uploadProgress }
+						aria-valuemin={ 0 }
+						aria-valuemax={ 100 }
+					>
+						<span
+							className="qp-video-progress__fill"
+							style={ { width: `${ uploadProgress }%` } }
+						/>
+					</div>
+					<span className="qp-video-progress__label">
+						{ sprintf(
+							/* translators: %d: upload progress percentage */
+							__( 'Uploading… %d%%', 'quickpostr' ),
+							uploadProgress
+						) }
+					</span>
+				</div>
+			) }
+
+			{ phase === 'processing' && (
+				<div
+					className="qp-video-processing"
+					role="status"
+					aria-live="polite"
+				>
+					<span className="qp-video-processing__spinner" aria-hidden="true" />
+					<span>
+						{ __(
+							'Processing video… this can take a minute.',
+							'quickpostr'
+						) }
+					</span>
+				</div>
+			) }
+
 			{ error && (
 				<p className="qp-composer-error" role="alert">
 					{ error }
@@ -341,11 +478,7 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 					}
 					type="button"
 				>
-					{ submitting
-						? __( 'Publishing…', 'quickpostr' )
-						: defaultStatus === 'draft'
-						? __( 'Save Draft', 'quickpostr' )
-						: __( 'Post', 'quickpostr' ) }
+					{ submitButtonLabel() }
 				</button>
 			</footer>
 

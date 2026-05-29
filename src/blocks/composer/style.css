@@ -742,6 +742,69 @@
 	margin-top: 0.75rem;
 }
 
+/* ── VideoMuxr upload progress ──────────────────────────────────────────── */
+.wp-block-quickpostr-composer .qp-video-progress {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-top: 0.75rem;
+}
+
+.wp-block-quickpostr-composer .qp-video-progress__bar {
+	flex: 1;
+	height: 6px;
+	border-radius: 999px;
+	background: var(--qp-border);
+	overflow: hidden;
+}
+
+.wp-block-quickpostr-composer .qp-video-progress__fill {
+	display: block;
+	height: 100%;
+	background: var(--qp-accent);
+	border-radius: 999px;
+	transition: width 0.2s ease;
+}
+
+.wp-block-quickpostr-composer .qp-video-progress__label {
+	flex: 0 0 auto;
+	font-size: 0.8125rem;
+	color: var(--qp-text-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.wp-block-quickpostr-composer .qp-video-processing {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	margin-top: 0.75rem;
+	font-size: 0.875rem;
+	color: var(--qp-text-muted);
+}
+
+.wp-block-quickpostr-composer .qp-video-processing__spinner {
+	width: 16px;
+	height: 16px;
+	border: 2px solid var(--qp-border);
+	border-top-color: var(--qp-accent);
+	border-radius: 50%;
+	animation: qp-video-spin 0.8s linear infinite;
+}
+
+@keyframes qp-video-spin {
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.wp-block-quickpostr-composer .qp-video-processing__spinner {
+		animation-duration: 2.4s;
+	}
+}
+
 /* ── Edit mode ──────────────────────────────────────────────────────────── */
 .wp-block-quickpostr-composer .qp-composer__edit-bar {
 	padding: 0.4rem 1rem;
