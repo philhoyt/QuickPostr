@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.15.1
+Stable tag: 0.16.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,10 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.16.0 =
+* Add: Share a photo to QuickPostr from your phone. Install QuickPostr as a web app (PWA) and it shows up in the Android share sheet — share a photo and the composer opens with that image loaded, ready to review and post.
+* Add: Composer Page setting (Settings → QuickPostr). Pick the page that holds the Composer block; it becomes the app's start page and where shared photos are sent.
 
 = 0.15.1 =
 * Fix: Gallery slider swipes now advance one photo at a time. A fast flick no longer skips past the photos in between by overshooting from the first slide to the last.
