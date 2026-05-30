@@ -52,14 +52,17 @@ register_deactivation_hook( __FILE__, 'quickpostr_deactivate' );
  * until permalinks are next saved.
  */
 function quickpostr_activate(): void {
-	( new QuickPostr_Manifest() )->register_rewrite_rules();
+	$quickpostr_manifest = new QuickPostr_Manifest();
+	$quickpostr_manifest->register_rewrite_rules();
+	$quickpostr_manifest->schedule_cleanup();
 	flush_rewrite_rules();
 }
 
 /**
- * Plugin deactivation: flush rewrite rules.
+ * Plugin deactivation: clear the cleanup cron and flush rewrite rules.
  */
 function quickpostr_deactivate(): void {
+	( new QuickPostr_Manifest() )->clear_cleanup();
 	flush_rewrite_rules();
 }
 

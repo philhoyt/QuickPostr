@@ -26,6 +26,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 class QuickPostr_Manifest {
 
 	/**
+	 * Attachment meta key flagging a shared upload that has not yet been used
+	 * in a published post. The value is the upload timestamp.
+	 */
+	const PENDING_META = '_quickpostr_pending_share';
+
+	/**
+	 * Cron hook that sweeps abandoned shared uploads.
+	 */
+	const CLEANUP_HOOK = 'quickpostr_cleanup_pending_shares';
+
+	/**
 	 * Register hooks.
 	 */
 	public function init(): void {
@@ -33,6 +44,23 @@ class QuickPostr_Manifest {
 		add_filter( 'query_vars', array( $this, 'register_query_vars' ) );
 		add_action( 'template_redirect', array( $this, 'maybe_serve_route' ) );
 		add_action( 'wp_head', array( $this, 'print_manifest_link' ) );
+		add_action( 'wp_after_insert_post', array( $this, 'claim_shared_uploads' ), 10, 2 );
+		add_action( self::CLEANUP_HOOK, array( $this, 'cleanup_pending_shares' ) );
+	}
+
+	/**
+	 * How long (in seconds) an unused shared upload survives before the cleanup
+	 * cron deletes it. Filterable via `quickpostr_pending_share_ttl`.
+	 *
+	 * @return int
+	 */
+	private function pending_ttl(): int {
+		/**
+		 * Filter the time-to-live for an unclaimed PWA-shared upload.
+		 *
+		 * @param int $ttl Seconds before an abandoned shared upload is deleted.
+		 */
+		return (int) apply_filters( 'quickpostr_pending_share_ttl', DAY_IN_SECONDS );
 	}
 
 	/**
@@ -43,6 +71,22 @@ class QuickPostr_Manifest {
 		add_rewrite_rule( '^quickpostr-manifest\.json$', 'index.php?quickpostr_manifest=1', 'top' );
 		add_rewrite_rule( '^quickpostr-sw\.js$', 'index.php?quickpostr_sw=1', 'top' );
 		add_rewrite_rule( '^quickpostr-share/?$', 'index.php?quickpostr_share=1', 'top' );
+	}
+
+	/**
+	 * Schedule the daily sweep of abandoned shared uploads. Called on activation.
+	 */
+	public function schedule_cleanup(): void {
+		if ( ! wp_next_scheduled( self::CLEANUP_HOOK ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CLEANUP_HOOK );
+		}
+	}
+
+	/**
+	 * Clear the cleanup cron. Called on deactivation.
+	 */
+	public function clear_cleanup(): void {
+		wp_clear_scheduled_hook( self::CLEANUP_HOOK );
 	}
 
 	/**
@@ -111,11 +155,7 @@ class QuickPostr_Manifest {
 			'display'      => 'standalone',
 			'icons'        => $icons,
 			'share_target' => array(
-				// The ?to= target tells the service worker which page to
-				// redirect to after stashing the shared file. The PHP fallback
-				// (when no service worker is controlling the request) ignores
-				// it and computes the composer URL itself.
-				'action'  => add_query_arg( 'to', $start_url, home_url( '/quickpostr-share/' ) ),
+				'action'  => home_url( '/quickpostr-share/' ),
 				'method'  => 'POST',
 				'enctype' => 'multipart/form-data',
 				'params'  => array(
@@ -211,8 +251,87 @@ class QuickPostr_Manifest {
 			exit;
 		}
 
+		// Flag the upload as pending so it is swept later if the user never
+		// publishes a post that uses it. claim_shared_uploads() clears the flag
+		// once the image is referenced by a saved post.
+		update_post_meta( $attachment_id, self::PENDING_META, time() );
+
 		wp_safe_redirect( add_query_arg( 'qp_share', $attachment_id, $composer_url ) );
 		exit;
+	}
+
+	/**
+	 * Claim shared uploads referenced by a saved post.
+	 *
+	 * When a post is saved, any pending shared attachments embedded in its
+	 * content are "claimed": the pending flag is cleared so the cleanup cron
+	 * leaves them alone, and they are attached to the post. Fires for every
+	 * post save (REST, editor, or direct insert) but only does work when a
+	 * pending shared image is actually referenced.
+	 *
+	 * @param int      $post_id The saved post ID.
+	 * @param \WP_Post $post    The saved post object.
+	 */
+	public function claim_shared_uploads( int $post_id, \WP_Post $post ): void {
+		if ( 'attachment' === $post->post_type || empty( $post->post_content ) ) {
+			return;
+		}
+
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+			return;
+		}
+
+		if ( ! preg_match_all( '/wp-image-(\d+)/', $post->post_content, $matches ) ) {
+			return;
+		}
+
+		foreach ( array_unique( array_map( 'absint', $matches[1] ) ) as $attachment_id ) {
+			if ( ! $attachment_id || ! get_post_meta( $attachment_id, self::PENDING_META, true ) ) {
+				continue;
+			}
+			delete_post_meta( $attachment_id, self::PENDING_META );
+			if ( (int) wp_get_post_parent_id( $attachment_id ) === 0 ) {
+				wp_update_post(
+					array(
+						'ID'          => $attachment_id,
+						'post_parent' => $post_id,
+					)
+				);
+			}
+		}
+	}
+
+	/**
+	 * Delete shared uploads that were never used in a post.
+	 *
+	 * Runs on the daily cron hook. Any attachment still flagged pending past the
+	 * TTL was shared into the composer but never published, so it is removed.
+	 */
+	public function cleanup_pending_shares(): void {
+		$cutoff = time() - $this->pending_ttl();
+
+		$attachments = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'posts_per_page' => 50,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- bounded sweep on the indexed pending-share key, runs once daily on cron.
+				'meta_query'     => array(
+					array(
+						'key'     => self::PENDING_META,
+						'value'   => $cutoff,
+						'compare' => '<=',
+						'type'    => 'NUMERIC',
+					),
+				),
+			)
+		);
+
+		foreach ( $attachments as $attachment_id ) {
+			wp_delete_attachment( $attachment_id, true );
+		}
 	}
 
 	/**
