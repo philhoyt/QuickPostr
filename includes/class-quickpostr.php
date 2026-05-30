@@ -22,6 +22,7 @@ class QuickPostr {
 	public function init(): void {
 		( new QuickPostr_Settings() )->init();
 		( new QuickPostr_Rest() )->init();
+		( new QuickPostr_Manifest() )->init();
 
 		add_action( 'init', array( $this, 'register_taxonomy' ) );
 		add_action( 'init', array( $this, 'register_post_meta' ) );

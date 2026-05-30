@@ -74,15 +74,20 @@ function validateImageFile( f ) {
  *   { file: File|null, preview: string, mediaId: number|null, sourceUrl: string|null }
  *
  * Props:
- *   onSuccess (wpPost, mediaUrl) => void
- *   geoData   {object} — location data from Composer root
- * @param {Object}   root0
- * @param {Function} root0.onSuccess
- * @param {object}   root0.geoData
+ *   onSuccess    (wpPost, mediaUrl) => void
+ *   geoData      {object} — location data from Composer root
+ *   initialPhoto {object|null} — a pre-loaded photo (e.g. a PWA-shared image),
+ *                in the library-pick shape { file, preview, mediaId, sourceUrl }
+ * @param {Object}        root0
+ * @param {Function}      root0.onSuccess
+ * @param {object}        root0.geoData
+ * @param {object|null}   root0.initialPhoto
  */
-export default function PhotoComposer( { onSuccess, geoData } ) {
+export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 	// Unified per-photo state: { file, preview, mediaId, sourceUrl }
-	const [ photos, setPhotos ] = useState( [] );
+	const [ photos, setPhotos ] = useState(
+		initialPhoto ? [ initialPhoto ] : []
+	);
 	const [ caption, setCaption ] = useState( '' );
 	const [ dragging, setDragging ] = useState( false );
 	const [ dragOverIndex, setDragOverIndex ] = useState( null );
@@ -99,6 +104,14 @@ export default function PhotoComposer( { onSuccess, geoData } ) {
 	const fileInputRef = useRef( null );
 	const dragIndexRef = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+	// Seed a pre-loaded photo (e.g. a PWA share) that resolves after mount.
+	// Only fills an empty composer so it never clobbers a user's own pick.
+	useEffect( () => {
+		if ( initialPhoto ) {
+			setPhotos( ( prev ) => ( prev.length === 0 ? [ initialPhoto ] : prev ) );
+		}
+	}, [ initialPhoto ] );
 
 	// Revoke blob object URLs on photos change or unmount.
 	useEffect( () => {

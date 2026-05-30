@@ -36,6 +36,13 @@ if ( defaultCopyIndex >= 0 ) {
 				context: 'src',
 				noErrorOnMissing: true,
 			},
+			{
+				// Service worker — copied verbatim (no bundling) so it lands at
+				// build/pwa/quickpostr-sw.js and is served from the site root.
+				from: 'pwa/*.js',
+				context: 'src',
+				noErrorOnMissing: true,
+			},
 		],
 	} );
 }
