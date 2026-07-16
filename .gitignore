@@ -19,8 +19,9 @@ Thumbs.db
 .env
 .env.*
 
-# PHP/Composer
-vendor/
+# PHP/Composer — root dev dependencies only; the vendored copy under
+# lib/plugin-update-checker/vendor/ (Parsedown) ships in the release.
+/vendor/
 
 # WordPress
 wp-content/
