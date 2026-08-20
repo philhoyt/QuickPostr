@@ -99,6 +99,7 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 		setError( null );
 
 		try {
+			const date = toRestDate( postDate );
 			let content;
 			if ( bbAvailable && preview ) {
 				content = serializeLinkCard( preview );
@@ -120,7 +121,7 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 				status: defaultStatus,
 				meta: { _quickpostr_post: '1' },
 				...buildQuickpostrFields( geoData ),
-				...( toRestDate( postDate ) ? { date: toRestDate( postDate ) } : {} ),
+				...( date ? { date } : {} ),
 			};
 			const wpPost = await createPost( baseFields );
 

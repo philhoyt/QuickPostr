@@ -229,6 +229,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 			return;
 		}
 
+		const date = toRestDate( postDate );
 		setSubmitting( true );
 		setError( null );
 
@@ -257,9 +258,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
 					...buildQuickpostrFields( geoData ),
-					...( toRestDate( postDate )
-						? { date: toRestDate( postDate ) }
-						: {} ),
+					...( date ? { date } : {} ),
 				};
 				wpPost = await createPost( baseFields );
 
@@ -289,9 +288,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
 					...buildQuickpostrFields( geoData ),
-					...( toRestDate( postDate )
-						? { date: toRestDate( postDate ) }
-						: {} ),
+					...( date ? { date } : {} ),
 				};
 				wpPost = await createPost( baseFields );
 

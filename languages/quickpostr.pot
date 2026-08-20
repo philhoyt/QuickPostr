@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-20T21:59:59+00:00\n"
+"POT-Creation-Date: 2026-08-20T22:01:45+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: quickpostr\n"
@@ -299,7 +299,7 @@ msgstr ""
 msgid "Share"
 msgstr ""
 
-#: src/blocks/composer/components/DateChip.jsx:60
+#: src/blocks/composer/components/DateChip.jsx:59
 msgid "Now"
 msgstr ""
 
@@ -309,19 +309,19 @@ msgstr ""
 msgid "Post date: %s. Change it."
 msgstr ""
 
-#: src/blocks/composer/components/DateChip.jsx:79
+#: src/blocks/composer/components/DateChip.jsx:78
 msgid "Set a post date. Currently now."
 msgstr ""
 
-#: src/blocks/composer/components/DateChip.jsx:94
+#: src/blocks/composer/components/DateChip.jsx:93
 msgid "Post date and time"
 msgstr ""
 
-#: src/blocks/composer/components/DateChip.jsx:110
+#: src/blocks/composer/components/DateChip.jsx:109
 msgid "Reset to now"
 msgstr ""
 
-#: src/blocks/composer/components/DateChip.jsx:115
+#: src/blocks/composer/components/DateChip.jsx:114
 msgid "This post will be scheduled, not published immediately."
 msgstr ""
 
@@ -447,8 +447,8 @@ msgid "Tap to add a photo"
 msgstr ""
 
 #: src/blocks/composer/edit.jsx:115
-#: src/blocks/composer/LinkComposer.jsx:161
-#: src/blocks/composer/PhotoComposer.jsx:551
+#: src/blocks/composer/LinkComposer.jsx:162
+#: src/blocks/composer/PhotoComposer.jsx:548
 #: src/blocks/composer/TextComposer.jsx:329
 #: src/blocks/composer/VideoComposer.jsx:292
 msgid "Post"
@@ -458,43 +458,43 @@ msgstr ""
 msgid "Could not fetch preview. Check the URL and try again."
 msgstr ""
 
-#: src/blocks/composer/LinkComposer.jsx:140
-#: src/blocks/composer/PhotoComposer.jsx:318
+#: src/blocks/composer/LinkComposer.jsx:141
+#: src/blocks/composer/PhotoComposer.jsx:315
 #: src/blocks/composer/TextComposer.jsx:302
 #: src/blocks/composer/VideoComposer.jsx:255
 msgid "Failed to publish. Please try again."
 msgstr ""
 
-#: src/blocks/composer/LinkComposer.jsx:160
-#: src/blocks/composer/PhotoComposer.jsx:550
+#: src/blocks/composer/LinkComposer.jsx:161
+#: src/blocks/composer/PhotoComposer.jsx:547
 #: src/blocks/composer/TextComposer.jsx:328
 #: src/blocks/composer/VideoComposer.jsx:291
 msgid "Save Draft"
 msgstr ""
 
-#: src/blocks/composer/LinkComposer.jsx:171
+#: src/blocks/composer/LinkComposer.jsx:172
 msgid "Paste a URL and press Enter…"
 msgstr ""
 
-#: src/blocks/composer/LinkComposer.jsx:172
+#: src/blocks/composer/LinkComposer.jsx:173
 msgid "Paste a URL…"
 msgstr ""
 
-#: src/blocks/composer/LinkComposer.jsx:178
+#: src/blocks/composer/LinkComposer.jsx:179
 msgid "URL"
 msgstr ""
 
-#: src/blocks/composer/LinkComposer.jsx:187
-#: src/blocks/composer/PhotoComposer.jsx:415
+#: src/blocks/composer/LinkComposer.jsx:188
+#: src/blocks/composer/PhotoComposer.jsx:412
 msgid "Preview"
 msgstr ""
 
-#: src/blocks/composer/LinkComposer.jsx:245
+#: src/blocks/composer/LinkComposer.jsx:246
 msgid "Saving…"
 msgstr ""
 
-#: src/blocks/composer/LinkComposer.jsx:255
-#: src/blocks/composer/PhotoComposer.jsx:562
+#: src/blocks/composer/LinkComposer.jsx:256
+#: src/blocks/composer/PhotoComposer.jsx:559
 #: src/blocks/composer/TextComposer.jsx:402
 #: src/blocks/composer/VideoComposer.jsx:481
 msgid "Posted!"
@@ -519,60 +519,60 @@ msgstr ""
 msgid "Use selected photos"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:355
+#: src/blocks/composer/PhotoComposer.jsx:352
 msgid "Choose photos to upload"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:378
+#: src/blocks/composer/PhotoComposer.jsx:375
 msgid "Drop photos here,"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:380
+#: src/blocks/composer/PhotoComposer.jsx:377
 #: src/blocks/composer/VideoComposer.jsx:338
 msgid "browse"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:384
+#: src/blocks/composer/PhotoComposer.jsx:381
 #: src/blocks/composer/VideoComposer.jsx:342
 msgid ", or"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:393
+#: src/blocks/composer/PhotoComposer.jsx:390
 #: src/blocks/composer/VideoComposer.jsx:351
 msgid "choose from library"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:422
+#: src/blocks/composer/PhotoComposer.jsx:419
 msgid "Remove photo"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:472
+#: src/blocks/composer/PhotoComposer.jsx:469
 msgid "Move photo left"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:483
+#: src/blocks/composer/PhotoComposer.jsx:480
 msgid "Move photo right"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:495
+#: src/blocks/composer/PhotoComposer.jsx:492
 msgid "Clear all photos"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:498
+#: src/blocks/composer/PhotoComposer.jsx:495
 msgid "Clear"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:507
+#: src/blocks/composer/PhotoComposer.jsx:504
 #: src/blocks/composer/VideoComposer.jsx:392
 msgid "Add a caption… (optional)"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:515
+#: src/blocks/composer/PhotoComposer.jsx:512
 msgid "Photo caption"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:540
-#: src/blocks/composer/PhotoComposer.jsx:547
+#: src/blocks/composer/PhotoComposer.jsx:537
+#: src/blocks/composer/PhotoComposer.jsx:544
 #: src/blocks/composer/TextComposer.jsx:389
 #: src/blocks/composer/TextComposer.jsx:392
 #: src/blocks/composer/VideoComposer.jsx:288
@@ -580,7 +580,7 @@ msgstr ""
 msgid "Publishing…"
 msgstr ""
 
-#: src/blocks/composer/PhotoComposer.jsx:541
+#: src/blocks/composer/PhotoComposer.jsx:538
 #: src/blocks/composer/VideoComposer.jsx:467
 msgid "Submit"
 msgstr ""

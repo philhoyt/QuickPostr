@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useId } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { useState, useRef, useId } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	siteNowLocalString,
 	formatForDisplay,
@@ -31,15 +31,14 @@ export default function DateChip( { value, onChange, canSchedule = true } ) {
 	const inputRef = useRef( null );
 	const inputId = useId();
 
-	// Seed the input with the site's current time whenever the panel opens, so
-	// the picker starts somewhere sensible without committing to a value.
-	useEffect( () => {
-		if ( expanded && ! value ) {
+	function handleToggle() {
+		// Seed the input with the site's current time as the panel opens, so the
+		// picker starts somewhere sensible without committing to a value. Done
+		// synchronously rather than in an effect, which would seed a paint late
+		// and flash an empty input.
+		if ( ! expanded && ! value ) {
 			setSeeded( siteNowLocalString() );
 		}
-	}, [ expanded, value ] );
-
-	function handleToggle() {
 		setExpanded( ( open ) => ! open );
 	}
 
@@ -71,9 +70,9 @@ export default function DateChip( { value, onChange, canSchedule = true } ) {
 				aria-expanded={ expanded }
 				aria-label={
 					hasCustomDate
-						? // translators: %s: the chosen post date and time.
-						  __( 'Post date: %s. Change it.', 'quickpostr' ).replace(
-								'%s',
+						? sprintf(
+								/* translators: %s: the chosen post date and time. */
+								__( 'Post date: %s. Change it.', 'quickpostr' ),
 								label
 						  )
 						: __( 'Set a post date. Currently now.', 'quickpostr' )
