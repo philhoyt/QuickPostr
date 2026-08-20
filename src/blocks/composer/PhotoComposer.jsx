@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { createPost, createGeoPost, uploadMedia } from './api.js';
+import { createPost, uploadMedia, buildQuickpostrFields } from './api.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 import { buildSinglePhotoContent } from './photoContent.js';
@@ -253,10 +253,9 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 					tags: selectedTags,
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
+					...buildQuickpostrFields( geoData ),
 				};
-				wpPost = await ( geoData?.active && geoData?.lat !== null
-					? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-					: createPost( baseFields ) );
+				wpPost = await createPost( baseFields );
 
 				onSuccess?.(
 					wpPost,
@@ -283,10 +282,9 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 					tags: selectedTags,
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
+					...buildQuickpostrFields( geoData ),
 				};
-				wpPost = await ( geoData?.active && geoData?.lat !== null
-					? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-					: createPost( baseFields ) );
+				wpPost = await createPost( baseFields );
 
 				onSuccess?.( wpPost, mediaUrl );
 			}

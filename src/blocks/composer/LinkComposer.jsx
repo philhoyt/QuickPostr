@@ -1,6 +1,6 @@
 import { useState, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { createPost, createGeoPost, fetchLinkPreview } from './api.js';
+import { createPost, fetchLinkPreview, buildQuickpostrFields } from './api.js';
 import TagInput from './TagInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
@@ -117,10 +117,9 @@ export default function LinkComposer( { onSuccess, geoData } ) {
 				title: '',
 				status: defaultStatus,
 				meta: { _quickpostr_post: '1' },
+				...buildQuickpostrFields( geoData ),
 			};
-			const wpPost = await ( geoData?.active && geoData?.lat !== null
-				? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-				: createPost( baseFields ) );
+			const wpPost = await createPost( baseFields );
 
 			onSuccess?.( wpPost );
 
