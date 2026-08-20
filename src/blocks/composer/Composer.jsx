@@ -131,12 +131,26 @@ export default function Composer() {
 				</div>
 			</header>
 
-			<div className="qp-composer__date-bar">
+			<div className="qp-composer__meta-bar">
 				<DateChip
 					value={ postDate }
 					onChange={ setPostDate }
 					canSchedule={ canSchedule }
 				/>
+				{ config.geoTagrActive && ! geoData.active && (
+					<GeoTagButton
+						onGeoDetected={ handleGeoDetected }
+						onGeoError={ handleGeoError }
+					/>
+				) }
+				{ config.geoTagrActive && geoData.active && (
+					<LocationChip
+						geoData={ geoData }
+						errorMsg={ geoError }
+						onDismiss={ handleGeoDismiss }
+						onLocationSelect={ handleGeoLocationSelect }
+					/>
+				) }
 			</div>
 
 			<div
@@ -166,25 +180,6 @@ export default function Composer() {
 					</button>
 				) ) }
 			</div>
-
-			{ config.geoTagrActive && (
-				<div className="qp-composer__geo-bar">
-					{ ! geoData.active && (
-						<GeoTagButton
-							onGeoDetected={ handleGeoDetected }
-							onGeoError={ handleGeoError }
-						/>
-					) }
-					{ geoData.active && (
-						<LocationChip
-							geoData={ geoData }
-							errorMsg={ geoError }
-							onDismiss={ handleGeoDismiss }
-							onLocationSelect={ handleGeoLocationSelect }
-						/>
-					) }
-				</div>
-			) }
 
 			{ scheduledPost && (
 				<div

@@ -69,7 +69,11 @@ export default function DateChip( { value, onChange, canSchedule = true } ) {
 	const willSchedule = canSchedule && hasCustomDate && isFuture( value );
 
 	return (
-		<div className="qp-date-chip">
+		<div
+			className={ `qp-date-chip${
+				expanded ? ' qp-date-chip--open' : ''
+			}` }
+		>
 			<button
 				type="button"
 				className={ `qp-date-chip__toggle${
