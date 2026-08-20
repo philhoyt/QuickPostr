@@ -182,41 +182,38 @@ class QuickPostr_Rest {
 			)
 		);
 
+		// No 'default' on any core field: WP_REST_Request::get_parameter_order()
+		// ends with 'defaults', so a declared default makes get_param() return a
+		// value the client never sent. Forwarding that to core turns a partial
+		// update into a destructive one -- a PUT carrying only { content } would
+		// wipe the post's tags and categories and force it to publish.
 		$geo_args = array(
 			'title'                 => array(
-				'type'    => 'string',
-				'default' => '',
+				'type' => 'string',
 			),
 			'content'               => array(
-				'type'    => 'string',
-				'default' => '',
+				'type' => 'string',
 			),
 			'status'                => array(
-				'type'    => 'string',
-				'default' => 'publish',
-				'enum'    => array( 'publish', 'draft', 'pending', 'private' ),
+				'type' => 'string',
+				'enum' => array( 'publish', 'draft', 'pending', 'private' ),
 			),
 			'format'                => array(
-				'type'    => 'string',
-				'default' => 'standard',
+				'type' => 'string',
 			),
 			'tags'                  => array(
-				'type'    => 'array',
-				'items'   => array( 'type' => 'integer' ),
-				'default' => array(),
+				'type'  => 'array',
+				'items' => array( 'type' => 'integer' ),
 			),
 			'categories'            => array(
-				'type'    => 'array',
-				'items'   => array( 'type' => 'integer' ),
-				'default' => array(),
+				'type'  => 'array',
+				'items' => array( 'type' => 'integer' ),
 			),
 			'meta'                  => array(
-				'type'    => 'object',
-				'default' => array(),
+				'type' => 'object',
 			),
 			'featured_media'        => array(
-				'type'    => 'integer',
-				'default' => 0,
+				'type' => 'integer',
 			),
 			'videomuxr_playback_id' => array(
 				'type'              => 'string',
@@ -280,124 +277,111 @@ class QuickPostr_Rest {
 	}
 
 	/**
-	 * Create a post via the core WP REST endpoint, then save GeoTagr meta if present.
+	 * Translate this route's legacy flat params into QuickPostr's post fields.
 	 *
-	 * Proxies standard post fields to /wp/v2/posts so WP core handles all
-	 * validation and hooks (including assign_source_terms). The geo_* params
-	 * are written directly via update_post_meta() after the post is created.
+	 * Callers of the deprecated proxy send geo_lat/geo_lng/geo_place/geo_address
+	 * and videomuxr_playback_id/videomuxr_asset_id as flat body params. Core's
+	 * /wp/v2/posts knows nothing about those names, so they are folded into the
+	 * quickpostr_geo and quickpostr_video fields registered by
+	 * register_post_fields(), which write the same meta the proxy used to write
+	 * inline. Keys with no data are omitted entirely.
+	 *
+	 * @param \WP_REST_Request $request The incoming request.
+	 * @return array Zero, one or two namespaced field values.
+	 */
+	private function map_legacy_params( \WP_REST_Request $request ): array {
+		$mapped = array();
+
+		$geo = array(
+			'lat'     => $request->get_param( 'geo_lat' ),
+			'lng'     => $request->get_param( 'geo_lng' ),
+			'place'   => $request->get_param( 'geo_place' ),
+			'address' => $request->get_param( 'geo_address' ),
+		);
+		$geo = array_filter(
+			$geo,
+			static function ( $value ) {
+				return null !== $value && '' !== $value;
+			}
+		);
+		if ( $geo ) {
+			$mapped['quickpostr_geo'] = $geo;
+		}
+
+		$video = array(
+			'playback_id' => $request->get_param( 'videomuxr_playback_id' ),
+			'asset_id'    => $request->get_param( 'videomuxr_asset_id' ),
+		);
+		$video = array_filter(
+			$video,
+			static function ( $value ) {
+				return null !== $value && '' !== $value;
+			}
+		);
+		if ( $video ) {
+			$mapped['quickpostr_video'] = $video;
+		}
+
+		return $mapped;
+	}
+
+	/**
+	 * Forward a proxied request to a core posts endpoint.
+	 *
+	 * Copies the whole JSON body across rather than a whitelist, so no core post
+	 * field can be silently dropped, then overlays the mapped legacy params.
+	 * Core handles all validation, capability checks and hooks.
+	 *
+	 * @param \WP_REST_Request $request The incoming request.
+	 * @param string           $method  HTTP method for the inner request.
+	 * @param string           $route   Core route to dispatch to.
+	 * @return \WP_REST_Response Core converts its own errors into a response.
+	 */
+	private function forward_to_core( \WP_REST_Request $request, string $method, string $route ): \WP_REST_Response {
+		$inner  = new \WP_REST_Request( $method, $route );
+		$params = array_merge(
+			(array) $request->get_json_params(),
+			$this->map_legacy_params( $request )
+		);
+
+		unset( $params['id'], $params['geo_lat'], $params['geo_lng'], $params['geo_place'], $params['geo_address'] );
+		unset( $params['videomuxr_playback_id'], $params['videomuxr_asset_id'] );
+
+		foreach ( $params as $key => $value ) {
+			$inner->set_param( $key, $value );
+		}
+
+		return rest_do_request( $inner );
+	}
+
+	/**
+	 * Create a post via the core WP REST endpoint.
+	 *
+	 * @deprecated 0.17.0 Post to /wp/v2/posts with the quickpostr_geo and
+	 *                    quickpostr_video fields instead. Kept so existing
+	 *                    callers keep working; removal planned for 1.0.0.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function create_post_with_geo( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$inner = new \WP_REST_Request( 'POST', '/wp/v2/posts' );
-
-		foreach ( array( 'title', 'content', 'status', 'format', 'tags', 'categories', 'meta' ) as $key ) {
-			$value = $request->get_param( $key );
-			if ( null !== $value ) {
-				$inner->set_param( $key, $value );
-			}
-		}
-
-		$featured_media = (int) $request->get_param( 'featured_media' );
-		if ( $featured_media ) {
-			$inner->set_param( 'featured_media', $featured_media );
-		}
-
-		$response = rest_do_request( $inner );
-		$data     = $response->get_data();
-		$post_id  = is_array( $data ) ? ( $data['id'] ?? 0 ) : 0;
-
-		if ( $post_id ) {
-			$this->save_videomuxr_meta( $post_id, $request );
-		}
-
-		if ( $post_id && function_exists( 'geo_tagr_get_post_meta' ) ) {
-			$geo_map = array(
-				'_geo_tagr_lat'     => $request->get_param( 'geo_lat' ),
-				'_geo_tagr_lng'     => $request->get_param( 'geo_lng' ),
-				'_geo_tagr_place'   => $request->get_param( 'geo_place' ),
-				'_geo_tagr_address' => $request->get_param( 'geo_address' ),
-			);
-			foreach ( $geo_map as $meta_key => $meta_value ) {
-				if ( null !== $meta_value && '' !== $meta_value ) {
-					update_post_meta( $post_id, $meta_key, $meta_value );
-				}
-			}
-		}
-
-		return $response;
+		return $this->forward_to_core( $request, 'POST', '/wp/v2/posts' );
 	}
 
 	/**
-	 * Update an existing post via the core WP REST endpoint, then save GeoTagr meta.
+	 * Update an existing post via the core WP REST endpoint.
+	 *
+	 * @deprecated 0.17.0 Send to /wp/v2/posts/{id} with the quickpostr_geo and
+	 *                    quickpostr_video fields instead. Kept so existing
+	 *                    callers keep working; removal planned for 1.0.0.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function update_post_with_geo( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$post_id = (int) $request->get_param( 'id' );
-		$inner   = new \WP_REST_Request( 'PUT', "/wp/v2/posts/$post_id" );
 
-		foreach ( array( 'title', 'content', 'status', 'format', 'tags', 'categories', 'meta' ) as $key ) {
-			$value = $request->get_param( $key );
-			if ( null !== $value ) {
-				$inner->set_param( $key, $value );
-			}
-		}
-
-		$featured_media = (int) $request->get_param( 'featured_media' );
-		if ( $featured_media ) {
-			$inner->set_param( 'featured_media', $featured_media );
-		}
-
-		$response   = rest_do_request( $inner );
-		$data       = $response->get_data();
-		$updated_id = is_array( $data ) ? ( $data['id'] ?? 0 ) : 0;
-
-		if ( $updated_id ) {
-			$this->save_videomuxr_meta( $updated_id, $request );
-		}
-
-		if ( $updated_id && function_exists( 'geo_tagr_get_post_meta' ) ) {
-			$geo_map = array(
-				'_geo_tagr_lat'     => $request->get_param( 'geo_lat' ),
-				'_geo_tagr_lng'     => $request->get_param( 'geo_lng' ),
-				'_geo_tagr_place'   => $request->get_param( 'geo_place' ),
-				'_geo_tagr_address' => $request->get_param( 'geo_address' ),
-			);
-			foreach ( $geo_map as $meta_key => $meta_value ) {
-				if ( null !== $meta_value && '' !== $meta_value ) {
-					update_post_meta( $updated_id, $meta_key, $meta_value );
-				}
-			}
-		}
-
-		return $response;
-	}
-
-	/**
-	 * Persist VideoMuxr playback/asset IDs as post meta when present.
-	 *
-	 * The composer submits these when VideoMuxr handled the video upload. The
-	 * meta keys are owned by VideoMuxr (registered show_in_rest => false, so they
-	 * cannot be set through the core REST meta param) and drive its front-end
-	 * player render and its before_delete_post asset cleanup.
-	 *
-	 * @param int              $post_id The post the meta belongs to.
-	 * @param \WP_REST_Request $request The REST request.
-	 * @return void
-	 */
-	private function save_videomuxr_meta( int $post_id, \WP_REST_Request $request ): void {
-		$playback_id = $request->get_param( 'videomuxr_playback_id' );
-		$asset_id    = $request->get_param( 'videomuxr_asset_id' );
-
-		if ( is_string( $playback_id ) && '' !== $playback_id ) {
-			update_post_meta( $post_id, '_videomuxr_playback_id', $playback_id );
-		}
-		if ( is_string( $asset_id ) && '' !== $asset_id ) {
-			update_post_meta( $post_id, '_videomuxr_asset_id', $asset_id );
-		}
+		return $this->forward_to_core( $request, 'PUT', "/wp/v2/posts/$post_id" );
 	}
 
 	/**
@@ -635,7 +619,11 @@ class QuickPostr_Rest {
 	}
 
 	/**
-	 * Verify the request comes from an authenticated user with an allowed role.
+	 * Verify the request comes from a logged-in user.
+	 *
+	 * Deliberately only an authentication check. Routes that create or modify
+	 * posts forward to core, which runs the real per-object capability checks;
+	 * the read-only routes here expose nothing role-sensitive.
 	 *
 	 * @return bool|WP_Error
 	 */
