@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { createPost, uploadMedia, buildQuickpostrFields } from './api.js';
-import { toRestDate } from './postDate.js';
+import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
+import TitleInput from './components/TitleInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 import { buildSinglePhotoContent } from './photoContent.js';
 
@@ -103,6 +104,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
+	const [ titleOverride, setTitleOverride ] = useState( '' );
 
 	const fileInputRef = useRef( null );
 	const dragIndexRef = useRef( null );
@@ -250,7 +252,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 					  } ) );
 
 				const baseFields = {
-					title: generateTitle( 'gallery', '', caption ),
+					title: titleOverride.trim(),
 					content: buildGalleryContent( mediaItems, caption ),
 					status: defaultStatus,
 					format: 'gallery',
@@ -280,7 +282,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 				}
 
 				const baseFields = {
-					title: generateTitle( 'photo', '', caption ),
+					title: titleOverride.trim(),
 					content: buildSinglePhotoContent( mediaId, mediaUrl, caption ),
 					status: defaultStatus,
 					format: 'image',
@@ -301,6 +303,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 				fileInputRef.current.value = '';
 			}
 			setCaption( '' );
+			setTitleOverride( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -339,6 +342,18 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 
 	return (
 		<div className="qp-photo-composer">
+			<TitleInput
+				value={ titleOverride }
+				onChange={ setTitleOverride }
+				autoTitle={ generateTitle(
+					photos.length >= 2 ? 'gallery' : 'photo',
+					'',
+					caption,
+					titleDateString( postDate )
+				) }
+				disabled={ submitting }
+			/>
+
 			{ showDropzone && (
 				<div
 					className={ dropzoneClass }

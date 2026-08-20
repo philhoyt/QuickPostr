@@ -222,3 +222,27 @@ export function formatForDisplay( local ) {
 		timeZone: 'UTC',
 	} ).format( new Date( ms ) );
 }
+
+/**
+ * Render a date for the auto-title label, matching PHP's 'M j, Y' format.
+ *
+ * PHP builds the fallback title from the post's own date, so a backdated post
+ * is labelled with the backdate. Passing the composer's chosen date here keeps
+ * the previewed title honest instead of always showing today.
+ *
+ * @param {string} local — a datetime-local value, or '' for the site's now.
+ * @return {string} e.g. "Aug 20, 2026".
+ */
+export function titleDateString( local ) {
+	const ms = parseAsUtc( local || siteNowLocalString() );
+	if ( null === ms ) {
+		return '';
+	}
+
+	return new Intl.DateTimeFormat( 'en-US', {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric',
+		timeZone: 'UTC',
+	} ).format( new Date( ms ) );
+}

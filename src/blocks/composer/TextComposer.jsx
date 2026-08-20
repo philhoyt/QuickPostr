@@ -3,8 +3,9 @@ import { __, sprintf } from '@wordpress/i18n';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
 import { createPost, updatePost, getDraft, discardDraft, buildQuickpostrFields } from './api.js';
-import { toRestDate } from './postDate.js';
+import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
+import TitleInput from './components/TitleInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -161,6 +162,8 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 	const [ draftId, setDraftId ] = useState( null );
 	const [ draftBanner, setDraftBanner ] = useState( false );
 	const [ draftPost, setDraftPost ] = useState( null );
+	// '' means "no override" — PHP generates the canonical title.
+	const [ titleOverride, setTitleOverride ] = useState( '' );
 
 	const placeholder =
 		config.blockAttrs?.placeholderText ?? "What's on your mind?";
@@ -168,7 +171,12 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 
 	// Plain-text content for title preview and character count.
 	const plainText = editorRef.current?.innerText?.trim() ?? '';
-	const title = generateTitle( 'text', plainText, '' );
+	const autoTitle = generateTitle(
+		'text',
+		plainText,
+		'',
+		titleDateString( postDate )
+	);
 
 	// On mount: check for an existing draft.
 	useEffect( () => {
@@ -260,7 +268,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 			if ( draftId ) {
 				// Publish the auto-saved draft.
 				const draftFields = {
-					title: '',
+					title: titleOverride.trim(),
 					content,
 					status: defaultStatus,
 					format: 'status',
@@ -273,7 +281,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 			} else {
 				// No draft: create a new post.
 				const postFields = {
-					title: '',
+					title: titleOverride.trim(),
 					content,
 					status: defaultStatus,
 					format: 'status',
@@ -295,6 +303,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 			}
 			setHtml( '' );
 			setDraftId( null );
+			setTitleOverride( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -318,6 +327,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 		draftId,
 		geoData,
 		postDate,
+		titleOverride,
 	] );
 
 	function handleKeyDown( e ) {
@@ -357,6 +367,13 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 					</div>
 				</div>
 			) }
+
+			<TitleInput
+				value={ titleOverride }
+				onChange={ setTitleOverride }
+				autoTitle={ autoTitle }
+				disabled={ submitting }
+			/>
 
 			<RichEditor
 				placeholder={ placeholder }

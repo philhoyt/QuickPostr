@@ -8,8 +8,9 @@ import {
 	pollVideoMuxrStatus,
 	buildQuickpostrFields,
 } from './api.js';
-import { toRestDate } from './postDate.js';
+import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
+import TitleInput from './components/TitleInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 
 const config = window.quickpostrConfig ?? {};
@@ -47,6 +48,7 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
+	const [ titleOverride, setTitleOverride ] = useState( '' );
 	// 'idle' | 'uploading' | 'processing' — only used on the VideoMuxr path.
 	const [ phase, setPhase ] = useState( 'idle' );
 	const [ uploadProgress, setUploadProgress ] = useState( 0 );
@@ -185,7 +187,7 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 					await pollVideoMuxrStatus( uploadId );
 
 				baseFields = {
-					title: generateTitle( 'photo', '', caption ),
+					title: titleOverride.trim(),
 					content: buildMuxVideoContent(
 						playbackId,
 						assetId,
@@ -212,7 +214,7 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 				}
 
 				baseFields = {
-					title: generateTitle( 'photo', '', caption ),
+					title: titleOverride.trim(),
 					content: buildVideoContent( mediaId, mediaUrl, caption ),
 					status: defaultStatus,
 					format: 'video',
@@ -243,6 +245,7 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 				fileInputRef.current.value = '';
 			}
 			setCaption( '' );
+			setTitleOverride( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -308,6 +311,18 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 
 	return (
 		<div className="qp-video-composer">
+			<TitleInput
+				value={ titleOverride }
+				onChange={ setTitleOverride }
+				autoTitle={ generateTitle(
+					'video',
+					'',
+					caption,
+					titleDateString( postDate )
+				) }
+				disabled={ submitting }
+			/>
+
 			{ ! file && ! preview && ! libraryMediaItem && (
 				<div
 					className={ dropzoneClass }

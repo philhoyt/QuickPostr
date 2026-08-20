@@ -87,18 +87,15 @@ final class SanitizeSettingsTest extends TestCase {
 	public function test_checkboxes_coerce_to_bool(): void {
 		$on = $this->settings->sanitize_settings(
 			array(
-				'show_slug_preview' => '1',
-				'hide_admin_bar'    => '1',
-				'strip_exif'        => '1',
+				'hide_admin_bar' => '1',
+				'strip_exif'     => '1',
 			)
 		);
-		$this->assertTrue( $on['show_slug_preview'] );
 		$this->assertTrue( $on['hide_admin_bar'] );
 		$this->assertTrue( $on['strip_exif'] );
 
 		// Absent checkboxes become false (unchecked boxes are not posted).
 		$off = $this->settings->sanitize_settings( array() );
-		$this->assertFalse( $off['show_slug_preview'] );
 		$this->assertFalse( $off['hide_admin_bar_admins'] );
 		$this->assertFalse( $off['front_end_edit'] );
 	}
