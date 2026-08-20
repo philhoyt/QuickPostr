@@ -3,6 +3,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
 import { createPost, updatePost, getDraft, discardDraft, buildQuickpostrFields } from './api.js';
+import { toRestDate } from './postDate.js';
 import SlugPreview from './SlugPreview.jsx';
 import TagInput from './TagInput.jsx';
 
@@ -142,8 +143,9 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  * @param {Object}   root0
  * @param {Function} root0.onSuccess
  * @param {object}   root0.geoData
+ * @param {string}   root0.postDate
  */
-export default function TextComposer( { onSuccess, geoData } ) {
+export default function TextComposer( { onSuccess, geoData, postDate } ) {
 	const editorRef = useRef( null );
 	const draftTimer = useRef( null );
 
@@ -248,6 +250,7 @@ export default function TextComposer( { onSuccess, geoData } ) {
 
 		try {
 			let wpPost;
+			const date = toRestDate( postDate );
 
 			if ( draftId ) {
 				// Publish the auto-saved draft.
@@ -259,6 +262,7 @@ export default function TextComposer( { onSuccess, geoData } ) {
 					tags: selectedTags,
 					categories: selectedCategories,
 					...buildQuickpostrFields( geoData ),
+					...( date ? { date } : {} ),
 				};
 				wpPost = await updatePost( draftId, draftFields );
 			} else {
@@ -272,6 +276,7 @@ export default function TextComposer( { onSuccess, geoData } ) {
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
 					...buildQuickpostrFields( geoData ),
+					...( date ? { date } : {} ),
 				};
 				wpPost = await createPost( postFields );
 			}
@@ -307,6 +312,7 @@ export default function TextComposer( { onSuccess, geoData } ) {
 		onSuccess,
 		draftId,
 		geoData,
+		postDate,
 	] );
 
 	function handleKeyDown( e ) {

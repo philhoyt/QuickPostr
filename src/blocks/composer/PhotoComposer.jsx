@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { createPost, uploadMedia, buildQuickpostrFields } from './api.js';
+import { toRestDate } from './postDate.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 import { buildSinglePhotoContent } from './photoContent.js';
@@ -76,14 +77,16 @@ function validateImageFile( f ) {
  * Props:
  *   onSuccess    (wpPost, mediaUrl) => void
  *   geoData      {object} — location data from Composer root
+ *   postDate     {string} — datetime-local value, '' for "now"
  *   initialPhoto {object|null} — a pre-loaded photo (e.g. a PWA-shared image),
  *                in the library-pick shape { file, preview, mediaId, sourceUrl }
  * @param {Object}        root0
  * @param {Function}      root0.onSuccess
  * @param {object}        root0.geoData
+ * @param {string}        root0.postDate
  * @param {object|null}   root0.initialPhoto
  */
-export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
+export default function PhotoComposer( { onSuccess, geoData, postDate, initialPhoto } ) {
 	// Unified per-photo state: { file, preview, mediaId, sourceUrl }
 	const [ photos, setPhotos ] = useState(
 		initialPhoto ? [ initialPhoto ] : []
@@ -254,6 +257,9 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
 					...buildQuickpostrFields( geoData ),
+					...( toRestDate( postDate )
+						? { date: toRestDate( postDate ) }
+						: {} ),
 				};
 				wpPost = await createPost( baseFields );
 
@@ -283,6 +289,9 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
 					...buildQuickpostrFields( geoData ),
+					...( toRestDate( postDate )
+						? { date: toRestDate( postDate ) }
+						: {} ),
 				};
 				wpPost = await createPost( baseFields );
 

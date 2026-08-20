@@ -8,6 +8,7 @@ import {
 	pollVideoMuxrStatus,
 	buildQuickpostrFields,
 } from './api.js';
+import { toRestDate } from './postDate.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 
@@ -28,8 +29,10 @@ const videoMuxr = config.videoMuxr ?? null;
  *   onSuccess (wpPost, mediaUrl) => void
  * @param {Object}   root0
  * @param {Function} root0.onSuccess
+ * @param {object}   root0.geoData
+ * @param {string}   root0.postDate
  */
-export default function VideoComposer( { onSuccess, geoData } ) {
+export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 	const [ file, setFile ] = useState( null );
 	const [ preview, setPreview ] = useState( null );
 	const [ libraryMediaItem, setLibraryMediaItem ] = useState( null );
@@ -220,9 +223,11 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 				};
 			}
 
+			const date = toRestDate( postDate );
 			const wpPost = await createPost( {
 				...baseFields,
 				...buildQuickpostrFields( geoData, muxIds ),
+				...( date ? { date } : {} ),
 			} );
 
 			onSuccess?.( wpPost );

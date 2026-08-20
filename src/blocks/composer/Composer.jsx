@@ -4,6 +4,7 @@ import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
 import VideoComposer from './VideoComposer.jsx';
 import LinkComposer from './LinkComposer.jsx';
+import DateChip from './components/DateChip.jsx';
 import GeoTagButton from './components/GeoTagButton.jsx';
 import LocationChip from './components/LocationChip.jsx';
 import usePwaShare from './usePwaShare.js';
@@ -38,6 +39,12 @@ export default function Composer() {
 		active: false,
 	} );
 	const [ geoError, setGeoError ] = useState( '' );
+
+	// '' means "now" — no date param is sent unless the user picks one.
+	const [ postDate, setPostDate ] = useState( '' );
+
+	// A draft with a future date is not scheduled, so the chip must not imply it.
+	const canSchedule = ( config.settings?.defaultStatus ?? 'publish' ) === 'publish';
 
 	const user = config.currentUser ?? {};
 	const avatarUrl = user.avatarUrls?.[ '48' ];
@@ -95,6 +102,14 @@ export default function Composer() {
 				</div>
 			</header>
 
+			<div className="qp-composer__date-bar">
+				<DateChip
+					value={ postDate }
+					onChange={ setPostDate }
+					canSchedule={ canSchedule }
+				/>
+			</div>
+
 			<div
 				className="qp-composer__mode-bar"
 				role="tablist"
@@ -147,12 +162,14 @@ export default function Composer() {
 					<TextComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						postDate={ postDate }
 					/>
 				) }
 				{ mode === 'photo' && (
 					<PhotoComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						postDate={ postDate }
 						initialPhoto={ sharedPhoto }
 					/>
 				) }
@@ -160,12 +177,14 @@ export default function Composer() {
 					<VideoComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						postDate={ postDate }
 					/>
 				) }
 				{ mode === 'link' && (
 					<LinkComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						postDate={ postDate }
 					/>
 				) }
 			</div>

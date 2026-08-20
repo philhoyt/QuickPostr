@@ -1,6 +1,7 @@
 import { useState, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { createPost, fetchLinkPreview, buildQuickpostrFields } from './api.js';
+import { toRestDate } from './postDate.js';
 import TagInput from './TagInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
@@ -33,8 +34,9 @@ function serializeLinkCard( attrs ) {
  * @param {Object}   root0
  * @param {Function} root0.onSuccess
  * @param {object}   root0.geoData
+ * @param {string}   root0.postDate
  */
-export default function LinkComposer( { onSuccess, geoData } ) {
+export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 	const [ url, setUrl ] = useState( '' );
 	const [ preview, setPreview ] = useState( null );
 	const [ fetching, setFetching ] = useState( false );
@@ -118,6 +120,7 @@ export default function LinkComposer( { onSuccess, geoData } ) {
 				status: defaultStatus,
 				meta: { _quickpostr_post: '1' },
 				...buildQuickpostrFields( geoData ),
+				...( toRestDate( postDate ) ? { date: toRestDate( postDate ) } : {} ),
 			};
 			const wpPost = await createPost( baseFields );
 
@@ -148,6 +151,7 @@ export default function LinkComposer( { onSuccess, geoData } ) {
 		onSuccess,
 		bbAvailable,
 		geoData,
+		postDate,
 	] );
 
 	const canSubmit = url.trim() && ! submitting;
