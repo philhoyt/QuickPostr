@@ -4,7 +4,6 @@ import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
 import { createPost, updatePost, getDraft, discardDraft, buildQuickpostrFields } from './api.js';
 import { toRestDate } from './postDate.js';
-import SlugPreview from './SlugPreview.jsx';
 import TagInput from './TagInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
@@ -365,8 +364,6 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 				editorRef={ editorRef }
 				onChange={ handleHtmlChange }
 			/>
-
-			<SlugPreview title={ title } />
 
 			<TagInput
 				selectedTags={ selectedTags }

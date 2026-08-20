@@ -47,11 +47,9 @@ $qp_config = array(
 	'settings'         => array(
 		'defaultStatus'   => $qp_settings['default_status'],
 		'defaultCategory' => (int) $qp_settings['default_category'],
-		'showSlugPreview' => (bool) $qp_settings['show_slug_preview'],
 	),
 	'blockAttrs'       => array(
 		'defaultMode'     => $attributes['defaultMode'] ?? 'status',
-		'showSlugPreview' => $attributes['showSlugPreview'] ?? true,
 		'placeholderText' => $attributes['placeholderText'] ?? __( "What's on your mind?", 'quickpostr' ),
 	),
 	'maxUploadSize'    => wp_max_upload_size(),
