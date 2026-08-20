@@ -39,10 +39,11 @@ class QuickPostr_Rest {
 	 * the meta written as a side effect — no proxy endpoint, and every core post
 	 * field (including `date`) keeps working for free.
 	 *
-	 * Both fields are write-only on purpose: no get_callback, so no protected
-	 * meta becomes newly readable. Exposing _geo_tagr_lat/_lng/_address on post
-	 * responses would leak exact coordinates for every post to anyone who can
-	 * read it.
+	 * Both fields are write-only on purpose: no get_callback, so QuickPostr adds
+	 * no new read surface for protected meta. Note that GeoTagr registers its
+	 * own keys with show_in_rest, so _geo_tagr_lat/_lng/_place/_address are
+	 * already readable by anyone through the core `meta` object. That is
+	 * GeoTagr's decision to revisit; mirroring it here would only widen it.
 	 *
 	 * @return void
 	 */
