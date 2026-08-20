@@ -26,6 +26,136 @@ class QuickPostr_Rest {
 	 */
 	public function init(): void {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_action( 'rest_api_init', array( $this, 'register_post_fields' ) );
+	}
+
+	/**
+	 * Register QuickPostr's writable fields on the core post resource.
+	 *
+	 * The geo and Mux values live in protected (underscore-prefixed) post meta
+	 * whose owning plugins register them with show_in_rest => false, so they
+	 * cannot be set through the core REST `meta` param. Registering our own
+	 * namespaced fields lets the composer post straight to /wp/v2/posts and get
+	 * the meta written as a side effect — no proxy endpoint, and every core post
+	 * field (including `date`) keeps working for free.
+	 *
+	 * Both fields are write-only on purpose: no get_callback, so no protected
+	 * meta becomes newly readable. Exposing _geo_tagr_lat/_lng/_address on post
+	 * responses would leak exact coordinates for every post to anyone who can
+	 * read it.
+	 *
+	 * @return void
+	 */
+	public function register_post_fields(): void {
+		register_rest_field(
+			'post',
+			'quickpostr_geo',
+			array(
+				'get_callback'    => null,
+				'update_callback' => array( $this, 'update_geo_field' ),
+				'schema'          => array(
+					'description' => __( 'Location metadata written to GeoTagr post meta. Write-only.', 'quickpostr' ),
+					'type'        => 'object',
+					'context'     => array(),
+					'properties'  => array(
+						'lat'     => array( 'type' => 'number' ),
+						'lng'     => array( 'type' => 'number' ),
+						'place'   => array( 'type' => 'string' ),
+						'address' => array( 'type' => 'string' ),
+					),
+				),
+			)
+		);
+
+		register_rest_field(
+			'post',
+			'quickpostr_video',
+			array(
+				'get_callback'    => null,
+				'update_callback' => array( $this, 'update_video_field' ),
+				'schema'          => array(
+					'description' => __( 'VideoMuxr playback and asset IDs. Write-only.', 'quickpostr' ),
+					'type'        => 'object',
+					'context'     => array(),
+					'properties'  => array(
+						'playback_id' => array( 'type' => 'string' ),
+						'asset_id'    => array( 'type' => 'string' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Write GeoTagr location meta from the quickpostr_geo field.
+	 *
+	 * Best-effort by design: this runs after wp_insert_post() has already
+	 * committed the post, so returning a WP_Error would fail the response and
+	 * leave the caller with a phantom post. It mirrors the previous proxy
+	 * behaviour, which wrote meta after a successful insert and ignored
+	 * failures.
+	 *
+	 * update_additional_fields_for_object() hands the value over raw — core does
+	 * not sanitize nested schema properties — so each value is sanitized here.
+	 *
+	 * @param mixed    $value The submitted field value.
+	 * @param \WP_Post $post  The post being created or updated.
+	 * @return void
+	 */
+	public function update_geo_field( mixed $value, \WP_Post $post ): void {
+		if ( ! is_array( $value ) || ! function_exists( 'geo_tagr_get_post_meta' ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+			return;
+		}
+
+		$geo_map = array(
+			'_geo_tagr_lat'     => isset( $value['lat'] ) ? (float) $value['lat'] : null,
+			'_geo_tagr_lng'     => isset( $value['lng'] ) ? (float) $value['lng'] : null,
+			'_geo_tagr_place'   => isset( $value['place'] ) ? sanitize_text_field( $value['place'] ) : null,
+			'_geo_tagr_address' => isset( $value['address'] ) ? sanitize_text_field( $value['address'] ) : null,
+		);
+
+		foreach ( $geo_map as $meta_key => $meta_value ) {
+			if ( null !== $meta_value && '' !== $meta_value ) {
+				update_post_meta( $post->ID, $meta_key, $meta_value );
+			}
+		}
+	}
+
+	/**
+	 * Write VideoMuxr playback/asset IDs from the quickpostr_video field.
+	 *
+	 * The meta keys are owned by VideoMuxr and drive its front-end player render
+	 * and its before_delete_post asset cleanup. Guarded on VideoMuxr being
+	 * present so the keys cannot be attached to arbitrary posts on sites that do
+	 * not run it. Best-effort for the same reason as update_geo_field().
+	 *
+	 * @param mixed    $value The submitted field value.
+	 * @param \WP_Post $post  The post being created or updated.
+	 * @return void
+	 */
+	public function update_video_field( mixed $value, \WP_Post $post ): void {
+		if ( ! is_array( $value ) || ! function_exists( 'videomuxr_is_configured' ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+			return;
+		}
+
+		$video_map = array(
+			'_videomuxr_playback_id' => isset( $value['playback_id'] ) ? sanitize_text_field( $value['playback_id'] ) : null,
+			'_videomuxr_asset_id'    => isset( $value['asset_id'] ) ? sanitize_text_field( $value['asset_id'] ) : null,
+		);
+
+		foreach ( $video_map as $meta_key => $meta_value ) {
+			if ( null !== $meta_value && '' !== $meta_value ) {
+				update_post_meta( $post->ID, $meta_key, $meta_value );
+			}
+		}
 	}
 
 	/**
