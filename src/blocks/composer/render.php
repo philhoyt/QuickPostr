@@ -55,6 +55,15 @@ $qp_config = array(
 		'placeholderText' => $attributes['placeholderText'] ?? __( "What's on your mind?", 'quickpostr' ),
 	),
 	'maxUploadSize'    => wp_max_upload_size(),
+	// Clock data for the composer's date control. serverNow is the authoritative
+	// anchor: the browser advances it with elapsed time rather than trusting the
+	// device clock, which may be wrong or set to another timezone. timezoneString
+	// is a PHP timezone name on most sites but a ±HH:MM offset when the site runs
+	// on a manual UTC offset, which Intl.DateTimeFormat cannot parse — hence
+	// gmtOffset as the fallback.
+	'serverNow'        => current_time( 'Y-m-d\TH:i:s' ),
+	'timezoneString'   => wp_timezone_string(),
+	'gmtOffset'        => (float) get_option( 'gmt_offset' ),
 	'pwa'              => array(
 		'swUrl' => home_url( '/quickpostr-sw.js' ),
 	),
