@@ -27,29 +27,38 @@ import {
  */
 export default function DateChip( { value, onChange, canSchedule = true } ) {
 	const [ expanded, setExpanded ] = useState( false );
-	const [ seeded, setSeeded ] = useState( '' );
+
+	// What the input displays. Kept separate from `value` because a
+	// datetime-local reports '' for any incomplete state: mid-edit, or with a
+	// segment cleared. Feeding that back as the input's value would snap the
+	// field back to "now" under the user's cursor on every such keystroke.
+	const [ draft, setDraft ] = useState( '' );
 	const inputRef = useRef( null );
 	const inputId = useId();
 
 	function handleToggle() {
-		// Seed the input with the site's current time as the panel opens, so the
-		// picker starts somewhere sensible without committing to a value. Done
+		// Seed the picker with the site's current time as the panel opens, so it
+		// starts somewhere sensible without committing to a value. Done
 		// synchronously rather than in an effect, which would seed a paint late
 		// and flash an empty input.
-		if ( ! expanded && ! value ) {
-			setSeeded( siteNowLocalString() );
+		if ( ! expanded ) {
+			setDraft( value || siteNowLocalString() );
 		}
 		setExpanded( ( open ) => ! open );
 	}
 
 	function handleInput( event ) {
-		// Only a real edit commits a value.
-		onChange( event.target.value );
+		const next = event.target.value;
+		// Always reflect what the user is doing, even mid-edit...
+		setDraft( next );
+		// ...but only a complete value commits a date. An incomplete one reads
+		// as '' here, which means "no date param", i.e. post as now.
+		onChange( next );
 	}
 
 	function handleReset() {
+		setDraft( siteNowLocalString() );
 		onChange( '' );
-		setSeeded( siteNowLocalString() );
 		inputRef.current?.focus();
 	}
 
@@ -97,7 +106,7 @@ export default function DateChip( { value, onChange, canSchedule = true } ) {
 						ref={ inputRef }
 						type="datetime-local"
 						className="qp-date-chip__input"
-						value={ value || seeded }
+						value={ draft }
 						onChange={ handleInput }
 					/>
 					{ hasCustomDate && (

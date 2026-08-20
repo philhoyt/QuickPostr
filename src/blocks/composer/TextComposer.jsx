@@ -245,6 +245,12 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 			return;
 		}
 
+		// The guard above reads the live DOM, so the payload must too. Falling
+		// back to state alone risks passing the guard on visible text while
+		// posting empty content, which WordPress rejects with "Content, title,
+		// and excerpt are empty."
+		const content = html || editorRef.current?.innerHTML || '';
+
 		setSubmitting( true );
 		setError( null );
 
@@ -256,7 +262,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 				// Publish the auto-saved draft.
 				const draftFields = {
 					title: '',
-					content: html,
+					content,
 					status: defaultStatus,
 					format: 'status',
 					tags: selectedTags,
@@ -269,7 +275,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 				// No draft: create a new post.
 				const postFields = {
 					title: '',
-					content: html,
+					content,
 					status: defaultStatus,
 					format: 'status',
 					tags: selectedTags,
