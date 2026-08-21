@@ -9,7 +9,6 @@
     "lint:css": "wp-scripts lint-style src/blocks/**/*.css",
     "plugin-zip": "wp-scripts plugin-zip",
     "test:unit": "wp-scripts test-unit-js",
-    "test:e2e": "wp-scripts test-playwright",
     "pot": "wp i18n make-pot . languages/quickpostr.pot --domain=quickpostr --exclude=vendor,node_modules,build,tests,lib"
   },
   "files": [
@@ -28,7 +27,7 @@
   "devDependencies": {
     "@types/react": "^18.3.28",
     "@wordpress/eslint-plugin": "^25.2.0",
-    "@wordpress/rich-text": "*",
+    "@wordpress/rich-text": "^7.46.0",
     "@wordpress/scripts": "^32.2.0",
     "@wordpress/stylelint-config": "^23.38.0",
     "ajv": "^8.20.0",

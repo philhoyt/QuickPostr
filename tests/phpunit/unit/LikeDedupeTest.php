@@ -13,6 +13,8 @@ use PHPUnit\Framework\TestCase;
 use QuickPostr_Rest;
 
 /**
+ * Anonymous like dedupe.
+ *
  * @covers QuickPostr_Rest::anonymous_like_exists_by_ip
  * @covers QuickPostr_Rest::anonymous_like_already_exists
  */

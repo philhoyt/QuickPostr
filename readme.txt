@@ -2,7 +2,7 @@
 Contributors: philhoyt
 Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.1
 Stable tag: 0.16.1
 License: GPL-2.0-or-later

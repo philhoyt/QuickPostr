@@ -16,6 +16,8 @@ use PHPUnit\Framework\TestCase;
 use QuickPostr_Settings;
 
 /**
+ * Settings sanitization.
+ *
  * @covers QuickPostr_Settings::sanitize_settings
  */
 final class SanitizeSettingsTest extends TestCase {

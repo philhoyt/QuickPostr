@@ -172,6 +172,15 @@
 	word-break: break-word;
 }
 
+/*
+ * outline:none above needs a replacement or keyboard users lose the composer
+ * entirely. Applied to the wrapper so the ring frames the whole editor.
+ */
+.wp-block-quickpostr-composer .qp-rich-editor:focus-within {
+	border-color: var(--qp-accent);
+	box-shadow: 0 0 0 2px rgb(0 0 0 / 8%);
+}
+
 .wp-block-quickpostr-composer .qp-rich-editor__content[data-placeholder]::before {
 	content: attr(data-placeholder);
 	color: var(--qp-text-muted);
@@ -263,6 +272,10 @@
 	color: var(--qp-text);
 	outline: none;
 	width: 140px;
+}
+
+.wp-block-quickpostr-composer .qp-tag-input__search:focus {
+	border-color: var(--qp-accent);
 }
 
 .wp-block-quickpostr-composer .qp-tag-input__suggestions {
