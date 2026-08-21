@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.17.0
+Stable tag: 0.18.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,9 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.18.0 =
+* Add: A "Composer with post feed" block pattern. Insert it on any page to get the composer above a feed of your posts, each with the author avatar, date, actions menu, featured image, title, content, and like and share buttons. Find it in the inserter under the QuickPostr category. When GeoTagr is active the pattern also shows the post's location.
 
 = 0.17.0 =
 * Add: Set the date on a post from the composer. Pick any past date to backdate a post, or a future one to schedule it -- available in all four modes. Times are always the site's, so the date you pick is the date the post carries no matter where you are.
