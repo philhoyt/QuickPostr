@@ -29,7 +29,7 @@
     "@types/react": "^18.3.28",
     "@wordpress/eslint-plugin": "^25.2.0",
     "@wordpress/rich-text": "^7.46.0",
-    "@wordpress/scripts": "^32.2.0",
+    "@wordpress/scripts": "^34.1.0",
     "@wordpress/stylelint-config": "^23.38.0",
     "ajv": "^8.20.0",
     "eslint": "^10.4.0"
