@@ -1073,103 +1073,6 @@
 	to { transform: rotate(360deg); }
 }
 
-/* ── Location chip ──────────────────────────────────────────────────────── */
-.wp-block-quickpostr-composer .qp-location-chip {
-	display: inline-flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 0.375rem;
-	padding: 0.3rem 0.5rem 0.3rem 0.625rem;
-	background: var(--qp-surface);
-	border: 1px solid var(--qp-accent);
-	border-radius: var(--qp-radius-pill);
-	font-size: 0.8125rem;
-	color: var(--qp-text);
-	min-width: 0;
-}
-
-/* Searching expands the pill in place rather than replacing it. */
-.wp-block-quickpostr-composer .qp-location-chip--open {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	flex-basis: 100%;
-	border-radius: var(--qp-radius-sm);
-	padding: 0.5rem 0.625rem;
-	gap: 0.5rem;
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__header {
-	display: flex;
-	align-items: center;
-	gap: 0.375rem;
-	min-width: 0;
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__panel {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-	min-width: 0;
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__icon {
-	width: 13px;
-	height: 13px;
-	flex-shrink: 0;
-	color: var(--qp-accent);
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__place {
-	overflow-wrap: break-word;
-	word-break: break-word;
-	min-width: 0;
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__place--empty {
-	color: var(--qp-text-muted);
-	font-style: italic;
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__edit {
-	background: none;
-	border: none;
-	padding: 0 0.25rem;
-	color: var(--qp-accent);
-	font-family: inherit;
-	font-size: 0.75rem;
-	font-weight: 500;
-	cursor: pointer;
-	flex-shrink: 0;
-	transition: opacity var(--qp-transition);
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__edit:hover {
-	opacity: 0.75;
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__dismiss {
-	background: none;
-	border: none;
-	padding: 0;
-	width: 18px;
-	height: 18px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: var(--qp-text-muted);
-	font-size: 0.75rem;
-	cursor: pointer;
-	flex-shrink: 0;
-	border-radius: 50%;
-	transition: color var(--qp-transition), background var(--qp-transition);
-}
-
-.wp-block-quickpostr-composer .qp-location-chip__dismiss:hover {
-	color: var(--qp-text);
-	background: var(--qp-border);
-}
-
 /* ── Geo search (manual override) ───────────────────────────────────────── */
 .wp-block-quickpostr-composer .qp-geo-error {
 	margin: 0;
@@ -1469,4 +1372,80 @@
 
 .wp-block-quickpostr-composer .qp-title-input__field:disabled {
 	opacity: 0.6;
+}
+
+/* ── Location chip ───────────────────────────────────────────────────────── */
+
+.wp-block-quickpostr-composer .qp-geo-chip {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	min-width: 0;
+}
+
+/* Open panel claims the whole row, like the date chip. */
+.wp-block-quickpostr-composer .qp-geo-chip--open {
+	flex-basis: 100%;
+}
+
+.wp-block-quickpostr-composer .qp-geo-chip__header {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	min-width: 0;
+}
+
+.wp-block-quickpostr-composer .qp-geo-button--set {
+	border-color: var(--qp-accent);
+	color: var(--qp-text);
+	background: var(--qp-surface);
+}
+
+.wp-block-quickpostr-composer .qp-geo-chip__clear {
+	flex-shrink: 0;
+	padding: 0 0.35rem;
+	background: transparent;
+	border: 0;
+	color: var(--qp-text-muted);
+	font-size: 0.875rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.wp-block-quickpostr-composer .qp-geo-chip__clear:hover {
+	color: var(--qp-text);
+}
+
+.wp-block-quickpostr-composer .qp-geo-chip__panel {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	width: 100%;
+	min-width: 0;
+	padding: 0.5rem 0.625rem;
+	background: var(--qp-surface);
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-sm);
+}
+
+.wp-block-quickpostr-composer .qp-geo-chip__detect {
+	align-self: flex-start;
+	padding: 0.3rem 0.75rem;
+	background: transparent;
+	border: 1px solid var(--qp-border);
+	border-radius: var(--qp-radius-pill);
+	color: var(--qp-text-muted);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	cursor: pointer;
+}
+
+.wp-block-quickpostr-composer .qp-geo-chip__detect:hover:not(:disabled) {
+	color: var(--qp-text);
+	border-color: var(--qp-accent);
+}
+
+.wp-block-quickpostr-composer .qp-geo-chip__detect:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
 }

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-21T00:12:05+00:00\n"
+"POT-Creation-Date: 2026-08-21T00:16:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: quickpostr\n"
@@ -46,20 +46,20 @@ msgid "QuickPostr Source"
 msgstr ""
 
 #: includes/class-quickpostr.php:341
-#: src/blocks/composer/Composer.jsx:175
+#: src/blocks/composer/Composer.jsx:158
 #: src/blocks/composer/edit.jsx:36
 #: src/blocks/composer/edit.jsx:83
 msgid "Photo"
 msgstr ""
 
 #: includes/class-quickpostr.php:343
-#: src/blocks/composer/Composer.jsx:177
+#: src/blocks/composer/Composer.jsx:160
 #: src/blocks/composer/TextComposer.jsx:114
 msgid "Link"
 msgstr ""
 
 #: includes/class-quickpostr.php:345
-#: src/blocks/composer/Composer.jsx:176
+#: src/blocks/composer/Composer.jsx:159
 msgid "Video"
 msgstr ""
 
@@ -68,7 +68,7 @@ msgid "Gallery"
 msgstr ""
 
 #: includes/class-quickpostr.php:349
-#: src/blocks/composer/Composer.jsx:174
+#: src/blocks/composer/Composer.jsx:157
 #: src/blocks/composer/edit.jsx:32
 #: src/blocks/composer/edit.jsx:76
 msgid "Status"
@@ -281,7 +281,6 @@ msgid "Yes, delete"
 msgstr ""
 
 #: src/blocks/post-actions/render.php:100
-#: src/blocks/composer/components/LocationChip.jsx:130
 msgid "Cancel"
 msgstr ""
 
@@ -316,85 +315,78 @@ msgstr ""
 msgid "This post will be scheduled, not published immediately."
 msgstr ""
 
-#: src/blocks/composer/components/GeoTagButton.jsx:30
-msgid "Could not detect your location. Enter an address below."
+#: src/blocks/composer/components/GeoChip.jsx:43
+msgid "Location added"
 msgstr ""
 
-#: src/blocks/composer/components/GeoTagButton.jsx:32
-msgid "Location permission denied. Enter an address below."
-msgstr ""
-
-#: src/blocks/composer/components/GeoTagButton.jsx:34
-msgid "Location unavailable. Enter an address below."
-msgstr ""
-
-#: src/blocks/composer/components/GeoTagButton.jsx:36
-msgid "Location request timed out. Enter an address below."
-msgstr ""
-
-#: src/blocks/composer/components/GeoTagButton.jsx:38
-msgid "Geolocation is not supported by your browser. Enter an address below."
-msgstr ""
-
-#: src/blocks/composer/components/GeoTagButton.jsx:50
-msgid "Detecting location…"
-msgstr ""
-
-#: src/blocks/composer/components/GeoTagButton.jsx:50
-msgid "Add location"
-msgstr ""
-
-#: src/blocks/composer/components/GeoTagButton.jsx:68
-msgid "Detecting…"
-msgstr ""
-
-#: src/blocks/composer/components/GeoTagButton.jsx:68
+#: src/blocks/composer/components/GeoChip.jsx:44
 msgid "Location"
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:84
-#: src/blocks/composer/components/LocationChip.jsx:155
-msgid "Search for a place…"
+#: src/blocks/composer/components/GeoChip.jsx:63
+msgid "Could not detect your location. Search for a place instead."
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:85
-msgid "Add a name…"
+#: src/blocks/composer/components/GeoChip.jsx:68
+msgid "Location permission denied. Search for a place instead."
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:118
-msgid "Change location"
+#: src/blocks/composer/components/GeoChip.jsx:73
+msgid "Location unavailable. Search for a place instead."
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:120
-msgid "Change"
+#: src/blocks/composer/components/GeoChip.jsx:78
+msgid "Location request timed out. Search for a place instead."
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:128
-msgid "Cancel location change"
+#: src/blocks/composer/components/GeoChip.jsx:83
+msgid "Geolocation is not supported by your browser. Search for a place instead."
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:137
+#. translators: %s: the attached place name.
+#: src/blocks/composer/components/GeoChip.jsx:139
+#, js-format
+msgid "Location: %s. Change it."
+msgstr ""
+
+#: src/blocks/composer/components/GeoChip.jsx:142
+msgid "Add location"
+msgstr ""
+
+#: src/blocks/composer/components/GeoChip.jsx:164
 msgid "Remove location"
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:158
+#: src/blocks/composer/components/GeoChip.jsx:180
+msgid "Detecting…"
+msgstr ""
+
+#: src/blocks/composer/components/GeoChip.jsx:181
+msgid "Use my current location"
+msgstr ""
+
+#: src/blocks/composer/components/GeoChip.jsx:194
+msgid "Search for a place…"
+msgstr ""
+
+#: src/blocks/composer/components/GeoChip.jsx:200
 msgid "Search location"
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:164
+#: src/blocks/composer/components/GeoChip.jsx:206
 msgid "Searching…"
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:175
+#: src/blocks/composer/components/GeoChip.jsx:218
 msgid "No results found."
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:182
+#: src/blocks/composer/components/GeoChip.jsx:226
 msgid "Location suggestions"
 msgstr ""
 
 #. translators: %s: typed place name
-#: src/blocks/composer/components/LocationChip.jsx:227
+#: src/blocks/composer/components/GeoChip.jsx:273
 #, js-format
 msgid "Use \"%s\" as place name"
 msgstr ""
@@ -407,17 +399,17 @@ msgstr ""
 msgid "Add a title (optional)"
 msgstr ""
 
-#: src/blocks/composer/Composer.jsx:159
+#: src/blocks/composer/Composer.jsx:142
 msgid "Post type"
 msgstr ""
 
 #. translators: %s: the date and time the post is scheduled for.
-#: src/blocks/composer/Composer.jsx:194
+#: src/blocks/composer/Composer.jsx:177
 #, js-format
 msgid "Scheduled for %s."
 msgstr ""
 
-#: src/blocks/composer/Composer.jsx:203
+#: src/blocks/composer/Composer.jsx:186
 msgid "Write another"
 msgstr ""
 

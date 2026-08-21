@@ -6,8 +6,7 @@ import VideoComposer from './VideoComposer.jsx';
 import LinkComposer from './LinkComposer.jsx';
 import DateChip from './components/DateChip.jsx';
 import { formatForDisplay } from './postDate.js';
-import GeoTagButton from './components/GeoTagButton.jsx';
-import LocationChip from './components/LocationChip.jsx';
+import GeoChip from './components/GeoChip.jsx';
 import usePwaShare from './usePwaShare.js';
 
 const config = window.quickpostrConfig ?? {};
@@ -39,7 +38,6 @@ export default function Composer() {
 		address: '',
 		active: false,
 	} );
-	const [ geoError, setGeoError ] = useState( '' );
 
 	// '' means "now" — no date param is sent unless the user picks one.
 	const [ postDate, setPostDate ] = useState( '' );
@@ -89,24 +87,18 @@ export default function Composer() {
 		setMode( nextMode );
 	}
 
-	function handleGeoDetected( result ) {
-		setGeoData( { ...result, active: true } );
-		setGeoError( '' );
-	}
-
-	function handleGeoError( message ) {
-		setGeoData( { lat: null, lng: null, place: '', address: '', active: true } );
-		setGeoError( message );
-	}
-
 	function handleGeoLocationSelect( result ) {
 		setGeoData( { ...result, active: true } );
-		setGeoError( '' );
 	}
 
 	function handleGeoDismiss() {
-		setGeoData( { lat: null, lng: null, place: '', address: '', active: false } );
-		setGeoError( '' );
+		setGeoData( {
+			lat: null,
+			lng: null,
+			place: '',
+			address: '',
+			active: false,
+		} );
 	}
 
 	return (
@@ -137,20 +129,11 @@ export default function Composer() {
 					onChange={ setPostDate }
 					canSchedule={ canSchedule }
 				/>
-				{ config.geoTagrActive && ! geoData.active && (
-					<GeoTagButton
-						onGeoDetected={ handleGeoDetected }
-						onGeoError={ handleGeoError }
-					/>
-				) }
-				{ config.geoTagrActive && geoData.active && (
-					<LocationChip
-						geoData={ geoData }
-						errorMsg={ geoError }
-						onDismiss={ handleGeoDismiss }
-						onLocationSelect={ handleGeoLocationSelect }
-					/>
-				) }
+				<GeoChip
+					geoData={ geoData }
+					onLocationSelect={ handleGeoLocationSelect }
+					onDismiss={ handleGeoDismiss }
+				/>
 			</div>
 
 			<div

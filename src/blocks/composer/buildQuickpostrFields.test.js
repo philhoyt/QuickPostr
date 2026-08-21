@@ -51,8 +51,7 @@ describe( 'buildQuickpostrFields', () => {
 	} );
 
 	it( 'omits quickpostr_geo when geolocation failed and left a null lat', () => {
-		// GeoTagButton's error path sets active:true with lat:null — that is a
-		// visible "location unavailable" chip, not a location to save.
+		// An active-but-empty geo state is not a location to save.
 		expect(
 			buildQuickpostrFields( {
 				active: true,
