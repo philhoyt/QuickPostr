@@ -22,6 +22,12 @@ class QuickPostr_Rest {
 	const NAMESPACE = 'quickpostr/v1';
 
 	/**
+	 * Comment meta key holding the salted hash of an anonymous liker's IP.
+	 * Used only to deduplicate likes; the raw address is never stored.
+	 */
+	const LIKE_IP_META = '_quickpostr_like_ip';
+
+	/**
 	 * Register hooks.
 	 */
 	public function init(): void {
@@ -489,17 +495,24 @@ class QuickPostr_Rest {
 				);
 			}
 
-			wp_insert_comment(
+			// The raw IP is deliberately not stored. Dedupe only needs equality,
+			// so a salted hash serves the same purpose without retaining an
+			// identifier that would otherwise need exporting and erasing.
+			$comment_id = wp_insert_comment(
 				array(
 					'comment_post_ID'      => $post_id,
 					'comment_author'       => $name,
 					'comment_author_email' => $email,
-					'comment_author_IP'    => $ip,
 					'comment_type'         => 'quickpostr_like',
 					'comment_content'      => $name . esc_html__( ' liked this post', 'quickpostr' ),
 					'comment_approved'     => 1,
 				)
 			);
+
+			if ( $comment_id && '' !== $ip ) {
+				update_comment_meta( (int) $comment_id, self::LIKE_IP_META, $this->hash_ip( $ip ) );
+			}
+
 			$liked = true;
 		}
 
@@ -614,15 +627,32 @@ class QuickPostr_Rest {
 		}
 		$comments = get_comments(
 			array(
-				'post_id'   => $post_id,
-				'author_ip' => $ip,
-				'user_id'   => 0,
-				'type'      => 'quickpostr_like',
-				'status'    => 'approve',
-				'number'    => 1,
+				'post_id'    => $post_id,
+				'meta_key'   => self::LIKE_IP_META,   // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- indexed meta key, single-row lookup bounded by number => 1.
+				'meta_value' => $this->hash_ip( $ip ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- exact match on a hash, not a LIKE.
+				'user_id'    => 0,
+				'type'       => 'quickpostr_like',
+				'status'     => 'approve',
+				'number'     => 1,
 			)
 		);
 		return ! empty( $comments );
+	}
+
+	/**
+	 * Salted, one-way hash of a visitor IP.
+	 *
+	 * Uses wp_hash(), so the value is bound to the site's salts and is not
+	 * portable between installs. An IPv4 space is small enough to brute-force
+	 * given the salt, so this is data minimisation rather than a guarantee — the
+	 * point is that the plugin no longer retains an address it would otherwise
+	 * have to export and erase on request.
+	 *
+	 * @param string $ip Raw IP address.
+	 * @return string
+	 */
+	private function hash_ip( string $ip ): string {
+		return wp_hash( 'quickpostr_like_ip|' . $ip );
 	}
 
 	/**

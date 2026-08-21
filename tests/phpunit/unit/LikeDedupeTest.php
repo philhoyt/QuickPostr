@@ -25,6 +25,13 @@ final class LikeDedupeTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		Monkey\setUp();
+		// The IP is stored as a salted hash, never raw; stub the salt-dependent
+		// hash so the dedupe query shape can be asserted deterministically.
+		Functions\when( 'wp_hash' )->alias(
+			static function ( $data ) {
+				return 'hashed:' . md5( (string) $data );
+			}
+		);
 		$this->rest = new QuickPostr_Rest();
 	}
 
@@ -68,7 +75,7 @@ final class LikeDedupeTest extends TestCase {
 		Functions\when( 'get_comments' )->alias(
 			static function ( $args ) {
 				// ...but the IP has liked before.
-				return isset( $args['author_ip'] )
+				return isset( $args['meta_key'] )
 					? array( (object) array( 'comment_ID' => 7 ) )
 					: array();
 			}
@@ -106,7 +113,7 @@ final class LikeDedupeTest extends TestCase {
 	public function test_name_only_like_is_still_deduped_by_ip(): void {
 		Functions\when( 'get_comments' )->alias(
 			static function ( $args ) {
-				return isset( $args['author_ip'] )
+				return isset( $args['meta_key'] )
 					? array( (object) array( 'comment_ID' => 11 ) )
 					: array();
 			}
@@ -122,7 +129,10 @@ final class LikeDedupeTest extends TestCase {
 				\Mockery::on(
 					static function ( $args ) {
 						return 123 === $args['post_id']
-							&& '203.0.113.5' === $args['author_ip']
+							// The raw IP must never reach the query.
+							&& ! isset( $args['author_ip'] )
+							&& '_quickpostr_like_ip' === $args['meta_key']
+							&& 'hashed:' . md5( 'quickpostr_like_ip|203.0.113.5' ) === $args['meta_value']
 							&& 0 === $args['user_id']
 							&& 'quickpostr_like' === $args['type']
 							&& 'approve' === $args['status']

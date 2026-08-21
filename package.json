@@ -17,6 +17,7 @@
     "languages",
     "lib",
     "quickpostr.php",
+    "uninstall.php",
     "readme.txt"
   ],
   "peerDependencies": {
