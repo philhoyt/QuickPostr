@@ -1,12 +1,17 @@
 /**
  * Unit tests for postDate.js.
  *
- * The harness timezone is deliberately set to a non-UTC zone before anything
- * else loads. Every assertion below concerns the *site's* wall clock, so if the
- * implementation ever read a local getter instead of a UTC one, the browser
- * timezone would leak in and these tests would shift by five hours.
+ * These assertions all concern the *site's* wall clock. If the implementation
+ * ever read a local getter instead of a UTC one, the browser timezone would leak
+ * in and the results would shift — but only visibly when the harness itself is
+ * not UTC. So the `test:unit` script sets `TZ=America/New_York` before Node
+ * starts.
+ *
+ * It has to be set there, not here: assigning `process.env.TZ` at file scope
+ * worked on macOS but silently did nothing on the Linux CI runner, leaving every
+ * timezone test below running in UTC and proving far less than it appeared to.
+ * The first test guards against that regressing.
  */
-process.env.TZ = 'America/New_York';
 
 /**
  * Load postDate.js fresh against a given config.

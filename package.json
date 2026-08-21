@@ -8,7 +8,7 @@
     "lint:js": "wp-scripts lint-js src/blocks",
     "lint:css": "wp-scripts lint-style src/blocks/**/*.css",
     "plugin-zip": "wp-scripts plugin-zip",
-    "test:unit": "wp-scripts test-unit-js",
+    "test:unit": "TZ=America/New_York wp-scripts test-unit-js",
     "pot": "wp i18n make-pot . languages/quickpostr.pot --domain=quickpostr --exclude=vendor,node_modules,build,tests,lib"
   },
   "files": [
