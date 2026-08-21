@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-21T00:00:00+00:00\n"
+"POT-Creation-Date: 2026-08-21T00:12:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: quickpostr\n"
@@ -281,7 +281,7 @@ msgid "Yes, delete"
 msgstr ""
 
 #: src/blocks/post-actions/render.php:100
-#: src/blocks/composer/components/LocationChip.jsx:145
+#: src/blocks/composer/components/LocationChip.jsx:130
 msgid "Cancel"
 msgstr ""
 
@@ -352,49 +352,49 @@ msgstr ""
 msgid "Location"
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:97
-msgid "Add a name…"
-msgstr ""
-
-#: src/blocks/composer/components/LocationChip.jsx:103
-msgid "Change location"
-msgstr ""
-
-#: src/blocks/composer/components/LocationChip.jsx:105
-msgid "Change"
-msgstr ""
-
-#: src/blocks/composer/components/LocationChip.jsx:111
-#: src/blocks/composer/components/LocationChip.jsx:152
-msgid "Remove location"
-msgstr ""
-
-#: src/blocks/composer/components/LocationChip.jsx:132
+#: src/blocks/composer/components/LocationChip.jsx:84
+#: src/blocks/composer/components/LocationChip.jsx:155
 msgid "Search for a place…"
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:135
-msgid "Search location"
+#: src/blocks/composer/components/LocationChip.jsx:85
+msgid "Add a name…"
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:143
+#: src/blocks/composer/components/LocationChip.jsx:118
+msgid "Change location"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:120
+msgid "Change"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:128
 msgid "Cancel location change"
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:159
-msgid "Searching…"
+#: src/blocks/composer/components/LocationChip.jsx:137
+msgid "Remove location"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:158
+msgid "Search location"
 msgstr ""
 
 #: src/blocks/composer/components/LocationChip.jsx:164
+msgid "Searching…"
+msgstr ""
+
+#: src/blocks/composer/components/LocationChip.jsx:175
 msgid "No results found."
 msgstr ""
 
-#: src/blocks/composer/components/LocationChip.jsx:171
+#: src/blocks/composer/components/LocationChip.jsx:182
 msgid "Location suggestions"
 msgstr ""
 
 #. translators: %s: typed place name
-#: src/blocks/composer/components/LocationChip.jsx:207
+#: src/blocks/composer/components/LocationChip.jsx:227
 #, js-format
 msgid "Use \"%s\" as place name"
 msgstr ""

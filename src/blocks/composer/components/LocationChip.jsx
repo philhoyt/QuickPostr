@@ -3,12 +3,11 @@ import { __, sprintf } from '@wordpress/i18n';
 import useNominatimSearch from '../hooks/useNominatimSearch.js';
 
 /**
- * Attached location chip — shows the resolved place name and action buttons.
+ * Attached location chip — the place name plus its actions.
  *
- * Three render states:
- *  1. Chip view  (!isManual && !editing) — place name + Change + ×
- *  2. Edit mode  (!isManual && editing)  — search pre-filled with current place, Cancel + ×
- *  3. Manual mode (isManual)             — permission-denied path, search + ×
+ * The chip header is always rendered, so the pill never vanishes out from under
+ * the user. Searching (either the permission-denied path or an explicit
+ * "Change") expands a panel beneath it, the same way the date chip behaves.
  *
  * Props:
  *   geoData         { lat, lng, place, address, active }
@@ -80,10 +79,18 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 		}
 	}
 
-	// ── State 1: chip view ───────────────────────────────────────────────────
-	if ( ! isManual && ! editing ) {
-		return (
-			<div className="qp-location-chip">
+	const searchOpen = isManual || editing;
+	const placeLabel = isManual
+		? __( 'Search for a place…', 'quickpostr' )
+		: geoData.place || __( 'Add a name…', 'quickpostr' );
+
+	return (
+		<div
+			className={ `qp-location-chip${
+				searchOpen ? ' qp-location-chip--open' : ''
+			}` }
+		>
+			<div className="qp-location-chip__header">
 				<svg
 					className="qp-location-chip__icon"
 					aria-hidden="true"
@@ -96,48 +103,23 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 					<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
 					<circle cx="12" cy="9" r="2.5" />
 				</svg>
-				<span className={ `qp-location-chip__place${ ! geoData.place ? ' qp-location-chip__place--empty' : '' }` }>
-					{ geoData.place || __( 'Add a name…', 'quickpostr' ) }
+				<span
+					className={ `qp-location-chip__place${
+						! geoData.place ? ' qp-location-chip__place--empty' : ''
+					}` }
+				>
+					{ placeLabel }
 				</span>
-				<button
-					type="button"
-					className="qp-location-chip__edit"
-					onClick={ handleStartEdit }
-					aria-label={ __( 'Change location', 'quickpostr' ) }
-				>
-					{ __( 'Change', 'quickpostr' ) }
-				</button>
-				<button
-					type="button"
-					className="qp-location-chip__dismiss"
-					onClick={ handleDismiss }
-					aria-label={ __( 'Remove location', 'quickpostr' ) }
-				>
-					&#x2715;
-				</button>
-			</div>
-		);
-	}
-
-	// ── States 2 & 3: edit mode or manual override ───────────────────────────
-	return (
-		<div className="qp-location-chip qp-location-chip--manual">
-			{ errorMsg && ! editing && (
-				<p className="qp-geo-error" role="alert">
-					{ errorMsg }
-				</p>
-			) }
-			<div className="qp-geo-search">
-				{ /* eslint-disable-next-line jsx-a11y/no-autofocus */ }
-				<input
-					type="text"
-					className="qp-geo-search__input"
-					placeholder={ __( 'Search for a place…', 'quickpostr' ) }
-					value={ query }
-					onChange={ handleSearchChange }
-					aria-label={ __( 'Search location', 'quickpostr' ) }
-					autoFocus
-				/>
+				{ ! searchOpen && (
+					<button
+						type="button"
+						className="qp-location-chip__edit"
+						onClick={ handleStartEdit }
+						aria-label={ __( 'Change location', 'quickpostr' ) }
+					>
+						{ __( 'Change', 'quickpostr' ) }
+					</button>
+				) }
 				{ editing && (
 					<button
 						type="button"
@@ -157,60 +139,97 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 					&#x2715;
 				</button>
 			</div>
-			{ loading && (
-				<p className="qp-geo-search__loading" aria-live="polite">
-					{ __( 'Searching…', 'quickpostr' ) }
-				</p>
-			) }
-			{ ! loading && hasSearched && query.trim() && results.length === 0 && (
-				<p className="qp-geo-search__no-results" aria-live="polite">
-					{ __( 'No results found.', 'quickpostr' ) }
-				</p>
-			) }
-			{ results.length > 0 && (
-				<ul
-					className="qp-geo-search__results"
-					role="listbox"
-					aria-label={ __( 'Location suggestions', 'quickpostr' ) }
-				>
-					{ results.map( ( r, i ) => {
-						const shortAddress = r.address
-							.split( ',' )
-							.slice( 0, 2 )
-							.join( ',' )
-							.trim();
-						const label =
-							r.place && r.place !== shortAddress
-								? `${ r.place } — ${ shortAddress }`
-								: shortAddress;
-						return (
-							<li
-								key={ i }
-								className="qp-geo-search__result"
-								role="option"
-								aria-selected="false"
-								tabIndex={ 0 }
-								onClick={ () => handleSelect( r ) }
-								onKeyDown={ ( e ) => handleResultKeyDown( e, r ) }
-							>
-								{ label }
-							</li>
-						);
-					} ) }
-				</ul>
-			) }
-			{ query.trim() && (
-				<button
-					type="button"
-					className={ `qp-geo-search__use-name${ results.length > 0 ? ' qp-geo-search__use-name--has-results' : '' }` }
-					onClick={ handleUseTypedName }
-				>
-					{ sprintf(
-						/* translators: %s: typed place name */
-						__( 'Use "%s" as place name', 'quickpostr' ),
-						query.trim()
+
+			{ searchOpen && (
+				<div className="qp-location-chip__panel">
+					{ errorMsg && ! editing && (
+						<p className="qp-geo-error" role="alert">
+							{ errorMsg }
+						</p>
 					) }
-				</button>
+					<div className="qp-geo-search">
+						{ /* eslint-disable-next-line jsx-a11y/no-autofocus */ }
+						<input
+							type="text"
+							className="qp-geo-search__input"
+							placeholder={ __( 'Search for a place…', 'quickpostr' ) }
+							value={ query }
+							onChange={ handleSearchChange }
+							aria-label={ __( 'Search location', 'quickpostr' ) }
+							autoFocus
+						/>
+					</div>
+					{ loading && (
+						<p className="qp-geo-search__loading" aria-live="polite">
+							{ __( 'Searching…', 'quickpostr' ) }
+						</p>
+					) }
+					{ ! loading &&
+						hasSearched &&
+						query.trim() &&
+						results.length === 0 && (
+							<p
+								className="qp-geo-search__no-results"
+								aria-live="polite"
+							>
+								{ __( 'No results found.', 'quickpostr' ) }
+							</p>
+						) }
+					{ results.length > 0 && (
+						<ul
+							className="qp-geo-search__results"
+							role="listbox"
+							aria-label={ __(
+								'Location suggestions',
+								'quickpostr'
+							) }
+						>
+							{ results.map( ( r, i ) => {
+								const shortAddress = r.address
+									.split( ',' )
+									.slice( 0, 2 )
+									.join( ',' )
+									.trim();
+								const label =
+									r.place && r.place !== shortAddress
+										? `${ r.place } — ${ shortAddress }`
+										: shortAddress;
+								return (
+									<li
+										key={ i }
+										className="qp-geo-search__result"
+										role="option"
+										aria-selected="false"
+										tabIndex={ 0 }
+										onClick={ () => handleSelect( r ) }
+										onKeyDown={ ( e ) =>
+											handleResultKeyDown( e, r )
+										}
+									>
+										{ label }
+									</li>
+								);
+							} ) }
+						</ul>
+					) }
+					{ query.trim() && (
+						<button
+							type="button"
+							className={ `qp-geo-search__use-name${
+								results.length > 0
+									? ' qp-geo-search__use-name--has-results'
+									: ''
+							}` }
+							onClick={ handleUseTypedName }
+						>
+							{ sprintf(
+								/* translators: %s: typed place name */
+								__( 'Use "%s" as place name', 'quickpostr' ),
+								query.trim()
+							) }
+						</button>
+					) }
+				</div>
 			) }
 		</div>
 	);
