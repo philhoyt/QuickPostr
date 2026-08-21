@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.16.1
+Stable tag: 0.17.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,23 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 Only JPEG. PNG and WebP uploads are not processed.
 
 == Changelog ==
+
+= 0.17.0 =
+* Add: Set the date on a post from the composer. Pick any past date to backdate a post, or a future one to schedule it -- available in all four modes. Times are always the site's, so the date you pick is the date the post carries no matter where you are.
+* Add: Scheduling now tells you what happened. A post dated in the future gets a "Scheduled for..." confirmation instead of reloading into a feed the post has not appeared in yet.
+* Add: Give a post your own title. The field sits above the composer and shows the auto-generated title as its placeholder, so you can see what the post will be called and type over it if you want something else. Titles you write are shown on the front end; auto-generated ones stay hidden as before.
+* Add: Uninstalling QuickPostr now removes the like records it created, along with its settings and terms. Posts you wrote through the composer are left alone.
+* Security: Closed a hole in the like button. An unauthenticated visitor could like the same post without limit by sending a different email address each time, inflating the count and adding a database row on every request.
+* Security: The PWA share endpoint now refuses uploads that the browser reports as coming from another site, and limits how many shares one account can make per hour.
+* Change: Visitor IP addresses are no longer stored. Likes from logged-out visitors are still counted once each, using a one-way hash instead of the address itself. QuickPostr also now suggests privacy-policy text describing what a like records.
+* Change: The date and location controls share one row, and the location button stays put when you click it -- it opens and closes the panel rather than disappearing.
+* Change: Posts are now created through WordPress's own REST route. The /quickpostr/v1/posts endpoints still work but are deprecated and will be removed in 1.0.0.
+* Change: Tested up to WordPress 7.1.
+* Fix: A place name you type is saved even when location detection fails or the search finds no match -- previously there was no way to keep it.
+* Fix: The date field no longer jumps back to "now" while you are editing it.
+* Fix: The composer can no longer submit an empty post that WordPress rejects.
+* Fix: Keyboard focus is visible again on the post editor and the tag field.
+* Remove: The slug preview, replaced by the editable title field above the composer. Its setting and block option are gone.
 
 = 0.16.1 =
 * Fix: Plugin no longer fatals with "Class Parsedown not found" on update checks. The bundled update-checker library's Parsedown files were being excluded from the release zip; they are now included.
