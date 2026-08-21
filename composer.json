@@ -5,23 +5,33 @@
     "license": "GPL-2.0-or-later",
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.10",
-        "wp-coding-standards/wpcs": "^3.1",
+        "wp-coding-standards/wpcs": "^3.4.1",
         "phpcsstandards/phpcsutils": "^1.0",
         "phpcsstandards/phpcsextra": "^1.0",
         "phpstan/phpstan": "^2.1",
         "szepeviktor/phpstan-wordpress": "^2.0",
-        "phpunit/phpunit": "^13.1",
-        "brain/monkey": "^2.7"
+        "phpunit/phpunit": "^9.6",
+        "brain/monkey": "^2.7",
+        "yoast/phpunit-polyfills": "^1.1"
     },
     "config": {
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform": {
+            "php": "8.1"
         }
     },
     "scripts": {
         "lint": "phpcs",
         "lint:fix": "phpcbf",
         "analyse": "phpstan analyse --memory-limit=1G",
-        "test": "phpunit"
+        "test": "phpunit --testsuite unit --bootstrap tests/phpunit/bootstrap.php",
+        "test:integration": "phpunit --testsuite integration --bootstrap tests/phpunit/integration-bootstrap.php",
+        "test:coverage": "php -d extension=pcov -d pcov.enabled=1 -d pcov.directory=includes vendor/bin/phpunit --testsuite integration --bootstrap tests/phpunit/integration-bootstrap.php --coverage-text",
+        "test:all": [
+            "@test",
+            "@test:integration"
+        ]
     }
 }

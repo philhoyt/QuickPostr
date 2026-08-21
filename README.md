@@ -1,5 +1,7 @@
 # QuickPostr
 
+[![CI](https://github.com/philhoyt/QuickPostr/actions/workflows/ci.yml/badge.svg)](https://github.com/philhoyt/QuickPostr/actions/workflows/ci.yml)
+
 ![QuickPostr Composer](assets/screenshot-1.png)
 
 A front-end post composer for WordPress, delivered as a WordPress block. Logged-in users post status updates, photos, videos, and links without visiting `/wp-admin`.
@@ -41,17 +43,26 @@ npm start            # webpack watch
 npm run lint:js      # JS linting (ESLint)
 npm run lint:css     # CSS/SCSS linting (Stylelint)
 npm run test:unit    # Jest unit tests
-npm run test:e2e     # Playwright end-to-end tests
 ```
 
 PHP tooling requires Composer dependencies:
 
 ```bash
 composer install
-composer lint        # PHPCS + WPCS
-composer lint:fix    # phpcbf auto-fix
-composer analyse     # PHPStan static analysis
-composer test        # PHPUnit
+composer lint             # PHPCS + WPCS
+composer lint:fix         # phpcbf auto-fix
+composer analyse          # PHPStan static analysis
+composer test             # PHPUnit unit suite (no WordPress, no DB)
+composer test:integration # PHPUnit against a real WordPress + DB
+composer test:all         # both suites
+composer test:coverage    # integration suite with line coverage (needs pcov)
+```
+
+The integration suite needs the WordPress core test library and a **throwaway**
+database — the harness drops all tables in it on every run:
+
+```bash
+bin/install-wp-tests.sh <db-name> <db-user> <db-pass> [db-host] [wp-version]
 ```
 
 ## Releases
@@ -78,7 +89,6 @@ assets.
 | Allowed Roles | administrator, editor, author | Controls who sees the Composer block. |
 | Default Post Status | publish | Set to `draft` to queue all posts for review. |
 | Default Category | none | Applied to every new post. |
-| Show Slug Preview | on | Displays the auto-generated title below the editor. |
 | Hide Admin Bar | on | Hides the admin bar for non-administrator roles. |
 | Hide Admin Bar (Administrators) | off | Separate toggle for the administrator role. |
 | Front-End Post Management | on | Enables the Edit and Delete actions in the Post Actions block. |

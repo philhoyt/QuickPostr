@@ -13,6 +13,8 @@ use PHPUnit\Framework\TestCase;
 use QuickPostr;
 
 /**
+ * Server-side auto-title generation.
+ *
  * @covers QuickPostr::generate_title
  */
 final class GenerateTitleTest extends TestCase {

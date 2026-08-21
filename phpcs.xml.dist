@@ -4,8 +4,10 @@
 
     <!-- What to scan -->
     <file>quickpostr.php</file>
+    <file>uninstall.php</file>
     <file>includes/</file>
     <file>src/blocks/</file>
+    <file>tests/</file>
 
     <!-- Ignore build output and third-party code -->
     <exclude-pattern>build/*</exclude-pattern>
@@ -28,6 +30,54 @@
 
     <!-- Minimum WordPress version -->
     <config name="minimum_supported_wp_version" value="6.7"/>
+
+    <!-- Test files follow PHPUnit conventions (descriptive method names,
+         StudlyCaps filenames, a bootstrap that stubs ABSPATH) rather than
+         WordPress file/doc naming. Scan them for real problems, not style. -->
+    <rule ref="Squiz.Commenting.FunctionComment.Missing">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.FunctionComment.MissingShort">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.VariableComment.Missing">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.FileComment.Missing">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.Files.FileName">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- The integration bootstrap writes setup errors to STDERR before
+         WordPress exists; WP_Filesystem is neither loaded nor applicable. -->
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fwrite">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <exclude-pattern>tests/*</exclude-pattern>
+        <!--
+        Block render.php templates are require'd inside a static closure by core
+        (wp-includes/blocks.php: `$settings['render_callback'] = static function
+        ( $attributes, $content, $block ) use ( $template_path ) { ... require
+        $template_path; ... }`), so their variables are function-scoped, not
+        globals. The sniff cannot see that and reports every local as an
+        unprefixed global.
+        -->
+        <exclude-pattern>src/blocks/*/render.php</exclude-pattern>
+    </rule>
+
+    <!-- Enforce prefixing. Without an explicit prefix list this sniff cannot
+         validate anything, so unprefixed globals would pass silently. -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="quickpostr"/>
+                <element value="QuickPostr"/>
+                <element value="QUICKPOSTR"/>
+            </property>
+        </properties>
+    </rule>
 
     <!-- Text domain -->
     <rule ref="WordPress.WP.I18n">

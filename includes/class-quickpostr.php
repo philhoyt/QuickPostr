@@ -35,6 +35,7 @@ class QuickPostr {
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
+		add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
 		add_filter( 'wp_handle_upload', array( $this, 'maybe_strip_exif' ), 10, 1 );
 		add_filter( 'wp_update_attachment_metadata', array( $this, 'fix_rotated_video_dimensions' ), 10, 2 );
 		add_filter( 'render_block_core/video', array( $this, 'set_video_aspect_ratio_auto' ), 10, 1 );
@@ -220,6 +221,31 @@ class QuickPostr {
 					return current_user_can( 'edit_posts' );
 				},
 			)
+		);
+	}
+
+	/**
+	 * Suggest privacy-policy text describing the data likes collect.
+	 *
+	 * Likes are the only place the plugin stores anything about a visitor: a
+	 * display name, an optional email address, and a salted hash of the IP used
+	 * to stop the same person liking a post repeatedly. The raw address is not
+	 * kept.
+	 *
+	 * @return void
+	 */
+	public function add_privacy_policy_content(): void {
+		if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
+			return;
+		}
+
+		$content = '<p>' . __( 'When you like a post, QuickPostr records that like so the count stays accurate and you are not counted twice.', 'quickpostr' ) . '</p>'
+			. '<p>' . __( 'If you are logged in, the like is stored against your user account. If you are not logged in, QuickPostr stores the name you enter, the email address you enter if you choose to provide one, and a one-way hash of your IP address. The hash is used only to recognise a repeat like on the same post — your IP address itself is not stored.', 'quickpostr' ) . '</p>'
+			. '<p>' . __( 'Likes are removed if the post they belong to is deleted, and all like records are removed if the plugin is uninstalled.', 'quickpostr' ) . '</p>';
+
+		wp_add_privacy_policy_content(
+			__( 'QuickPostr', 'quickpostr' ),
+			wp_kses_post( wpautop( $content, false ) )
 		);
 	}
 

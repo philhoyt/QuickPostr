@@ -2,7 +2,7 @@
 Contributors: philhoyt
 Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.1
 Stable tag: 0.16.1
 License: GPL-2.0-or-later
@@ -50,7 +50,6 @@ All settings are at **Settings → QuickPostr**.
 * **Allowed Roles** -- which roles can see and use the Composer block. Default: administrator, editor, author.
 * **Default Post Status** -- publish or draft. Set to draft to queue posts for review.
 * **Default Category** -- applied to every new post.
-* **Show Slug Preview** -- displays the auto-generated title preview below the editor.
 * **Hide Admin Bar** -- hides the WordPress admin bar for non-administrator roles.
 * **Hide Admin Bar (Administrators)** -- separate toggle for the administrator role.
 * **Front-End Post Management** -- enables the Edit and Delete actions in the Post Actions block.

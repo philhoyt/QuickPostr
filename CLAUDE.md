@@ -17,7 +17,40 @@ composer lint
 
 # PHP auto-fix (phpcbf)
 composer lint:fix
+
+# PHP static analysis
+composer analyse
+
+# PHP tests
+composer test              # unit — Brain Monkey, no WordPress, no DB
+composer test:integration  # WP_UnitTestCase against a real WordPress + DB
+composer test:all          # both
+composer test:coverage     # integration + line coverage (needs pcov)
+
+# JS tests
+npm run test:unit
 ```
+
+### Integration test setup (one time)
+
+The integration suite needs the WordPress core test library and a **throwaway**
+database — the harness drops all tables in it on every run.
+
+```bash
+bin/install-wp-tests.sh <db-name> <db-user> <db-pass> [db-host] [wp-version]
+```
+
+With Local by Flywheel, the host is the mysqld socket path:
+
+```bash
+SOCK="$HOME/Library/Application Support/Local/run/<site-id>/mysql/mysqld.sock"
+bin/install-wp-tests.sh quickpostr_tests root root "localhost:$SOCK" 7.1
+```
+
+Local must be running for the integration suite; the unit suite has no such
+dependency. PHPUnit is pinned to ^9.6 because the WordPress core test library
+caps there — `yoast/phpunit-polyfills` supports at most PHPUnit 12, and
+wordpress-develop pins polyfills to ^1.1, which tops out at 9.
 
 ## Before every commit — checklist
 
@@ -48,6 +81,12 @@ Manual smoke tests (load the plugin in a browser):
 - Do not shadow the `$current_user` WordPress global; use a prefixed variable (e.g. `$quickpostr_user`)
 
 ## JS conventions
+
+- `package.json` pins `overrides.prettier` to `npm:wp-prettier@^3.0.3`. Do not
+  remove it. `@wordpress/eslint-plugin` declares a peer of `prettier: ">=3"`, so
+  without the override an `npm update` hoists vanilla prettier over the
+  WordPress fork, `parenSpacing` stops being honoured, and every `( foo )` in the
+  codebase becomes a lint error (728 of them, when this happened).
 
 - Build toolchain: `@wordpress/scripts` + custom `webpack.config.js` (async entry, Blockendar pattern)
 - Two bundles: `index.js` (editor) and `composer-view.js` (front end)

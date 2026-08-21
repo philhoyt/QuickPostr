@@ -217,6 +217,10 @@ class QuickPostr_Manifest {
 	 * plus the upload_files capability. A logged-out user is sent to the login
 	 * screen; on success the uploaded attachment ID is handed to the composer
 	 * via ?qp_share so the user can review and post.
+	 *
+	 * Two guards stand in for the missing nonce: the request is refused when the
+	 * browser reports an explicitly cross-site initiator, and each user is rate
+	 * limited. See is_cross_site_request() for why that check is safe here.
 	 */
 	private function handle_share(): void {
 		$share_url = home_url( '/quickpostr-share/' );
@@ -229,6 +233,16 @@ class QuickPostr_Manifest {
 		$composer_url = $this->get_composer_page_url();
 
 		if ( ! current_user_can( 'upload_files' ) ) {
+			wp_safe_redirect( $composer_url );
+			exit;
+		}
+
+		if ( $this->is_cross_site_request() ) {
+			wp_safe_redirect( $composer_url );
+			exit;
+		}
+
+		if ( $this->share_rate_limit_exceeded( get_current_user_id() ) ) {
 			wp_safe_redirect( $composer_url );
 			exit;
 		}
@@ -258,6 +272,65 @@ class QuickPostr_Manifest {
 
 		wp_safe_redirect( add_query_arg( 'qp_share', $attachment_id, $composer_url ) );
 		exit;
+	}
+
+	/**
+	 * Whether the browser reported an explicitly cross-site initiator.
+	 *
+	 * Stands in for the nonce this endpoint cannot have. A Web Share Target
+	 * launch has no document initiator, so per the Fetch Metadata spec the
+	 * browser sends `Sec-Fetch-Site: none` — the same value as a bookmark or a
+	 * typed URL. A form on someone else's site posting here sends `cross-site`.
+	 *
+	 * Only that one explicit value is refused. A missing header (older browsers,
+	 * proxies that strip it) passes, so this can only ever reject a request the
+	 * browser has positively identified as cross-site — it cannot break a real
+	 * share.
+	 *
+	 * @return bool
+	 */
+	private function is_cross_site_request(): bool {
+		if ( empty( $_SERVER['HTTP_SEC_FETCH_SITE'] ) ) {
+			return false;
+		}
+
+		$site = sanitize_text_field( wp_unslash( $_SERVER['HTTP_SEC_FETCH_SITE'] ) );
+
+		return 'cross-site' === $site;
+	}
+
+	/**
+	 * Throttle share uploads per user.
+	 *
+	 * The endpoint writes a file to the media library on every call, so without
+	 * a ceiling a single session could be driven to fill the uploads directory.
+	 * Sharing is a deliberate, one-at-a-time gesture, so the limit is generous
+	 * enough never to be met by hand.
+	 *
+	 * @param int $user_id The sharing user.
+	 * @return bool True when the user has exhausted the window.
+	 */
+	private function share_rate_limit_exceeded( int $user_id ): bool {
+		/**
+		 * Filter how many PWA shares a user may make per hour.
+		 *
+		 * @param int $limit Maximum shares per hour.
+		 */
+		$limit = (int) apply_filters( 'quickpostr_share_rate_limit', 30 );
+		if ( $limit <= 0 ) {
+			return false;
+		}
+
+		$key   = 'quickpostr_share_rate_' . $user_id;
+		$count = (int) get_transient( $key );
+
+		if ( $count >= $limit ) {
+			return true;
+		}
+
+		set_transient( $key, $count + 1, HOUR_IN_SECONDS );
+
+		return false;
 	}
 
 	/**

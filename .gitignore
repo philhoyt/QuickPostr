@@ -38,3 +38,7 @@ wp-content/
 
 # PHPUnit
 .phpunit.result.cache
+
+# Coverage output
+/coverage
+/.phpunit.cache

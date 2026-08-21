@@ -22,6 +22,12 @@ class QuickPostr_Rest {
 	const NAMESPACE = 'quickpostr/v1';
 
 	/**
+	 * Comment meta key holding the salted hash of an anonymous liker's IP.
+	 * Used only to deduplicate likes; the raw address is never stored.
+	 */
+	const LIKE_IP_META = '_quickpostr_like_ip';
+
+	/**
 	 * Register hooks.
 	 */
 	public function init(): void {
@@ -478,11 +484,7 @@ class QuickPostr_Rest {
 				);
 			}
 
-			// Deduplicate anonymous likes: by email when provided, otherwise by
-			// originating IP. Without this an unauthenticated client could inflate
-			// the count indefinitely by re-posting name-only likes.
-			$already_liked = ( $email && $this->get_anonymous_like_exists( $post_id, $email ) )
-				|| ( ! $email && $this->anonymous_like_exists_by_ip( $post_id, $ip ) );
+			$already_liked = $this->anonymous_like_already_exists( $post_id, $email, $ip );
 
 			if ( $already_liked ) {
 				return rest_ensure_response(
@@ -493,17 +495,24 @@ class QuickPostr_Rest {
 				);
 			}
 
-			wp_insert_comment(
+			// The raw IP is deliberately not stored. Dedupe only needs equality,
+			// so a salted hash serves the same purpose without retaining an
+			// identifier that would otherwise need exporting and erasing.
+			$comment_id = wp_insert_comment(
 				array(
 					'comment_post_ID'      => $post_id,
 					'comment_author'       => $name,
 					'comment_author_email' => $email,
-					'comment_author_IP'    => $ip,
 					'comment_type'         => 'quickpostr_like',
 					'comment_content'      => $name . esc_html__( ' liked this post', 'quickpostr' ),
 					'comment_approved'     => 1,
 				)
 			);
+
+			if ( $comment_id && '' !== $ip ) {
+				update_comment_meta( (int) $comment_id, self::LIKE_IP_META, $this->hash_ip( $ip ) );
+			}
+
 			$liked = true;
 		}
 
@@ -558,6 +567,31 @@ class QuickPostr_Rest {
 	}
 
 	/**
+	 * Whether this anonymous visitor has already liked the post.
+	 *
+	 * Both checks always run. An earlier version consulted the IP *only* when no
+	 * email was supplied, which let a client like the same post without limit by
+	 * sending a fresh address every time — the email check only ever matches that
+	 * same address, so a new one always looked like a first-time like. The route
+	 * is unauthenticated, so that was an unbounded insert into wp_comments.
+	 *
+	 * Kept as its own method so the composition is testable: the previous bug
+	 * survived because only the individual helpers had coverage.
+	 *
+	 * @param int    $post_id The post being liked.
+	 * @param string $email   Submitted email address, may be empty.
+	 * @param string $ip      Originating IP address, may be empty.
+	 * @return bool True when this visitor already has a like on the post.
+	 */
+	public function anonymous_like_already_exists( int $post_id, string $email, string $ip ): bool {
+		if ( '' !== $email && $this->get_anonymous_like_exists( $post_id, $email ) ) {
+			return true;
+		}
+
+		return $this->anonymous_like_exists_by_ip( $post_id, $ip );
+	}
+
+	/**
 	 * Return true if an anonymous like-comment with the given email exists on a post.
 	 *
 	 * @param int    $post_id The post ID.
@@ -593,15 +627,32 @@ class QuickPostr_Rest {
 		}
 		$comments = get_comments(
 			array(
-				'post_id'   => $post_id,
-				'author_ip' => $ip,
-				'user_id'   => 0,
-				'type'      => 'quickpostr_like',
-				'status'    => 'approve',
-				'number'    => 1,
+				'post_id'    => $post_id,
+				'meta_key'   => self::LIKE_IP_META,   // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- indexed meta key, single-row lookup bounded by number => 1.
+				'meta_value' => $this->hash_ip( $ip ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- exact match on a hash, not a LIKE.
+				'user_id'    => 0,
+				'type'       => 'quickpostr_like',
+				'status'     => 'approve',
+				'number'     => 1,
 			)
 		);
 		return ! empty( $comments );
+	}
+
+	/**
+	 * Salted, one-way hash of a visitor IP.
+	 *
+	 * Uses wp_hash(), so the value is bound to the site's salts and is not
+	 * portable between installs. An IPv4 space is small enough to brute-force
+	 * given the salt, so this is data minimisation rather than a guarantee — the
+	 * point is that the plugin no longer retains an address it would otherwise
+	 * have to export and erase on request.
+	 *
+	 * @param string $ip Raw IP address.
+	 * @return string
+	 */
+	private function hash_ip( string $ip ): string {
+		return wp_hash( 'quickpostr_like_ip|' . $ip );
 	}
 
 	/**

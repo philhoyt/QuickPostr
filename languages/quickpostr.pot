@@ -9,15 +9,16 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-21T00:16:40+00:00\n"
+"POT-Creation-Date: 2026-08-21T16:07:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: quickpostr\n"
 
 #. Plugin Name of the plugin
 #: quickpostr.php
-#: includes/class-quickpostr.php:186
-#: includes/class-quickpostr.php:200
+#: includes/class-quickpostr.php:187
+#: includes/class-quickpostr.php:201
+#: includes/class-quickpostr.php:247
 #: includes/class-settings.php:66
 msgid "QuickPostr"
 msgstr ""
@@ -37,65 +38,77 @@ msgstr ""
 msgid "Phil Hoyt"
 msgstr ""
 
-#: includes/class-quickpostr.php:152
+#: includes/class-quickpostr.php:153
 msgid "QuickPostr Slider"
 msgstr ""
 
-#: includes/class-quickpostr.php:234
+#: includes/class-quickpostr.php:242
+msgid "When you like a post, QuickPostr records that like so the count stays accurate and you are not counted twice."
+msgstr ""
+
+#: includes/class-quickpostr.php:243
+msgid "If you are logged in, the like is stored against your user account. If you are not logged in, QuickPostr stores the name you enter, the email address you enter if you choose to provide one, and a one-way hash of your IP address. The hash is used only to recognise a repeat like on the same post — your IP address itself is not stored."
+msgstr ""
+
+#: includes/class-quickpostr.php:244
+msgid "Likes are removed if the post they belong to is deleted, and all like records are removed if the plugin is uninstalled."
+msgstr ""
+
+#: includes/class-quickpostr.php:260
 msgid "QuickPostr Source"
 msgstr ""
 
-#: includes/class-quickpostr.php:341
+#: includes/class-quickpostr.php:367
 #: src/blocks/composer/Composer.jsx:158
 #: src/blocks/composer/edit.jsx:36
 #: src/blocks/composer/edit.jsx:83
 msgid "Photo"
 msgstr ""
 
-#: includes/class-quickpostr.php:343
+#: includes/class-quickpostr.php:369
 #: src/blocks/composer/Composer.jsx:160
 #: src/blocks/composer/TextComposer.jsx:114
 msgid "Link"
 msgstr ""
 
-#: includes/class-quickpostr.php:345
+#: includes/class-quickpostr.php:371
 #: src/blocks/composer/Composer.jsx:159
 msgid "Video"
 msgstr ""
 
-#: includes/class-quickpostr.php:347
+#: includes/class-quickpostr.php:373
 msgid "Gallery"
 msgstr ""
 
-#: includes/class-quickpostr.php:349
+#: includes/class-quickpostr.php:375
 #: src/blocks/composer/Composer.jsx:157
 #: src/blocks/composer/edit.jsx:32
 #: src/blocks/composer/edit.jsx:76
 msgid "Status"
 msgstr ""
 
-#: includes/class-rest.php:58
+#: includes/class-rest.php:64
 msgid "Location metadata written to GeoTagr post meta. Write-only."
 msgstr ""
 
-#: includes/class-rest.php:78
+#: includes/class-rest.php:84
 msgid "VideoMuxr playback and asset IDs. Write-only."
 msgstr ""
 
-#: includes/class-rest.php:441
+#: includes/class-rest.php:447
 msgid "Post not found."
 msgstr ""
 
-#: includes/class-rest.php:462
-#: includes/class-rest.php:503
+#: includes/class-rest.php:468
+#: includes/class-rest.php:507
 msgid " liked this post"
 msgstr ""
 
-#: includes/class-rest.php:476
+#: includes/class-rest.php:482
 msgid "Name is required to like this post."
 msgstr ""
 
-#: includes/class-rest.php:635
+#: includes/class-rest.php:686
 msgid "You must be logged in to access QuickPostr settings."
 msgstr ""
 
