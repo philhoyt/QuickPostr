@@ -83,6 +83,18 @@ jobs:
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Build assets
+        # register_block_type() is pointed at build/, which is gitignored. Without
+        # a build WordPress cannot find block.json, falls back to treating the
+        # path as a block name, and no blocks register.
+        run: npm ci && npm run build
+
       - name: Install subversion
         # The PHPUnit harness lives in wordpress-develop, which is only
         # available over svn; it is not in the release tarball.

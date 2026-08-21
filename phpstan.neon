@@ -11,7 +11,10 @@ parameters:
         # can't evaluate statically from quickpostr.php).
         - .phpstan/bootstrap.php
     excludePaths:
-        - vendor
-        - node_modules
-        - build
+        # (?) marks a path optional. Without it PHPStan errors when the path is
+        # absent, which is the normal state in a PHP-only CI job that never runs
+        # npm install or a build.
+        - vendor (?)
+        - node_modules (?)
+        - build (?)
         - tests (?)
