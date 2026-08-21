@@ -1,18 +1,23 @@
 <?xml version="1.0"?>
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/13.1/phpunit.xsd"
-    bootstrap="tests/phpunit/bootstrap.php"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
     colors="true"
-    beStrictAboutTestsThatDoNotTestAnything="true">
+    beStrictAboutTestsThatDoNotTestAnything="true"
+    convertDeprecationsToExceptions="false">
     <testsuites>
+        <!-- Fast, no WordPress, no database. -->
         <testsuite name="unit">
             <directory>./tests/phpunit/unit</directory>
         </testsuite>
+        <!-- Real WordPress runtime; needs bin/install-wp-tests.sh first. -->
+        <testsuite name="integration">
+            <directory>./tests/phpunit/integration</directory>
+        </testsuite>
     </testsuites>
-    <source>
+    <coverage processUncoveredFiles="true">
         <include>
             <directory suffix=".php">./includes</directory>
         </include>
-    </source>
+    </coverage>
 </phpunit>

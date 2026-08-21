@@ -49,6 +49,11 @@
     <rule ref="WordPress.Files.FileName">
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>
+    <!-- The integration bootstrap writes setup errors to STDERR before
+         WordPress exists; WP_Filesystem is neither loaded nor applicable. -->
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fwrite">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <exclude-pattern>tests/*</exclude-pattern>
         <!--
