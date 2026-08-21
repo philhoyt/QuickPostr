@@ -39,7 +39,6 @@ class QuickPostr_Settings {
 			'allowed_roles'         => array( 'administrator', 'editor', 'author' ),
 			'default_status'        => 'publish',
 			'default_category'      => 0,
-			'show_slug_preview'     => true,
 			'hide_admin_bar'        => true,
 			'hide_admin_bar_admins' => false,
 			'front_end_edit'        => true,
@@ -115,14 +114,6 @@ class QuickPostr_Settings {
 		);
 
 		add_settings_field(
-			'show_slug_preview',
-			esc_html__( 'Show Slug Preview', 'quickpostr' ),
-			array( $this, 'field_show_slug_preview' ),
-			'quickpostr',
-			'quickpostr_general'
-		);
-
-		add_settings_field(
 			'hide_admin_bar',
 			esc_html__( 'Hide Admin Bar', 'quickpostr' ),
 			array( $this, 'field_hide_admin_bar' ),
@@ -192,7 +183,6 @@ class QuickPostr_Settings {
 									? $input['default_status']
 									: $defaults['default_status'],
 			'default_category'      => absint( $input['default_category'] ?? 0 ),
-			'show_slug_preview'     => ! empty( $input['show_slug_preview'] ),
 			'hide_admin_bar'        => ! empty( $input['hide_admin_bar'] ),
 			'hide_admin_bar_admins' => ! empty( $input['hide_admin_bar_admins'] ),
 			'front_end_edit'        => ! empty( $input['front_end_edit'] ),
@@ -261,19 +251,6 @@ class QuickPostr_Settings {
 				'option_none_value' => '0',
 				'hide_empty'        => false,
 			)
-		);
-	}
-
-	/**
-	 * Render the show_slug_preview checkbox field.
-	 */
-	public function field_show_slug_preview(): void {
-		$settings = self::get();
-		printf(
-			'<input type="checkbox" name="%1$s[show_slug_preview]" value="1"%2$s> <span class="description">%3$s</span>',
-			esc_attr( self::OPTION_KEY ),
-			checked( $settings['show_slug_preview'], true, false ),
-			esc_html__( 'Show the auto-generated title preview below the composer input.', 'quickpostr' )
 		);
 	}
 

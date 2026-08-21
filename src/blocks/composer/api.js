@@ -52,17 +52,51 @@ export function createPost( fields ) {
 }
 
 /**
- * Create a new post with geo metadata.
+ * Build QuickPostr's namespaced write-only post fields.
  *
- * Routes through /quickpostr/v1/posts which proxies to /wp/v2/posts and
- * additionally writes _geo_tagr_* post meta when GeoTagr is active.
- * Include geo_lat, geo_lng, geo_place, geo_address in fields.
+ * `quickpostr_geo` and `quickpostr_video` are registered on the core post
+ * resource by QuickPostr_Rest::register_post_fields(), which writes the
+ * protected _geo_tagr_* and _videomuxr_* meta that the core `meta` param
+ * cannot reach. Spread the result into the fields passed to createPost() or
+ * updatePost() — each key is omitted entirely when it has no data, so posts
+ * without a location or a Mux upload send nothing extra.
  *
- * @param {Object} fields — post fields plus geo_lat, geo_lng, geo_place, geo_address.
- * @return {Promise<object>} The created post object.
+ * @param {Object|null} geoData — composer geo state { active, lat, lng, place, address }.
+ * @param {Object|null} video   — { playbackId, assetId } when VideoMuxr handled the upload.
+ * @return {Object} Zero, one or two namespaced field keys.
  */
-export function createGeoPost( fields ) {
-	return request( 'POST', '/quickpostr/v1/posts', fields );
+export function buildQuickpostrFields( geoData, video = null ) {
+	const fields = {};
+
+	const hasCoords = geoData?.lat !== null && geoData?.lat !== undefined;
+	const hasPlace = !! geoData?.place?.trim();
+
+	if ( geoData?.active && ( hasCoords || hasPlace ) ) {
+		const geo = {};
+		// Coordinates are omitted rather than sent as null when geolocation
+		// failed: the field's schema types them as numbers, so null would fail
+		// validation, and a (float) cast of null would tag the post at 0,0.
+		if ( hasCoords ) {
+			geo.lat = geoData.lat;
+			geo.lng = geoData.lng;
+		}
+		if ( geoData.place ) {
+			geo.place = geoData.place;
+		}
+		if ( geoData.address ) {
+			geo.address = geoData.address;
+		}
+		fields.quickpostr_geo = geo;
+	}
+
+	if ( video?.playbackId ) {
+		fields.quickpostr_video = {
+			playback_id: video.playbackId,
+			asset_id: video.assetId,
+		};
+	}
+
+	return fields;
 }
 
 /**
@@ -321,21 +355,6 @@ export function getTag( id ) {
  */
 export function updatePost( id, fields ) {
 	return request( 'PUT', `/wp/v2/posts/${ id }`, fields );
-}
-
-/**
- * Update an existing post with geo metadata.
- *
- * Routes through /quickpostr/v1/posts/{id} which proxies to /wp/v2/posts/{id}
- * and additionally writes _geo_tagr_* post meta when GeoTagr is active.
- * Include geo_lat, geo_lng, geo_place, geo_address in fields.
- *
- * @param {number} id
- * @param {Object} fields — post fields plus geo_lat, geo_lng, geo_place, geo_address.
- * @return {Promise<object>} Updated post object.
- */
-export function updateGeoPost( id, fields ) {
-	return request( 'PUT', `/quickpostr/v1/posts/${ id }`, fields );
 }
 
 /**

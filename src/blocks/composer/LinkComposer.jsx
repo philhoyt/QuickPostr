@@ -1,7 +1,10 @@
 import { useState, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { createPost, createGeoPost, fetchLinkPreview } from './api.js';
+import { createPost, fetchLinkPreview, buildQuickpostrFields } from './api.js';
+import { toRestDate, titleDateString } from './postDate.js';
+import { generateTitle } from './useAutoTitle.js';
 import TagInput from './TagInput.jsx';
+import TitleInput from './components/TitleInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -33,8 +36,9 @@ function serializeLinkCard( attrs ) {
  * @param {Object}   root0
  * @param {Function} root0.onSuccess
  * @param {object}   root0.geoData
+ * @param {string}   root0.postDate
  */
-export default function LinkComposer( { onSuccess, geoData } ) {
+export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 	const [ url, setUrl ] = useState( '' );
 	const [ preview, setPreview ] = useState( null );
 	const [ fetching, setFetching ] = useState( false );
@@ -43,6 +47,7 @@ export default function LinkComposer( { onSuccess, geoData } ) {
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
 	const [ selectedTags, setSelectedTags ] = useState( [] );
+	const [ titleOverride, setTitleOverride ] = useState( '' );
 	const [ selectedCategories, setSelectedCategories ] = useState(
 		config.settings?.defaultCategory
 			? [ config.settings.defaultCategory ]
@@ -97,6 +102,7 @@ export default function LinkComposer( { onSuccess, geoData } ) {
 		setError( null );
 
 		try {
+			const date = toRestDate( postDate );
 			let content;
 			if ( bbAvailable && preview ) {
 				content = serializeLinkCard( preview );
@@ -114,18 +120,19 @@ export default function LinkComposer( { onSuccess, geoData } ) {
 
 			const baseFields = {
 				...fields,
-				title: '',
+				title: titleOverride.trim(),
 				status: defaultStatus,
 				meta: { _quickpostr_post: '1' },
+				...buildQuickpostrFields( geoData ),
+				...( date ? { date } : {} ),
 			};
-			const wpPost = await ( geoData?.active && geoData?.lat !== null
-				? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-				: createPost( baseFields ) );
+			const wpPost = await createPost( baseFields );
 
 			onSuccess?.( wpPost );
 
 			setUrl( '' );
 			setPreview( null );
+			setTitleOverride( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -149,6 +156,8 @@ export default function LinkComposer( { onSuccess, geoData } ) {
 		onSuccess,
 		bbAvailable,
 		geoData,
+		postDate,
+		titleOverride,
 	] );
 
 	const canSubmit = url.trim() && ! submitting;
@@ -159,6 +168,18 @@ export default function LinkComposer( { onSuccess, geoData } ) {
 
 	return (
 		<div className="qp-link-composer">
+			<TitleInput
+				value={ titleOverride }
+				onChange={ setTitleOverride }
+				autoTitle={ generateTitle(
+					'link',
+					'',
+					preview?.title ?? '',
+					titleDateString( postDate )
+				) }
+				disabled={ submitting }
+			/>
+
 			<div className="qp-link-composer__url-row">
 				<input
 					type="url"

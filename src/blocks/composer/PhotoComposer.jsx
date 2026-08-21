@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { createPost, createGeoPost, uploadMedia } from './api.js';
+import { createPost, uploadMedia, buildQuickpostrFields } from './api.js';
+import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
+import TitleInput from './components/TitleInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 import { buildSinglePhotoContent } from './photoContent.js';
 
@@ -76,14 +78,16 @@ function validateImageFile( f ) {
  * Props:
  *   onSuccess    (wpPost, mediaUrl) => void
  *   geoData      {object} — location data from Composer root
+ *   postDate     {string} — datetime-local value, '' for "now"
  *   initialPhoto {object|null} — a pre-loaded photo (e.g. a PWA-shared image),
  *                in the library-pick shape { file, preview, mediaId, sourceUrl }
  * @param {Object}        root0
  * @param {Function}      root0.onSuccess
  * @param {object}        root0.geoData
+ * @param {string}        root0.postDate
  * @param {object|null}   root0.initialPhoto
  */
-export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
+export default function PhotoComposer( { onSuccess, geoData, postDate, initialPhoto } ) {
 	// Unified per-photo state: { file, preview, mediaId, sourceUrl }
 	const [ photos, setPhotos ] = useState(
 		initialPhoto ? [ initialPhoto ] : []
@@ -100,6 +104,7 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
+	const [ titleOverride, setTitleOverride ] = useState( '' );
 
 	const fileInputRef = useRef( null );
 	const dragIndexRef = useRef( null );
@@ -226,6 +231,7 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 			return;
 		}
 
+		const date = toRestDate( postDate );
 		setSubmitting( true );
 		setError( null );
 
@@ -246,17 +252,17 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 					  } ) );
 
 				const baseFields = {
-					title: generateTitle( 'gallery', '', caption ),
+					title: titleOverride.trim(),
 					content: buildGalleryContent( mediaItems, caption ),
 					status: defaultStatus,
 					format: 'gallery',
 					tags: selectedTags,
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
+					...buildQuickpostrFields( geoData ),
+					...( date ? { date } : {} ),
 				};
-				wpPost = await ( geoData?.active && geoData?.lat !== null
-					? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-					: createPost( baseFields ) );
+				wpPost = await createPost( baseFields );
 
 				onSuccess?.(
 					wpPost,
@@ -276,17 +282,17 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 				}
 
 				const baseFields = {
-					title: generateTitle( 'photo', '', caption ),
+					title: titleOverride.trim(),
 					content: buildSinglePhotoContent( mediaId, mediaUrl, caption ),
 					status: defaultStatus,
 					format: 'image',
 					tags: selectedTags,
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
+					...buildQuickpostrFields( geoData ),
+					...( date ? { date } : {} ),
 				};
-				wpPost = await ( geoData?.active && geoData?.lat !== null
-					? createGeoPost( { ...baseFields, geo_lat: geoData.lat, geo_lng: geoData.lng, geo_place: geoData.place, geo_address: geoData.address } )
-					: createPost( baseFields ) );
+				wpPost = await createPost( baseFields );
 
 				onSuccess?.( wpPost, mediaUrl );
 			}
@@ -297,6 +303,7 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 				fileInputRef.current.value = '';
 			}
 			setCaption( '' );
+			setTitleOverride( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -335,6 +342,18 @@ export default function PhotoComposer( { onSuccess, geoData, initialPhoto } ) {
 
 	return (
 		<div className="qp-photo-composer">
+			<TitleInput
+				value={ titleOverride }
+				onChange={ setTitleOverride }
+				autoTitle={ generateTitle(
+					photos.length >= 2 ? 'gallery' : 'photo',
+					'',
+					caption,
+					titleDateString( postDate )
+				) }
+				disabled={ submitting }
+			/>
+
 			{ showDropzone && (
 				<div
 					className={ dropzoneClass }

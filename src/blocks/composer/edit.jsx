@@ -15,7 +15,7 @@ import {
 import { __ } from '@wordpress/i18n';
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { defaultMode, showSlugPreview, placeholderText } = attributes;
+	const { defaultMode, placeholderText } = attributes;
 	const blockProps = useBlockProps( {
 		className: 'quickpostr-composer-preview',
 	} );
@@ -46,17 +46,6 @@ export default function Edit( { attributes, setAttributes } ) {
 						value={ placeholderText }
 						onChange={ ( value ) =>
 							setAttributes( { placeholderText: value } )
-						}
-					/>
-					<ToggleControl
-						label={ __( 'Show Slug Preview', 'quickpostr' ) }
-						help={ __(
-							'Display the auto-generated title preview below the composer.',
-							'quickpostr'
-						) }
-						checked={ showSlugPreview }
-						onChange={ ( value ) =>
-							setAttributes( { showSlugPreview: value } )
 						}
 					/>
 				</PanelBody>

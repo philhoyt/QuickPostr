@@ -2,9 +2,10 @@ import { useState, useRef, useCallback, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
-import { createPost, createGeoPost, updatePost, updateGeoPost, getDraft, discardDraft } from './api.js';
-import SlugPreview from './SlugPreview.jsx';
+import { createPost, updatePost, getDraft, discardDraft, buildQuickpostrFields } from './api.js';
+import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
+import TitleInput from './components/TitleInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -142,8 +143,9 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  * @param {Object}   root0
  * @param {Function} root0.onSuccess
  * @param {object}   root0.geoData
+ * @param {string}   root0.postDate
  */
-export default function TextComposer( { onSuccess, geoData } ) {
+export default function TextComposer( { onSuccess, geoData, postDate } ) {
 	const editorRef = useRef( null );
 	const draftTimer = useRef( null );
 
@@ -160,6 +162,8 @@ export default function TextComposer( { onSuccess, geoData } ) {
 	const [ draftId, setDraftId ] = useState( null );
 	const [ draftBanner, setDraftBanner ] = useState( false );
 	const [ draftPost, setDraftPost ] = useState( null );
+	// '' means "no override" — PHP generates the canonical title.
+	const [ titleOverride, setTitleOverride ] = useState( '' );
 
 	const placeholder =
 		config.blockAttrs?.placeholderText ?? "What's on your mind?";
@@ -167,7 +171,12 @@ export default function TextComposer( { onSuccess, geoData } ) {
 
 	// Plain-text content for title preview and character count.
 	const plainText = editorRef.current?.innerText?.trim() ?? '';
-	const title = generateTitle( 'text', plainText, '' );
+	const autoTitle = generateTitle(
+		'text',
+		plainText,
+		'',
+		titleDateString( postDate )
+	);
 
 	// On mount: check for an existing draft.
 	useEffect( () => {
@@ -243,55 +252,46 @@ export default function TextComposer( { onSuccess, geoData } ) {
 			return;
 		}
 
+		// The guard above reads the live DOM, so the payload must too. Falling
+		// back to state alone risks passing the guard on visible text while
+		// posting empty content, which WordPress rejects with "Content, title,
+		// and excerpt are empty."
+		const content = html || editorRef.current?.innerHTML || '';
+
 		setSubmitting( true );
 		setError( null );
 
 		try {
 			let wpPost;
+			const date = toRestDate( postDate );
 
 			if ( draftId ) {
 				// Publish the auto-saved draft.
 				const draftFields = {
-					title: '',
-					content: html,
+					title: titleOverride.trim(),
+					content,
 					status: defaultStatus,
 					format: 'status',
 					tags: selectedTags,
 					categories: selectedCategories,
+					...buildQuickpostrFields( geoData ),
+					...( date ? { date } : {} ),
 				};
-				if ( geoData?.active && geoData?.lat !== null ) {
-					wpPost = await updateGeoPost( draftId, {
-						...draftFields,
-						geo_lat: geoData.lat,
-						geo_lng: geoData.lng,
-						geo_place: geoData.place,
-						geo_address: geoData.address,
-					} );
-				} else {
-					wpPost = await updatePost( draftId, draftFields );
-				}
+				wpPost = await updatePost( draftId, draftFields );
 			} else {
 				// No draft: create a new post.
 				const postFields = {
-					title: '',
-					content: html,
+					title: titleOverride.trim(),
+					content,
 					status: defaultStatus,
 					format: 'status',
 					tags: selectedTags,
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
+					...buildQuickpostrFields( geoData ),
+					...( date ? { date } : {} ),
 				};
-				if ( geoData?.active && geoData?.lat !== null ) {
-					wpPost = await createGeoPost( {
-						...postFields,
-						geo_lat: geoData.lat,
-						geo_lng: geoData.lng,
-						geo_place: geoData.place,
-						geo_address: geoData.address,
-					} );
-				} else {
-					wpPost = await createPost( postFields );
-				}
+				wpPost = await createPost( postFields );
 			}
 
 			onSuccess?.( wpPost );
@@ -303,6 +303,7 @@ export default function TextComposer( { onSuccess, geoData } ) {
 			}
 			setHtml( '' );
 			setDraftId( null );
+			setTitleOverride( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -325,6 +326,8 @@ export default function TextComposer( { onSuccess, geoData } ) {
 		onSuccess,
 		draftId,
 		geoData,
+		postDate,
+		titleOverride,
 	] );
 
 	function handleKeyDown( e ) {
@@ -365,14 +368,19 @@ export default function TextComposer( { onSuccess, geoData } ) {
 				</div>
 			) }
 
+			<TitleInput
+				value={ titleOverride }
+				onChange={ setTitleOverride }
+				autoTitle={ autoTitle }
+				disabled={ submitting }
+			/>
+
 			<RichEditor
 				placeholder={ placeholder }
 				disabled={ submitting }
 				editorRef={ editorRef }
 				onChange={ handleHtmlChange }
 			/>
-
-			<SlugPreview title={ title } />
 
 			<TagInput
 				selectedTags={ selectedTags }

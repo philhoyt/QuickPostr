@@ -27,10 +27,6 @@
 			"default": "status",
 			"enum": [ "status", "photo", "video" ]
 		},
-		"showSlugPreview": {
-			"type": "boolean",
-			"default": true
-		},
 		"placeholderText": {
 			"type": "string",
 			"default": "What's on your mind?"

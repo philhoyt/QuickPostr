@@ -2,13 +2,15 @@ import { useState, useRef, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import {
 	createPost,
-	createGeoPost,
 	uploadMedia,
 	requestVideoMuxrUpload,
 	uploadToMux,
 	pollVideoMuxrStatus,
+	buildQuickpostrFields,
 } from './api.js';
+import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
+import TitleInput from './components/TitleInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 
 const config = window.quickpostrConfig ?? {};
@@ -28,8 +30,10 @@ const videoMuxr = config.videoMuxr ?? null;
  *   onSuccess (wpPost, mediaUrl) => void
  * @param {Object}   root0
  * @param {Function} root0.onSuccess
+ * @param {object}   root0.geoData
+ * @param {string}   root0.postDate
  */
-export default function VideoComposer( { onSuccess, geoData } ) {
+export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 	const [ file, setFile ] = useState( null );
 	const [ preview, setPreview ] = useState( null );
 	const [ libraryMediaItem, setLibraryMediaItem ] = useState( null );
@@ -44,6 +48,7 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
+	const [ titleOverride, setTitleOverride ] = useState( '' );
 	// 'idle' | 'uploading' | 'processing' — only used on the VideoMuxr path.
 	const [ phase, setPhase ] = useState( 'idle' );
 	const [ uploadProgress, setUploadProgress ] = useState( 0 );
@@ -167,6 +172,7 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 			// New file + VideoMuxr active → upload straight to Mux.
 			const useMux = videoMuxr?.active && !! file;
 			let baseFields;
+			let muxIds = null;
 
 			if ( useMux ) {
 				setPhase( 'uploading' );
@@ -181,7 +187,7 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 					await pollVideoMuxrStatus( uploadId );
 
 				baseFields = {
-					title: generateTitle( 'photo', '', caption ),
+					title: titleOverride.trim(),
 					content: buildMuxVideoContent(
 						playbackId,
 						assetId,
@@ -193,9 +199,8 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 					tags: selectedTags,
 					categories: selectedCategories,
 					meta: { _quickpostr_post: '1' },
-					videomuxr_playback_id: playbackId,
-					videomuxr_asset_id: assetId,
 				};
+				muxIds = { playbackId, assetId };
 			} else {
 				let mediaId, mediaUrl;
 
@@ -209,7 +214,7 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 				}
 
 				baseFields = {
-					title: generateTitle( 'photo', '', caption ),
+					title: titleOverride.trim(),
 					content: buildVideoContent( mediaId, mediaUrl, caption ),
 					status: defaultStatus,
 					format: 'video',
@@ -220,25 +225,12 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 				};
 			}
 
-			const hasGeo = geoData?.active && geoData?.lat !== null;
-			let fields = baseFields;
-			if ( hasGeo ) {
-				fields = {
-					...baseFields,
-					geo_lat: geoData.lat,
-					geo_lng: geoData.lng,
-					geo_place: geoData.place,
-					geo_address: geoData.address,
-				};
-			}
-
-			// VideoMuxr meta can only be written by our own endpoint (the core
-			// REST route cannot set show_in_rest:false meta), so Mux posts always
-			// route through /quickpostr/v1/posts.
-			const wpPost =
-				hasGeo || useMux
-					? await createGeoPost( fields )
-					: await createPost( fields );
+			const date = toRestDate( postDate );
+			const wpPost = await createPost( {
+				...baseFields,
+				...buildQuickpostrFields( geoData, muxIds ),
+				...( date ? { date } : {} ),
+			} );
 
 			onSuccess?.( wpPost );
 
@@ -253,6 +245,7 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 				fileInputRef.current.value = '';
 			}
 			setCaption( '' );
+			setTitleOverride( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -318,6 +311,18 @@ export default function VideoComposer( { onSuccess, geoData } ) {
 
 	return (
 		<div className="qp-video-composer">
+			<TitleInput
+				value={ titleOverride }
+				onChange={ setTitleOverride }
+				autoTitle={ generateTitle(
+					'video',
+					'',
+					caption,
+					titleDateString( postDate )
+				) }
+				disabled={ submitting }
+			/>
+
 			{ ! file && ! preview && ! libraryMediaItem && (
 				<div
 					className={ dropzoneClass }

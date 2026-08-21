@@ -267,7 +267,7 @@ class QuickPostr {
 	 * @param \WP_Post         $post    The inserted post.
 	 * @param \WP_REST_Request $request The REST request.
 	 */
-	public function assign_source_terms( \WP_Post $post, \WP_REST_Request $request ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public function assign_source_terms( \WP_Post $post, \WP_REST_Request $request ): void {
 		if ( ! get_post_meta( $post->ID, '_quickpostr_post', true ) ) {
 			return;
 		}
@@ -289,8 +289,26 @@ class QuickPostr {
 
 		wp_set_object_terms( $post->ID, array( 'app', $format_term ), 'quickpostr_source' );
 
-		// Generate and set the authoritative title. The JS composer sends an
-		// empty title — PHP owns the canonical value.
+		// A title the user actually typed wins. Read it from the request rather
+		// than from $post->post_title: this hook also runs on updates, and the
+		// composer's auto-saved draft already carries a PHP-generated title by
+		// then, which would otherwise look like a user's choice.
+		$requested_title = $request->get_param( 'title' );
+		if ( is_array( $requested_title ) ) {
+			$requested_title = $requested_title['raw'] ?? '';
+		}
+		$requested_title = trim( wp_strip_all_tags( (string) $requested_title ) );
+
+		if ( '' !== $requested_title ) {
+			// Flagged so suppress_title() knows to leave this one visible.
+			update_post_meta( $post->ID, '_quickpostr_custom_title', '1' );
+			return;
+		}
+
+		delete_post_meta( $post->ID, '_quickpostr_custom_title' );
+
+		// Otherwise generate the authoritative title. The composer sends an
+		// empty title in that case — PHP owns the canonical value.
 		$date  = wp_date( 'M j, Y', strtotime( $post->post_date ) );
 		$title = $this->generate_title( $post->post_content, $format_term, $date );
 
@@ -351,12 +369,19 @@ class QuickPostr {
 	 * Deliberately skipped in admin and REST contexts so ActivityPub
 	 * and admin list views receive the real stored title.
 	 *
+	 * A title the user typed in the composer is always shown: hiding it would
+	 * make the field pointless, since the whole reason to type one is to have
+	 * it appear. Only auto-generated titles are suppressed.
+	 *
 	 * @param string $title   The post title.
 	 * @param int    $post_id The post ID.
 	 * @return string
 	 */
 	public function suppress_title( string $title, int $post_id ): string {
 		if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return $title;
+		}
+		if ( get_post_meta( $post_id, '_quickpostr_custom_title', true ) ) {
 			return $title;
 		}
 		if ( has_term( 'app', 'quickpostr_source', $post_id ) ) {

@@ -1,11 +1,12 @@
-import { useState, useEffect } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { useState, useEffect, useRef } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
 import VideoComposer from './VideoComposer.jsx';
 import LinkComposer from './LinkComposer.jsx';
-import GeoTagButton from './components/GeoTagButton.jsx';
-import LocationChip from './components/LocationChip.jsx';
+import DateChip from './components/DateChip.jsx';
+import { formatForDisplay } from './postDate.js';
+import GeoChip from './components/GeoChip.jsx';
 import usePwaShare from './usePwaShare.js';
 
 const config = window.quickpostrConfig ?? {};
@@ -37,7 +38,24 @@ export default function Composer() {
 		address: '',
 		active: false,
 	} );
-	const [ geoError, setGeoError ] = useState( '' );
+
+	// '' means "now" — no date param is sent unless the user picks one.
+	const [ postDate, setPostDate ] = useState( '' );
+
+	// A draft with a future date is not scheduled, so the chip must not imply it.
+	const canSchedule = ( config.settings?.defaultStatus ?? 'publish' ) === 'publish';
+
+	// Set when WordPress schedules the post instead of publishing it.
+	const [ scheduledPost, setScheduledPost ] = useState( null );
+	const scheduledNoticeRef = useRef( null );
+
+	// Move focus to the notice so the outcome is announced rather than silently
+	// replacing the composer.
+	useEffect( () => {
+		if ( scheduledPost ) {
+			scheduledNoticeRef.current?.focus();
+		}
+	}, [ scheduledPost ] );
 
 	const user = config.currentUser ?? {};
 	const avatarUrl = user.avatarUrls?.[ '48' ];
@@ -48,29 +66,39 @@ export default function Composer() {
 		.join( '' )
 		.toUpperCase();
 
-	function handleSuccess() {
+	function handleSuccess( wpPost ) {
+		// Never carry a chosen date over to the next post.
+		setPostDate( '' );
+
+		// A scheduled post will not appear in the theme's Query Loop yet, so
+		// reloading would look like the post vanished. Say what happened instead.
+		if ( wpPost?.status === 'future' ) {
+			setScheduledPost( wpPost );
+			return;
+		}
+
 		// Reload so the theme's Query Loop reflects the new post.
 		window.location.reload();
 	}
 
-	function handleGeoDetected( result ) {
-		setGeoData( { ...result, active: true } );
-		setGeoError( '' );
-	}
-
-	function handleGeoError( message ) {
-		setGeoData( { lat: null, lng: null, place: '', address: '', active: true } );
-		setGeoError( message );
+	function handleSelectMode( nextMode ) {
+		// Switching tabs must never be a dead end behind the notice.
+		setScheduledPost( null );
+		setMode( nextMode );
 	}
 
 	function handleGeoLocationSelect( result ) {
 		setGeoData( { ...result, active: true } );
-		setGeoError( '' );
 	}
 
 	function handleGeoDismiss() {
-		setGeoData( { lat: null, lng: null, place: '', address: '', active: false } );
-		setGeoError( '' );
+		setGeoData( {
+			lat: null,
+			lng: null,
+			place: '',
+			address: '',
+			active: false,
+		} );
 	}
 
 	return (
@@ -95,6 +123,19 @@ export default function Composer() {
 				</div>
 			</header>
 
+			<div className="qp-composer__meta-bar">
+				<DateChip
+					value={ postDate }
+					onChange={ setPostDate }
+					canSchedule={ canSchedule }
+				/>
+				<GeoChip
+					geoData={ geoData }
+					onLocationSelect={ handleGeoLocationSelect }
+					onDismiss={ handleGeoDismiss }
+				/>
+			</div>
+
 			<div
 				className="qp-composer__mode-bar"
 				role="tablist"
@@ -108,7 +149,7 @@ export default function Composer() {
 						className={ `qp-composer__mode-btn${
 							mode === m ? ' qp-composer__mode-btn--active' : ''
 						}` }
-						onClick={ () => setMode( m ) }
+						onClick={ () => handleSelectMode( m ) }
 						type="button"
 					>
 						{
@@ -123,36 +164,46 @@ export default function Composer() {
 				) ) }
 			</div>
 
-			{ config.geoTagrActive && (
-				<div className="qp-composer__geo-bar">
-					{ ! geoData.active && (
-						<GeoTagButton
-							onGeoDetected={ handleGeoDetected }
-							onGeoError={ handleGeoError }
-						/>
-					) }
-					{ geoData.active && (
-						<LocationChip
-							geoData={ geoData }
-							errorMsg={ geoError }
-							onDismiss={ handleGeoDismiss }
-							onLocationSelect={ handleGeoLocationSelect }
-						/>
-					) }
+			{ scheduledPost && (
+				<div
+					className="qp-composer-scheduled"
+					role="status"
+					ref={ scheduledNoticeRef }
+					tabIndex={ -1 }
+				>
+					<p className="qp-composer-scheduled__text">
+						{ sprintf(
+							/* translators: %s: the date and time the post is scheduled for. */
+							__( 'Scheduled for %s.', 'quickpostr' ),
+							formatForDisplay( scheduledPost.date )
+						) }
+					</p>
+					<button
+						type="button"
+						className="qp-composer-scheduled__again"
+						onClick={ () => setScheduledPost( null ) }
+					>
+						{ __( 'Write another', 'quickpostr' ) }
+					</button>
 				</div>
 			) }
 
-			<div className="qp-composer__body">
+			<div
+				className="qp-composer__body"
+				hidden={ !! scheduledPost }
+			>
 				{ mode === 'status' && (
 					<TextComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						postDate={ postDate }
 					/>
 				) }
 				{ mode === 'photo' && (
 					<PhotoComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						postDate={ postDate }
 						initialPhoto={ sharedPhoto }
 					/>
 				) }
@@ -160,12 +211,14 @@ export default function Composer() {
 					<VideoComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						postDate={ postDate }
 					/>
 				) }
 				{ mode === 'link' && (
 					<LinkComposer
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
+						postDate={ postDate }
 					/>
 				) }
 			</div>
