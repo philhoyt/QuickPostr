@@ -1,5 +1,7 @@
 # QuickPostr
 
+[![CI](https://github.com/philhoyt/QuickPostr/actions/workflows/ci.yml/badge.svg)](https://github.com/philhoyt/QuickPostr/actions/workflows/ci.yml)
+
 ![QuickPostr Composer](assets/screenshot-1.png)
 
 A front-end post composer for WordPress, delivered as a WordPress block. Logged-in users post status updates, photos, videos, and links without visiting `/wp-admin`.

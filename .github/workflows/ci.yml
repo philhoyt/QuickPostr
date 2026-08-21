@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# A new push to the same branch supersedes the run in flight.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Floor matches "Requires PHP: 8.1" in the plugin header.
+        php: [ '8.1', '8.2', '8.3', '8.4', '8.5' ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Audit PHP dependencies
+        run: composer audit
+
+      - name: Lint (phpcs)
+        run: composer run lint
+
+      - name: Static analysis (phpstan)
+        run: composer run analyse
+
+      - name: Unit tests
+        run: composer run test
+
+  integration:
+    name: WordPress integration
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: quickpostr_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # PHPUnit is pinned to ^9.6 because the WordPress core test library
+          # caps there; run integration on the plugin's minimum PHP.
+          php-version: '8.1'
+          tools: composer
+          extensions: mysqli
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install subversion
+        # The PHPUnit harness lives in wordpress-develop, which is only
+        # available over svn; it is not in the release tarball.
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
+      - name: Install the WordPress test library
+        # Pinned rather than "latest" so a WordPress release cannot turn CI red
+        # on an unrelated PR. /wp-compat is what moves this deliberately.
+        run: bin/install-wp-tests.sh quickpostr_tests root root 127.0.0.1 7.1
+
+      - name: Integration tests
+        run: composer run test:integration
+
+  js:
+    name: JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Single source of truth, shared with the release workflow.
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Lint JS
+        run: npm run lint:js
+
+      - name: Lint CSS
+        run: npm run lint:css
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
