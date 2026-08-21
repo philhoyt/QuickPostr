@@ -6,6 +6,7 @@
     <file>quickpostr.php</file>
     <file>uninstall.php</file>
     <file>includes/</file>
+    <file>patterns/</file>
     <file>src/blocks/</file>
     <file>tests/</file>
 

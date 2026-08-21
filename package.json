@@ -16,6 +16,7 @@
     "includes",
     "languages",
     "lib",
+    "patterns",
     "quickpostr.php",
     "uninstall.php",
     "readme.txt"

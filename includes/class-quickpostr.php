@@ -200,6 +200,23 @@ class QuickPostr {
 			'quickpostr',
 			array( 'label' => __( 'QuickPostr', 'quickpostr' ) )
 		);
+
+		// Plugins get no automatic patterns/ registration -- that is block-theme
+		// only -- so the markup is require'd and registered explicitly.
+		$quickpostr_has_geo = function_exists( 'geo_tagr_get_post_meta' );
+		$quickpostr_pattern = require QUICKPOSTR_PATH . 'patterns/post-feed.php';
+
+		register_block_pattern(
+			'quickpostr/post-feed',
+			array(
+				'title'         => __( 'Composer with post feed', 'quickpostr' ),
+				'description'   => __( 'The QuickPostr composer above a Query Loop of posts, each showing the author avatar, date, actions menu, content, and like and share buttons.', 'quickpostr' ),
+				'categories'    => array( 'quickpostr' ),
+				'keywords'      => array( 'composer', 'feed', 'timeline', 'social', 'query' ),
+				'viewportWidth' => 900,
+				'content'       => $quickpostr_pattern,
+			)
+		);
 	}
 
 	/**
