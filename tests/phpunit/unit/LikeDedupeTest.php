@@ -14,6 +14,7 @@ use QuickPostr_Rest;
 
 /**
  * @covers QuickPostr_Rest::anonymous_like_exists_by_ip
+ * @covers QuickPostr_Rest::anonymous_like_already_exists
  */
 final class LikeDedupeTest extends TestCase {
 
@@ -51,6 +52,65 @@ final class LikeDedupeTest extends TestCase {
 			->andReturn( array() );
 
 		$this->assertFalse( $this->rest->anonymous_like_exists_by_ip( 123, '203.0.113.5' ) );
+	}
+
+	/**
+	 * The bypass this suite previously missed.
+	 *
+	 * Only the individual helpers had coverage, so the composition in
+	 * toggle_like() went untested and a fresh email skipped the IP check
+	 * entirely — letting one client like a post without limit.
+	 */
+	public function test_fresh_email_does_not_skip_the_ip_check(): void {
+		// No like on file for this address...
+		Functions\when( 'get_comments' )->alias(
+			static function ( $args ) {
+				// ...but the IP has liked before.
+				return isset( $args['author_ip'] )
+					? array( (object) array( 'comment_ID' => 7 ) )
+					: array();
+			}
+		);
+
+		$this->assertTrue(
+			$this->rest->anonymous_like_already_exists( 123, 'brand-new@example.test', '203.0.113.5' ),
+			'A previously unseen email must still be blocked by the IP check.'
+		);
+	}
+
+	public function test_known_email_is_blocked_even_from_a_new_ip(): void {
+		Functions\when( 'get_comments' )->alias(
+			static function ( $args ) {
+				// Email match; the IP is unseen.
+				return isset( $args['author_email'] )
+					? array( (object) array( 'comment_ID' => 9 ) )
+					: array();
+			}
+		);
+
+		$this->assertTrue(
+			$this->rest->anonymous_like_already_exists( 123, 'seen@example.test', '198.51.100.9' )
+		);
+	}
+
+	public function test_unseen_email_and_unseen_ip_is_allowed(): void {
+		Functions\when( 'get_comments' )->justReturn( array() );
+
+		$this->assertFalse(
+			$this->rest->anonymous_like_already_exists( 123, 'new@example.test', '198.51.100.9' )
+		);
+	}
+
+	public function test_name_only_like_is_still_deduped_by_ip(): void {
+		Functions\when( 'get_comments' )->alias(
+			static function ( $args ) {
+				return isset( $args['author_ip'] )
+					? array( (object) array( 'comment_ID' => 11 ) )
+					: array();
+			}
+		);
+
+		$this->assertTrue( $this->rest->anonymous_like_already_exists( 123, '', '203.0.113.5' ) );
 	}
 
 	public function test_query_is_scoped_to_anonymous_like_for_post_and_ip(): void {

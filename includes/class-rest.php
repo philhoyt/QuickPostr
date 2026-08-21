@@ -478,11 +478,7 @@ class QuickPostr_Rest {
 				);
 			}
 
-			// Deduplicate anonymous likes: by email when provided, otherwise by
-			// originating IP. Without this an unauthenticated client could inflate
-			// the count indefinitely by re-posting name-only likes.
-			$already_liked = ( $email && $this->get_anonymous_like_exists( $post_id, $email ) )
-				|| ( ! $email && $this->anonymous_like_exists_by_ip( $post_id, $ip ) );
+			$already_liked = $this->anonymous_like_already_exists( $post_id, $email, $ip );
 
 			if ( $already_liked ) {
 				return rest_ensure_response(
@@ -555,6 +551,31 @@ class QuickPostr_Rest {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Whether this anonymous visitor has already liked the post.
+	 *
+	 * Both checks always run. An earlier version consulted the IP *only* when no
+	 * email was supplied, which let a client like the same post without limit by
+	 * sending a fresh address every time — the email check only ever matches that
+	 * same address, so a new one always looked like a first-time like. The route
+	 * is unauthenticated, so that was an unbounded insert into wp_comments.
+	 *
+	 * Kept as its own method so the composition is testable: the previous bug
+	 * survived because only the individual helpers had coverage.
+	 *
+	 * @param int    $post_id The post being liked.
+	 * @param string $email   Submitted email address, may be empty.
+	 * @param string $ip      Originating IP address, may be empty.
+	 * @return bool True when this visitor already has a like on the post.
+	 */
+	public function anonymous_like_already_exists( int $post_id, string $email, string $ip ): bool {
+		if ( '' !== $email && $this->get_anonymous_like_exists( $post_id, $email ) ) {
+			return true;
+		}
+
+		return $this->anonymous_like_exists_by_ip( $post_id, $ip );
 	}
 
 	/**
