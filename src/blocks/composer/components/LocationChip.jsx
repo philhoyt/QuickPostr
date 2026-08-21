@@ -22,7 +22,10 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 	const { results, loading, hasSearched, search, clearResults } =
 		useNominatimSearch();
 
-	const isManual = geoData.lat === null;
+	// Manual mode = nothing to show yet: no coordinates and no name. Once either
+	// exists the chip view takes over, so a name typed without coordinates still
+	// reads as a saved location.
+	const isManual = geoData.lat === null && ! geoData.place;
 
 	function handleSearchChange( e ) {
 		const value = e.target.value;
@@ -196,7 +199,7 @@ export default function LocationChip( { geoData, errorMsg, onDismiss, onLocation
 					} ) }
 				</ul>
 			) }
-			{ editing && ! isManual && query.trim() && (
+			{ query.trim() && (
 				<button
 					type="button"
 					className={ `qp-geo-search__use-name${ results.length > 0 ? ' qp-geo-search__use-name--has-results' : '' }` }

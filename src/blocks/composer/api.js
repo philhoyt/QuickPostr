@@ -68,13 +68,25 @@ export function createPost( fields ) {
 export function buildQuickpostrFields( geoData, video = null ) {
 	const fields = {};
 
-	if ( geoData?.active && geoData?.lat !== null ) {
-		fields.quickpostr_geo = {
-			lat: geoData.lat,
-			lng: geoData.lng,
-			place: geoData.place,
-			address: geoData.address,
-		};
+	const hasCoords = geoData?.lat !== null && geoData?.lat !== undefined;
+	const hasPlace = !! geoData?.place?.trim();
+
+	if ( geoData?.active && ( hasCoords || hasPlace ) ) {
+		const geo = {};
+		// Coordinates are omitted rather than sent as null when geolocation
+		// failed: the field's schema types them as numbers, so null would fail
+		// validation, and a (float) cast of null would tag the post at 0,0.
+		if ( hasCoords ) {
+			geo.lat = geoData.lat;
+			geo.lng = geoData.lng;
+		}
+		if ( geoData.place ) {
+			geo.place = geoData.place;
+		}
+		if ( geoData.address ) {
+			geo.address = geoData.address;
+		}
+		fields.quickpostr_geo = geo;
 	}
 
 	if ( video?.playbackId ) {

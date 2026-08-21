@@ -64,6 +64,45 @@ describe( 'buildQuickpostrFields', () => {
 		).toEqual( {} );
 	} );
 
+	it( 'sends a typed place name even with no coordinates', () => {
+		// Geolocation denied, user typed a name Nominatim could not match.
+		const result = buildQuickpostrFields( {
+			active: true,
+			lat: null,
+			lng: null,
+			place: 'My Back Garden',
+			address: '',
+		} );
+		expect( result.quickpostr_geo ).toEqual( { place: 'My Back Garden' } );
+	} );
+
+	it( 'omits lat/lng entirely rather than sending null', () => {
+		// The field schema types them as numbers, so null fails validation, and
+		// a (float) cast of null would tag the post at 0,0.
+		const result = buildQuickpostrFields( {
+			active: true,
+			lat: null,
+			lng: null,
+			place: 'Somewhere',
+			address: 'Some road',
+		} );
+		expect( 'lat' in result.quickpostr_geo ).toBe( false );
+		expect( 'lng' in result.quickpostr_geo ).toBe( false );
+		expect( result.quickpostr_geo.address ).toBe( 'Some road' );
+	} );
+
+	it( 'still omits quickpostr_geo when there is neither a coord nor a name', () => {
+		expect(
+			buildQuickpostrFields( {
+				active: true,
+				lat: null,
+				lng: null,
+				place: '   ',
+				address: '',
+			} )
+		).toEqual( {} );
+	} );
+
 	it( 'accepts a zero latitude rather than treating it as missing', () => {
 		const result = buildQuickpostrFields( {
 			active: true,
