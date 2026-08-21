@@ -82,6 +82,12 @@ Manual smoke tests (load the plugin in a browser):
 
 ## JS conventions
 
+- `package.json` pins `overrides.prettier` to `npm:wp-prettier@^3.0.3`. Do not
+  remove it. `@wordpress/eslint-plugin` declares a peer of `prettier: ">=3"`, so
+  without the override an `npm update` hoists vanilla prettier over the
+  WordPress fork, `parenSpacing` stops being honoured, and every `( foo )` in the
+  codebase becomes a lint error (728 of them, when this happened).
+
 - Build toolchain: `@wordpress/scripts` + custom `webpack.config.js` (async entry, Blockendar pattern)
 - Two bundles: `index.js` (editor) and `composer-view.js` (front end)
 - React is externalized — use `@wordpress/element` (`createRoot`), not `react-dom/client`

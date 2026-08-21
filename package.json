@@ -36,5 +36,8 @@
   },
   "dependencies": {
     "micromodal": "^0.6.1"
+  },
+  "overrides": {
+    "prettier": "npm:wp-prettier@^3.0.3"
   }
 }
