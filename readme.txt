@@ -50,7 +50,6 @@ All settings are at **Settings → QuickPostr**.
 * **Allowed Roles** -- which roles can see and use the Composer block. Default: administrator, editor, author.
 * **Default Post Status** -- publish or draft. Set to draft to queue posts for review.
 * **Default Category** -- applied to every new post.
-* **Show Slug Preview** -- displays the auto-generated title preview below the editor.
 * **Hide Admin Bar** -- hides the WordPress admin bar for non-administrator roles.
 * **Hide Admin Bar (Administrators)** -- separate toggle for the administrator role.
 * **Front-End Post Management** -- enables the Edit and Delete actions in the Post Actions block.
