@@ -3,7 +3,6 @@ import { __, sprintf } from '@wordpress/i18n';
 import { createPost, uploadMedia, buildQuickpostrFields } from './api.js';
 import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
-import TitleInput from './components/TitleInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 import { buildSinglePhotoContent } from './photoContent.js';
 
@@ -87,7 +86,15 @@ function validateImageFile( f ) {
  * @param {string}        root0.postDate
  * @param {object|null}   root0.initialPhoto
  */
-export default function PhotoComposer( { onSuccess, geoData, postDate, initialPhoto } ) {
+export default function PhotoComposer( {
+	onSuccess,
+	geoData,
+	postDate,
+	initialPhoto,
+	title,
+	onTitleChange,
+	onStateChange,
+} ) {
 	// Unified per-photo state: { file, preview, mediaId, sourceUrl }
 	const [ photos, setPhotos ] = useState(
 		initialPhoto ? [ initialPhoto ] : []
@@ -104,11 +111,23 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
-	const [ titleOverride, setTitleOverride ] = useState( '' );
 
 	const fileInputRef = useRef( null );
 	const dragIndexRef = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+	const autoTitle = generateTitle(
+		photos.length >= 2 ? 'gallery' : 'photo',
+		'',
+		caption,
+		titleDateString( postDate )
+	);
+
+	// Keep the meta bar's title chip showing what PHP would generate, and let
+	// it disable itself while a submit is in flight.
+	useEffect( () => {
+		onStateChange?.( { autoTitle, busy: submitting } );
+	}, [ autoTitle, submitting, onStateChange ] );
 
 	// Seed a pre-loaded photo (e.g. a PWA share) that resolves after mount.
 	// Only fills an empty composer so it never clobbers a user's own pick.
@@ -252,7 +271,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 					  } ) );
 
 				const baseFields = {
-					title: titleOverride.trim(),
+					title: title.trim(),
 					content: buildGalleryContent( mediaItems, caption ),
 					status: defaultStatus,
 					format: 'gallery',
@@ -282,7 +301,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 				}
 
 				const baseFields = {
-					title: titleOverride.trim(),
+					title: title.trim(),
 					content: buildSinglePhotoContent( mediaId, mediaUrl, caption ),
 					status: defaultStatus,
 					format: 'image',
@@ -303,7 +322,7 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 				fileInputRef.current.value = '';
 			}
 			setCaption( '' );
-			setTitleOverride( '' );
+			onTitleChange?.( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -342,18 +361,6 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 
 	return (
 		<div className="qp-photo-composer">
-			<TitleInput
-				value={ titleOverride }
-				onChange={ setTitleOverride }
-				autoTitle={ generateTitle(
-					photos.length >= 2 ? 'gallery' : 'photo',
-					'',
-					caption,
-					titleDateString( postDate )
-				) }
-				disabled={ submitting }
-			/>
-
 			{ showDropzone && (
 				<div
 					className={ dropzoneClass }
@@ -513,27 +520,18 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 			) }
 
 			{ photos.length > 0 && (
-				<>
-					<textarea
-						className="qp-photo-caption"
-						placeholder={ __(
-							'Add a caption… (optional)',
-							'quickpostr'
-						) }
-						value={ caption }
-						onChange={ ( e ) => setCaption( e.target.value ) }
-						disabled={ submitting }
-						rows={ 3 }
-						aria-label={ __( 'Photo caption', 'quickpostr' ) }
-					/>
-
-					<TagInput
-						selectedTags={ selectedTags }
-						selectedCategories={ selectedCategories }
-						onTagsChange={ setSelectedTags }
-						onCategoriesChange={ setSelectedCategories }
-					/>
-				</>
+				<textarea
+					className="qp-photo-caption"
+					placeholder={ __(
+						'Add a caption… (optional)',
+						'quickpostr'
+					) }
+					value={ caption }
+					onChange={ ( e ) => setCaption( e.target.value ) }
+					disabled={ submitting }
+					rows={ 3 }
+					aria-label={ __( 'Photo caption', 'quickpostr' ) }
+				/>
 			) }
 
 			{ error && (
@@ -542,7 +540,15 @@ export default function PhotoComposer( { onSuccess, geoData, postDate, initialPh
 				</p>
 			) }
 
-			<footer className="qp-photo-composer__footer">
+			<footer className="qp-composer__actions">
+				{ photos.length > 0 && (
+					<TagInput
+						selectedTags={ selectedTags }
+						selectedCategories={ selectedCategories }
+						onTagsChange={ setSelectedTags }
+						onCategoriesChange={ setSelectedCategories }
+					/>
+				) }
 				<button
 					className="qp-composer-submit"
 					onClick={ handleSubmit }

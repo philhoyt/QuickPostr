@@ -1,10 +1,9 @@
-import { useState, useCallback } from '@wordpress/element';
+import { useState, useCallback, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { createPost, fetchLinkPreview, buildQuickpostrFields } from './api.js';
 import { toRestDate, titleDateString } from './postDate.js';
 import { generateTitle } from './useAutoTitle.js';
 import TagInput from './TagInput.jsx';
-import TitleInput from './components/TitleInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -38,7 +37,14 @@ function serializeLinkCard( attrs ) {
  * @param {object}   root0.geoData
  * @param {string}   root0.postDate
  */
-export default function LinkComposer( { onSuccess, geoData, postDate } ) {
+export default function LinkComposer( {
+	onSuccess,
+	geoData,
+	postDate,
+	title,
+	onTitleChange,
+	onStateChange,
+} ) {
 	const [ url, setUrl ] = useState( '' );
 	const [ preview, setPreview ] = useState( null );
 	const [ fetching, setFetching ] = useState( false );
@@ -47,7 +53,6 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
 	const [ selectedTags, setSelectedTags ] = useState( [] );
-	const [ titleOverride, setTitleOverride ] = useState( '' );
 	const [ selectedCategories, setSelectedCategories ] = useState(
 		config.settings?.defaultCategory
 			? [ config.settings.defaultCategory ]
@@ -56,6 +61,19 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 
 	const bbAvailable = config.betterBookmarks ?? false;
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+	const autoTitle = generateTitle(
+		'link',
+		'',
+		preview?.title ?? '',
+		titleDateString( postDate )
+	);
+
+	// Keep the meta bar's title chip showing what PHP would generate, and let
+	// it disable itself while a submit is in flight.
+	useEffect( () => {
+		onStateChange?.( { autoTitle, busy: submitting } );
+	}, [ autoTitle, submitting, onStateChange ] );
 
 	async function handleFetch() {
 		const trimmed = url.trim();
@@ -120,7 +138,7 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 
 			const baseFields = {
 				...fields,
-				title: titleOverride.trim(),
+				title: title.trim(),
 				status: defaultStatus,
 				meta: { _quickpostr_post: '1' },
 				...buildQuickpostrFields( geoData ),
@@ -132,7 +150,7 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 
 			setUrl( '' );
 			setPreview( null );
-			setTitleOverride( '' );
+			onTitleChange?.( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -157,7 +175,8 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 		bbAvailable,
 		geoData,
 		postDate,
-		titleOverride,
+		title,
+		onTitleChange,
 	] );
 
 	const canSubmit = url.trim() && ! submitting;
@@ -168,18 +187,6 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 
 	return (
 		<div className="qp-link-composer">
-			<TitleInput
-				value={ titleOverride }
-				onChange={ setTitleOverride }
-				autoTitle={ generateTitle(
-					'link',
-					'',
-					preview?.title ?? '',
-					titleDateString( postDate )
-				) }
-				disabled={ submitting }
-			/>
-
 			<div className="qp-link-composer__url-row">
 				<input
 					type="url"
@@ -240,20 +247,19 @@ export default function LinkComposer( { onSuccess, geoData, postDate } ) {
 				</div>
 			) }
 
-			<TagInput
-				selectedTags={ selectedTags }
-				selectedCategories={ selectedCategories }
-				onTagsChange={ setSelectedTags }
-				onCategoriesChange={ setSelectedCategories }
-			/>
-
 			{ error && (
 				<p className="qp-composer-error" role="alert">
 					{ error }
 				</p>
 			) }
 
-			<footer className="qp-link-composer__footer">
+			<footer className="qp-composer__actions">
+				<TagInput
+					selectedTags={ selectedTags }
+					selectedCategories={ selectedCategories }
+					onTagsChange={ setSelectedTags }
+					onCategoriesChange={ setSelectedCategories }
+				/>
 				<button
 					className="qp-composer-submit"
 					type="button"

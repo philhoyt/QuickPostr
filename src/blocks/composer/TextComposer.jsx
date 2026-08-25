@@ -5,7 +5,6 @@ import { generateTitle } from './useAutoTitle.js';
 import { createPost, updatePost, getDraft, discardDraft, buildQuickpostrFields } from './api.js';
 import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
-import TitleInput from './components/TitleInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
 
@@ -145,7 +144,14 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  * @param {object}   root0.geoData
  * @param {string}   root0.postDate
  */
-export default function TextComposer( { onSuccess, geoData, postDate } ) {
+export default function TextComposer( {
+	onSuccess,
+	geoData,
+	postDate,
+	title,
+	onTitleChange,
+	onStateChange,
+} ) {
 	const editorRef = useRef( null );
 	const draftTimer = useRef( null );
 
@@ -162,8 +168,6 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 	const [ draftId, setDraftId ] = useState( null );
 	const [ draftBanner, setDraftBanner ] = useState( false );
 	const [ draftPost, setDraftPost ] = useState( null );
-	// '' means "no override" — PHP generates the canonical title.
-	const [ titleOverride, setTitleOverride ] = useState( '' );
 
 	const placeholder =
 		config.blockAttrs?.placeholderText ?? "What's on your mind?";
@@ -177,6 +181,12 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 		'',
 		titleDateString( postDate )
 	);
+
+	// Keep the meta bar's title chip showing what PHP would generate, and let
+	// it disable itself while a submit is in flight.
+	useEffect( () => {
+		onStateChange?.( { autoTitle, busy: submitting } );
+	}, [ autoTitle, submitting, onStateChange ] );
 
 	// On mount: check for an existing draft.
 	useEffect( () => {
@@ -268,7 +278,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 			if ( draftId ) {
 				// Publish the auto-saved draft.
 				const draftFields = {
-					title: titleOverride.trim(),
+					title: title.trim(),
 					content,
 					status: defaultStatus,
 					format: 'status',
@@ -281,7 +291,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 			} else {
 				// No draft: create a new post.
 				const postFields = {
-					title: titleOverride.trim(),
+					title: title.trim(),
 					content,
 					status: defaultStatus,
 					format: 'status',
@@ -303,7 +313,7 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 			}
 			setHtml( '' );
 			setDraftId( null );
-			setTitleOverride( '' );
+			onTitleChange?.( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -327,7 +337,8 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 		draftId,
 		geoData,
 		postDate,
-		titleOverride,
+		title,
+		onTitleChange,
 	] );
 
 	function handleKeyDown( e ) {
@@ -368,25 +379,11 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 				</div>
 			) }
 
-			<TitleInput
-				value={ titleOverride }
-				onChange={ setTitleOverride }
-				autoTitle={ autoTitle }
-				disabled={ submitting }
-			/>
-
 			<RichEditor
 				placeholder={ placeholder }
 				disabled={ submitting }
 				editorRef={ editorRef }
 				onChange={ handleHtmlChange }
-			/>
-
-			<TagInput
-				selectedTags={ selectedTags }
-				selectedCategories={ selectedCategories }
-				onTagsChange={ setSelectedTags }
-				onCategoriesChange={ setSelectedCategories }
 			/>
 
 			{ error && (
@@ -395,22 +392,31 @@ export default function TextComposer( { onSuccess, geoData, postDate } ) {
 				</p>
 			) }
 
-			<footer className="qp-text-composer__footer">
-				<span
-					className="qp-text-composer__char-count"
-					aria-live="polite"
-				>
-					{ editorRef.current?.innerText?.length ?? 0 }
-				</span>
-				<button
-					className="qp-composer-submit"
-					onClick={ handleSubmit }
-					disabled={ ! hasContent || submitting }
-					aria-label={ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
-					type="button"
-				>
-					{ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
-				</button>
+			<footer className="qp-composer__actions">
+				<TagInput
+					selectedTags={ selectedTags }
+					selectedCategories={ selectedCategories }
+					onTagsChange={ setSelectedTags }
+					onCategoriesChange={ setSelectedCategories }
+				/>
+				{ /* Grouped so the count never wraps away from the button. */ }
+				<div className="qp-composer__actions-end">
+					<span
+						className="qp-text-composer__char-count"
+						aria-live="polite"
+					>
+						{ editorRef.current?.innerText?.length ?? 0 }
+					</span>
+					<button
+						className="qp-composer-submit"
+						onClick={ handleSubmit }
+						disabled={ ! hasContent || submitting }
+						aria-label={ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
+						type="button"
+					>
+						{ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
+					</button>
+				</div>
 			</footer>
 
 			{ flash && (
