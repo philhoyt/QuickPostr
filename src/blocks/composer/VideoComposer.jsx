@@ -10,7 +10,6 @@ import {
 } from './api.js';
 import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
-import TitleInput from './components/TitleInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
 
 const config = window.quickpostrConfig ?? {};
@@ -33,7 +32,14 @@ const videoMuxr = config.videoMuxr ?? null;
  * @param {object}   root0.geoData
  * @param {string}   root0.postDate
  */
-export default function VideoComposer( { onSuccess, geoData, postDate } ) {
+export default function VideoComposer( {
+	onSuccess,
+	geoData,
+	postDate,
+	title,
+	onTitleChange,
+	onStateChange,
+} ) {
 	const [ file, setFile ] = useState( null );
 	const [ preview, setPreview ] = useState( null );
 	const [ libraryMediaItem, setLibraryMediaItem ] = useState( null );
@@ -48,13 +54,25 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 	const [ submitting, setSubmitting ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ flash, setFlash ] = useState( false );
-	const [ titleOverride, setTitleOverride ] = useState( '' );
 	// 'idle' | 'uploading' | 'processing' — only used on the VideoMuxr path.
 	const [ phase, setPhase ] = useState( 'idle' );
 	const [ uploadProgress, setUploadProgress ] = useState( 0 );
 
 	const fileInputRef = useRef( null );
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+	const autoTitle = generateTitle(
+		'video',
+		'',
+		caption,
+		titleDateString( postDate )
+	);
+
+	// Keep the meta bar's title chip showing what PHP would generate, and let
+	// it disable itself while a submit is in flight.
+	useEffect( () => {
+		onStateChange?.( { autoTitle, busy: submitting } );
+	}, [ autoTitle, submitting, onStateChange ] );
 
 	// Revoke the object URL on unmount to avoid memory leaks.
 	useEffect( () => {
@@ -187,7 +205,7 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 					await pollVideoMuxrStatus( uploadId );
 
 				baseFields = {
-					title: titleOverride.trim(),
+					title: title.trim(),
 					content: buildMuxVideoContent(
 						playbackId,
 						assetId,
@@ -214,7 +232,7 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 				}
 
 				baseFields = {
-					title: titleOverride.trim(),
+					title: title.trim(),
 					content: buildVideoContent( mediaId, mediaUrl, caption ),
 					status: defaultStatus,
 					format: 'video',
@@ -245,7 +263,7 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 				fileInputRef.current.value = '';
 			}
 			setCaption( '' );
-			setTitleOverride( '' );
+			onTitleChange?.( '' );
 			setSelectedTags( [] );
 			setSelectedCategories(
 				config.settings?.defaultCategory
@@ -311,18 +329,6 @@ export default function VideoComposer( { onSuccess, geoData, postDate } ) {
 
 	return (
 		<div className="qp-video-composer">
-			<TitleInput
-				value={ titleOverride }
-				onChange={ setTitleOverride }
-				autoTitle={ generateTitle(
-					'video',
-					'',
-					caption,
-					titleDateString( postDate )
-				) }
-				disabled={ submitting }
-			/>
-
 			{ ! file && ! preview && ! libraryMediaItem && (
 				<div
 					className={ dropzoneClass }

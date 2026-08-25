@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from '@wordpress/element';
+import { useState, useEffect, useRef, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
@@ -7,6 +7,7 @@ import LinkComposer from './LinkComposer.jsx';
 import DateChip from './components/DateChip.jsx';
 import { formatForDisplay } from './postDate.js';
 import GeoChip from './components/GeoChip.jsx';
+import TitleChip from './components/TitleChip.jsx';
 import usePwaShare from './usePwaShare.js';
 
 const config = window.quickpostrConfig ?? {};
@@ -42,6 +43,50 @@ export default function Composer() {
 	// '' means "now" — no date param is sent unless the user picks one.
 	const [ postDate, setPostDate ] = useState( '' );
 
+	// '' means "no override" — PHP generates the canonical title. Held here
+	// rather than inside each composer so the title chip can live in the meta
+	// bar alongside the date and location chips.
+	const [ titleOverride, setTitleOverride ] = useState( '' );
+
+	// What the active composer reports back for the meta bar: the title PHP
+	// would generate from the current content, and whether a submit is in
+	// flight. One prop rather than several so each composer needs a single
+	// effect to keep it current.
+	const [ composerState, setComposerState ] = useState( {
+		autoTitle: '',
+		busy: false,
+	} );
+	const handleComposerState = useCallback( ( next ) => {
+		setComposerState( next );
+	}, [] );
+
+	// Only one chip panel may be open at a time: they are absolutely positioned
+	// over the same strip, so two open at once overlap.
+	const [ openChip, setOpenChip ] = useState( null );
+	const metaBarRef = useRef( null );
+
+	const toggleChip = useCallback( ( name ) => {
+		setOpenChip( ( current ) => ( current === name ? null : name ) );
+	}, [] );
+
+	// Clicking anywhere outside the meta bar closes whichever panel is open.
+	useEffect( () => {
+		if ( ! openChip ) {
+			return undefined;
+		}
+		function handlePointerDown( event ) {
+			if ( ! metaBarRef.current?.contains( event.target ) ) {
+				setOpenChip( null );
+			}
+		}
+		document.addEventListener( 'mousedown', handlePointerDown );
+		document.addEventListener( 'touchstart', handlePointerDown );
+		return () => {
+			document.removeEventListener( 'mousedown', handlePointerDown );
+			document.removeEventListener( 'touchstart', handlePointerDown );
+		};
+	}, [ openChip ] );
+
 	// A draft with a future date is not scheduled, so the chip must not imply it.
 	const canSchedule = ( config.settings?.defaultStatus ?? 'publish' ) === 'publish';
 
@@ -67,8 +112,10 @@ export default function Composer() {
 		.toUpperCase();
 
 	function handleSuccess( wpPost ) {
-		// Never carry a chosen date over to the next post.
+		// Never carry a chosen date or title over to the next post.
 		setPostDate( '' );
+		setTitleOverride( '' );
+		setOpenChip( null );
 
 		// A scheduled post will not appear in the theme's Query Loop yet, so
 		// reloading would look like the post vanished. Say what happened instead.
@@ -123,19 +170,6 @@ export default function Composer() {
 				</div>
 			</header>
 
-			<div className="qp-composer__meta-bar">
-				<DateChip
-					value={ postDate }
-					onChange={ setPostDate }
-					canSchedule={ canSchedule }
-				/>
-				<GeoChip
-					geoData={ geoData }
-					onLocationSelect={ handleGeoLocationSelect }
-					onDismiss={ handleGeoDismiss }
-				/>
-			</div>
-
 			<div
 				className="qp-composer__mode-bar"
 				role="tablist"
@@ -162,6 +196,31 @@ export default function Composer() {
 						}
 					</button>
 				) ) }
+			</div>
+
+			<div className="qp-composer__meta-bar" ref={ metaBarRef }>
+				<TitleChip
+					value={ titleOverride }
+					onChange={ setTitleOverride }
+					autoTitle={ composerState.autoTitle }
+					disabled={ composerState.busy }
+					isOpen={ openChip === 'title' }
+					onToggle={ () => toggleChip( 'title' ) }
+				/>
+				<DateChip
+					value={ postDate }
+					onChange={ setPostDate }
+					canSchedule={ canSchedule }
+					isOpen={ openChip === 'date' }
+					onToggle={ () => toggleChip( 'date' ) }
+				/>
+				<GeoChip
+					geoData={ geoData }
+					onLocationSelect={ handleGeoLocationSelect }
+					onDismiss={ handleGeoDismiss }
+					isOpen={ openChip === 'geo' }
+					onToggle={ () => toggleChip( 'geo' ) }
+				/>
 			</div>
 
 			{ scheduledPost && (
@@ -197,6 +256,9 @@ export default function Composer() {
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
 						postDate={ postDate }
+						title={ titleOverride }
+						onTitleChange={ setTitleOverride }
+						onStateChange={ handleComposerState }
 					/>
 				) }
 				{ mode === 'photo' && (
@@ -205,6 +267,9 @@ export default function Composer() {
 						geoData={ geoData }
 						postDate={ postDate }
 						initialPhoto={ sharedPhoto }
+						title={ titleOverride }
+						onTitleChange={ setTitleOverride }
+						onStateChange={ handleComposerState }
 					/>
 				) }
 				{ mode === 'video' && (
@@ -212,6 +277,9 @@ export default function Composer() {
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
 						postDate={ postDate }
+						title={ titleOverride }
+						onTitleChange={ setTitleOverride }
+						onStateChange={ handleComposerState }
 					/>
 				) }
 				{ mode === 'link' && (
@@ -219,6 +287,9 @@ export default function Composer() {
 						onSuccess={ handleSuccess }
 						geoData={ geoData }
 						postDate={ postDate }
+						title={ titleOverride }
+						onTitleChange={ setTitleOverride }
+						onStateChange={ handleComposerState }
 					/>
 				) }
 			</div>

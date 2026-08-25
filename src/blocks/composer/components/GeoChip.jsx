@@ -1,4 +1,4 @@
-import { useState } from '@wordpress/element';
+import { useState, useRef, useEffect, useId } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import useGeoLocation from '../hooks/useGeoLocation.js';
 import useNominatimSearch from '../hooks/useNominatimSearch.js';
@@ -11,6 +11,10 @@ import useNominatimSearch from '../hooks/useNominatimSearch.js';
  * commit anything — the attached location only changes when the user detects,
  * picks a result, or clears it.
  *
+ * Open state is owned by the composer so only one chip panel is ever open —
+ * the panels are absolutely positioned over the same strip and would otherwise
+ * overlap each other.
+ *
  * Detection lives inside the panel rather than on the button, so a failed or
  * blocked detect leaves the button exactly where it was. Note that browsers
  * refuse geolocation outside a secure context, so on an http:// site detect
@@ -20,18 +24,38 @@ import useNominatimSearch from '../hooks/useNominatimSearch.js';
  *   geoData          { lat, lng, place, address, active }
  *   onLocationSelect ({ lat, lng, place, address }) => void
  *   onDismiss        () => void
+ *   isOpen           {boolean} — whether this chip's panel is the open one
+ *   onToggle         () => void
  * @param {Object}   root0
  * @param {object}   root0.geoData
  * @param {Function} root0.onLocationSelect
  * @param {Function} root0.onDismiss
+ * @param {boolean}  root0.isOpen
+ * @param {Function} root0.onToggle
  */
-export default function GeoChip( { geoData, onLocationSelect, onDismiss } ) {
-	const [ open, setOpen ] = useState( false );
+export default function GeoChip( {
+	geoData,
+	onLocationSelect,
+	onDismiss,
+	isOpen = false,
+	onToggle,
+} ) {
 	const [ query, setQuery ] = useState( '' );
 	const [ error, setError ] = useState( '' );
 	const { detect, loading: detecting } = useGeoLocation();
 	const { results, loading, hasSearched, search, clearResults } =
 		useNominatimSearch();
+	const toggleRef = useRef( null );
+	const searchRef = useRef( null );
+	const panelId = useId();
+
+	// Move focus into the panel as it opens. Keyed on `isOpen` alone so typing
+	// a query never re-fires it.
+	useEffect( () => {
+		if ( isOpen ) {
+			searchRef.current?.focus();
+		}
+	}, [ isOpen ] );
 
 	if ( ! window.quickpostrConfig?.geoTagrActive ) {
 		return null;
@@ -43,16 +67,23 @@ export default function GeoChip( { geoData, onLocationSelect, onDismiss } ) {
 		? geoData.place || __( 'Location added', 'quickpostr' )
 		: __( 'Location', 'quickpostr' );
 
-	function handleToggle() {
-		setOpen( ( isOpen ) => ! isOpen );
-	}
-
 	function commit( result ) {
 		onLocationSelect( result );
 		setQuery( '' );
 		setError( '' );
 		clearResults();
-		setOpen( false );
+		if ( isOpen ) {
+			onToggle?.();
+		}
+		toggleRef.current?.focus();
+	}
+
+	function handleKeyDown( event ) {
+		if ( event.key === 'Escape' && isOpen ) {
+			event.stopPropagation();
+			onToggle?.();
+			toggleRef.current?.focus();
+		}
 	}
 
 	async function handleDetect() {
@@ -113,6 +144,7 @@ export default function GeoChip( { geoData, onLocationSelect, onDismiss } ) {
 		setError( '' );
 		clearResults();
 		onDismiss();
+		toggleRef.current?.focus();
 	}
 
 	function handleResultKeyDown( event, result ) {
@@ -123,15 +155,22 @@ export default function GeoChip( { geoData, onLocationSelect, onDismiss } ) {
 	}
 
 	return (
-		<div className={ `qp-geo-chip${ open ? ' qp-geo-chip--open' : '' }` }>
-			<div className="qp-geo-chip__header">
+		<div
+			className={ `qp-chip qp-chip--geo${
+				isOpen ? ' qp-chip--open' : ''
+			}` }
+			onKeyDown={ handleKeyDown }
+		>
+			<div className="qp-chip__header">
 				<button
 					type="button"
-					className={ `qp-geo-button${
-						hasLocation ? ' qp-geo-button--set' : ''
+					ref={ toggleRef }
+					className={ `qp-chip__toggle${
+						hasLocation ? ' qp-chip__toggle--set' : ''
 					}` }
-					onClick={ handleToggle }
-					aria-expanded={ open }
+					onClick={ onToggle }
+					aria-expanded={ isOpen }
+					aria-controls={ panelId }
 					aria-label={
 						hasLocation
 							? sprintf(
@@ -143,7 +182,7 @@ export default function GeoChip( { geoData, onLocationSelect, onDismiss } ) {
 					}
 				>
 					<svg
-						className="qp-geo-button__icon"
+						className="qp-chip__icon qp-chip__icon--svg"
 						aria-hidden="true"
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 24 24"
@@ -154,12 +193,12 @@ export default function GeoChip( { geoData, onLocationSelect, onDismiss } ) {
 						<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
 						<circle cx="12" cy="9" r="2.5" />
 					</svg>
-					<span>{ label }</span>
+					<span className="qp-chip__label">{ label }</span>
 				</button>
 				{ hasLocation && (
 					<button
 						type="button"
-						className="qp-geo-chip__clear"
+						className="qp-chip__clear"
 						onClick={ handleClear }
 						aria-label={ __( 'Remove location', 'quickpostr' ) }
 					>
@@ -168,11 +207,11 @@ export default function GeoChip( { geoData, onLocationSelect, onDismiss } ) {
 				) }
 			</div>
 
-			{ open && (
-				<div className="qp-geo-chip__panel">
+			{ isOpen && (
+				<div className="qp-chip__panel" id={ panelId }>
 					<button
 						type="button"
-						className="qp-geo-chip__detect"
+						className="qp-chip__panel-action qp-geo-chip__detect"
 						onClick={ handleDetect }
 						disabled={ detecting }
 					>
@@ -189,6 +228,7 @@ export default function GeoChip( { geoData, onLocationSelect, onDismiss } ) {
 
 					<div className="qp-geo-search">
 						<input
+							ref={ searchRef }
 							type="text"
 							className="qp-geo-search__input"
 							placeholder={ __(
