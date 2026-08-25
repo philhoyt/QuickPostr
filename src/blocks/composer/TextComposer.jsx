@@ -386,35 +386,37 @@ export default function TextComposer( {
 				onChange={ handleHtmlChange }
 			/>
 
-			<TagInput
-				selectedTags={ selectedTags }
-				selectedCategories={ selectedCategories }
-				onTagsChange={ setSelectedTags }
-				onCategoriesChange={ setSelectedCategories }
-			/>
-
 			{ error && (
 				<p className="qp-composer-error" role="alert">
 					{ error }
 				</p>
 			) }
 
-			<footer className="qp-text-composer__footer">
-				<span
-					className="qp-text-composer__char-count"
-					aria-live="polite"
-				>
-					{ editorRef.current?.innerText?.length ?? 0 }
-				</span>
-				<button
-					className="qp-composer-submit"
-					onClick={ handleSubmit }
-					disabled={ ! hasContent || submitting }
-					aria-label={ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
-					type="button"
-				>
-					{ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
-				</button>
+			<footer className="qp-composer__actions">
+				<TagInput
+					selectedTags={ selectedTags }
+					selectedCategories={ selectedCategories }
+					onTagsChange={ setSelectedTags }
+					onCategoriesChange={ setSelectedCategories }
+				/>
+				{ /* Grouped so the count never wraps away from the button. */ }
+				<div className="qp-composer__actions-end">
+					<span
+						className="qp-text-composer__char-count"
+						aria-live="polite"
+					>
+						{ editorRef.current?.innerText?.length ?? 0 }
+					</span>
+					<button
+						className="qp-composer-submit"
+						onClick={ handleSubmit }
+						disabled={ ! hasContent || submitting }
+						aria-label={ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
+						type="button"
+					>
+						{ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
+					</button>
+				</div>
 			</footer>
 
 			{ flash && (

@@ -407,24 +407,15 @@ export default function VideoComposer( {
 			) }
 
 			{ ( file || libraryMediaItem ) && (
-				<>
-					<textarea
-						className="qp-video-caption"
-						placeholder={ __( 'Add a caption… (optional)', 'quickpostr' ) }
-						value={ caption }
-						onChange={ ( e ) => setCaption( e.target.value ) }
-						disabled={ submitting }
-						rows={ 3 }
-						aria-label={ __( 'Video caption', 'quickpostr' ) }
-					/>
-
-					<TagInput
-						selectedTags={ selectedTags }
-						selectedCategories={ selectedCategories }
-						onTagsChange={ setSelectedTags }
-						onCategoriesChange={ setSelectedCategories }
-					/>
-				</>
+				<textarea
+					className="qp-video-caption"
+					placeholder={ __( 'Add a caption… (optional)', 'quickpostr' ) }
+					value={ caption }
+					onChange={ ( e ) => setCaption( e.target.value ) }
+					disabled={ submitting }
+					rows={ 3 }
+					aria-label={ __( 'Video caption', 'quickpostr' ) }
+				/>
 			) }
 
 			{ phase === 'uploading' && (
@@ -477,7 +468,15 @@ export default function VideoComposer( {
 				</p>
 			) }
 
-			<footer className="qp-video-composer__footer">
+			<footer className="qp-composer__actions">
+				{ ( file || libraryMediaItem ) && (
+					<TagInput
+						selectedTags={ selectedTags }
+						selectedCategories={ selectedCategories }
+						onTagsChange={ setSelectedTags }
+						onCategoriesChange={ setSelectedCategories }
+					/>
+				) }
 				<button
 					className="qp-composer-submit"
 					onClick={ handleSubmit }

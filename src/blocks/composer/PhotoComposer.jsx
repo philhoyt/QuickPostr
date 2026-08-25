@@ -520,27 +520,18 @@ export default function PhotoComposer( {
 			) }
 
 			{ photos.length > 0 && (
-				<>
-					<textarea
-						className="qp-photo-caption"
-						placeholder={ __(
-							'Add a caption… (optional)',
-							'quickpostr'
-						) }
-						value={ caption }
-						onChange={ ( e ) => setCaption( e.target.value ) }
-						disabled={ submitting }
-						rows={ 3 }
-						aria-label={ __( 'Photo caption', 'quickpostr' ) }
-					/>
-
-					<TagInput
-						selectedTags={ selectedTags }
-						selectedCategories={ selectedCategories }
-						onTagsChange={ setSelectedTags }
-						onCategoriesChange={ setSelectedCategories }
-					/>
-				</>
+				<textarea
+					className="qp-photo-caption"
+					placeholder={ __(
+						'Add a caption… (optional)',
+						'quickpostr'
+					) }
+					value={ caption }
+					onChange={ ( e ) => setCaption( e.target.value ) }
+					disabled={ submitting }
+					rows={ 3 }
+					aria-label={ __( 'Photo caption', 'quickpostr' ) }
+				/>
 			) }
 
 			{ error && (
@@ -549,7 +540,15 @@ export default function PhotoComposer( {
 				</p>
 			) }
 
-			<footer className="qp-photo-composer__footer">
+			<footer className="qp-composer__actions">
+				{ photos.length > 0 && (
+					<TagInput
+						selectedTags={ selectedTags }
+						selectedCategories={ selectedCategories }
+						onTagsChange={ setSelectedTags }
+						onCategoriesChange={ setSelectedCategories }
+					/>
+				) }
 				<button
 					className="qp-composer-submit"
 					onClick={ handleSubmit }

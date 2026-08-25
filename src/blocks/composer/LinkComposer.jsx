@@ -247,20 +247,19 @@ export default function LinkComposer( {
 				</div>
 			) }
 
-			<TagInput
-				selectedTags={ selectedTags }
-				selectedCategories={ selectedCategories }
-				onTagsChange={ setSelectedTags }
-				onCategoriesChange={ setSelectedCategories }
-			/>
-
 			{ error && (
 				<p className="qp-composer-error" role="alert">
 					{ error }
 				</p>
 			) }
 
-			<footer className="qp-link-composer__footer">
+			<footer className="qp-composer__actions">
+				<TagInput
+					selectedTags={ selectedTags }
+					selectedCategories={ selectedCategories }
+					onTagsChange={ setSelectedTags }
+					onCategoriesChange={ setSelectedCategories }
+				/>
 				<button
 					className="qp-composer-submit"
 					type="button"

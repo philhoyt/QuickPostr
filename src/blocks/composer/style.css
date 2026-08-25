@@ -187,13 +187,32 @@
 	pointer-events: none;
 }
 
-/* ── Text composer footer ───────────────────────────────────────────────── */
-.wp-block-quickpostr-composer .qp-text-composer__footer {
+/* ── Composer actions row ───────────────────────────────────────────────── */
+
+/*
+ * The terms and the submit button share one row: the pickers take the space on
+ * the left, the button sits at the end. Bottom-aligned so the button lines up
+ * with the last picker rather than floating against the "Categories" label.
+ */
+.wp-block-quickpostr-composer .qp-composer__actions {
 	display: flex;
-	align-items: center;
+	flex-wrap: wrap;
+	align-items: flex-end;
 	justify-content: flex-end;
 	gap: 0.75rem;
 	margin-top: 0.75rem;
+}
+
+.wp-block-quickpostr-composer .qp-composer__actions .qp-tag-input {
+	flex: 1 1 16rem;
+	min-width: 0;
+	margin-top: 0;
+}
+
+.wp-block-quickpostr-composer .qp-composer__actions-end {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
 }
 
 .wp-block-quickpostr-composer .qp-text-composer__char-count {
@@ -599,12 +618,6 @@
 	color: var(--qp-text-muted);
 }
 
-.wp-block-quickpostr-composer .qp-photo-composer__footer {
-	display: flex;
-	justify-content: flex-end;
-	margin-top: 0.75rem;
-}
-
 /* ── Video composer ─────────────────────────────────────────────────────── */
 .wp-block-quickpostr-composer .qp-video-dropzone {
 	display: flex;
@@ -729,12 +742,6 @@
 
 .wp-block-quickpostr-composer .qp-video-caption::placeholder {
 	color: var(--qp-text-muted);
-}
-
-.wp-block-quickpostr-composer .qp-video-composer__footer {
-	display: flex;
-	justify-content: flex-end;
-	margin-top: 0.75rem;
 }
 
 /* ── VideoMuxr upload progress ──────────────────────────────────────────── */
@@ -1015,12 +1022,6 @@
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
-}
-
-.wp-block-quickpostr-composer .qp-link-composer__footer {
-	display: flex;
-	justify-content: flex-end;
-	margin-top: 0.75rem;
 }
 
 /* ── Meta bar ───────────────────────────────────────────────────────────── */
