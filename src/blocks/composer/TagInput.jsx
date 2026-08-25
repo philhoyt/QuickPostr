@@ -65,8 +65,8 @@ export default function TagInput( {
 				api={ categoryApi }
 				chipModifier=" qp-tag-input__tag--cat"
 				labels={ {
+					label: __( 'Categories', 'quickpostr' ),
 					placeholder: __( 'Add categories…', 'quickpostr' ),
-					searchLabel: __( 'Search categories', 'quickpostr' ),
 					/* translators: %s: category name */
 					removeLabel: __( 'Remove category %s', 'quickpostr' ),
 				} }
@@ -77,8 +77,8 @@ export default function TagInput( {
 				onChange={ onTagsChange }
 				api={ tagApi }
 				labels={ {
+					label: __( 'Tags', 'quickpostr' ),
 					placeholder: __( 'Add tags…', 'quickpostr' ),
-					searchLabel: __( 'Search tags', 'quickpostr' ),
 					/* translators: %s: tag name */
 					removeLabel: __( 'Remove tag %s', 'quickpostr' ),
 				} }

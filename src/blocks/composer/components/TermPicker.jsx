@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from '@wordpress/element';
+import {
+	useState,
+	useEffect,
+	useRef,
+	useCallback,
+	useId,
+} from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 /**
@@ -12,13 +18,19 @@ import { __, sprintf } from '@wordpress/i18n';
  * from whatever the user picks plus a lookup for ids that arrive pre-selected
  * (the default category, or an existing post's terms).
  *
+ * Keyboard: the input is a combobox following the ARIA pattern — Down/Up move
+ * through the list, Home/End jump to its ends, Enter takes the highlighted
+ * option, Escape closes. Creating a term is always an explicit choice: Enter
+ * with nothing highlighted commits only an exact existing match, never a new
+ * term, because a typo followed by Enter used to add one permanently.
+ *
  * Props:
  *   selected  {number[]}          — selected term ids
  *   onChange  (ids: number[]) => void
  *   api       { search, create, get, getPopular } — the taxonomy's REST calls
- *   labels    { placeholder, searchLabel, removeLabel } — removeLabel is a
- *             printf format taking the term name, so it stays one literal
- *             string per taxonomy for translators
+ *   labels    { label, placeholder, removeLabel } — removeLabel is a printf
+ *             format taking the term name, so it stays one literal string per
+ *             taxonomy for translators
  *   chipModifier {string}         — extra class for the selected-term chips
  * @param {Object}   root0
  * @param {number[]} root0.selected
@@ -39,11 +51,19 @@ export default function TermPicker( {
 	const [ names, setNames ] = useState( {} ); // id → name
 	const [ open, setOpen ] = useState( false );
 	const [ creating, setCreating ] = useState( false );
+	const [ searching, setSearching ] = useState( false );
 	const [ popular, setPopular ] = useState( [] );
+	const [ activeIndex, setActiveIndex ] = useState( -1 );
 
 	const timer = useRef( null );
 	const wrapperRef = useRef( null );
 	const inputRef = useRef( null );
+	const listRef = useRef( null );
+	// Bumped per search so a slow response can't overwrite a newer one.
+	const requestRef = useRef( 0 );
+
+	const inputId = useId();
+	const listId = useId();
 
 	const { search, create, get, getPopular } = api;
 
@@ -78,39 +98,110 @@ export default function TermPicker( {
 				wrapperRef.current &&
 				! wrapperRef.current.contains( event.target )
 			) {
-				setOpen( false );
+				close();
 			}
 		}
 		document.addEventListener( 'mousedown', handleClick );
 		return () => document.removeEventListener( 'mousedown', handleClick );
 	}, [] );
 
-	function handleFocus() {
-		if ( input.trim().length < 2 && popular.length > 0 ) {
-			setOpen( true );
+	// ── What the list shows ───────────────────────────────────────────────────
+
+	const typed = input.trim();
+	const typedLc = typed.toLowerCase();
+
+	// Below the search threshold the list is the popular terms, narrowed by
+	// whatever has been typed so far — otherwise a single character left the
+	// full unfiltered list sitting there.
+	const showPopular = typed.length < 2;
+	const source = showPopular
+		? popular.filter( ( term ) =>
+				term.name.toLowerCase().includes( typedLc )
+		  )
+		: suggestions;
+	const available = source.filter( ( term ) => ! selected.includes( term.id ) );
+
+	const exactMatch = showPopular
+		? null
+		: suggestions.find( ( term ) => term.name.toLowerCase() === typedLc );
+	const alreadyAdded =
+		! showPopular &&
+		( exactMatch
+			? selected.includes( exactMatch.id )
+			: Object.values( names ).some(
+					( name ) => name.toLowerCase() === typedLc
+			  ) );
+	const canCreate =
+		! showPopular && ! searching && ! alreadyAdded && ! exactMatch;
+
+	// The navigable rows, in render order. The header and the "Already added"
+	// notice are not in here — neither can be chosen.
+	const options = [
+		...available.map( ( term ) => ( { type: 'term', term } ) ),
+		...( canCreate ? [ { type: 'create' } ] : [] ),
+	];
+
+	const hasRows =
+		options.length > 0 || ( ! showPopular && ( alreadyAdded || searching ) );
+	const listOpen = open && hasRows;
+	// Guards the gap between a keystroke shrinking the list and the next render.
+	const active = activeIndex < options.length ? activeIndex : -1;
+
+	// Keep the highlighted option in view when arrowing past the visible edge.
+	useEffect( () => {
+		if ( active < 0 ) {
+			return;
 		}
+		listRef.current
+			?.querySelectorAll( '[data-option]' )
+			[ active ]?.scrollIntoView( { block: 'nearest' } );
+	}, [ active ] );
+
+	// ── Actions ───────────────────────────────────────────────────────────────
+
+	function close() {
+		setOpen( false );
+		setActiveIndex( -1 );
+	}
+
+	function handleFocus() {
+		setOpen( true );
 	}
 
 	const handleInput = useCallback(
 		( event ) => {
 			const value = event.target.value;
 			setInput( value );
+			setOpen( true );
+			setActiveIndex( -1 );
 			clearTimeout( timer.current );
 
 			if ( value.trim().length < 2 ) {
+				// Abandon any in-flight search so its result cannot land after
+				// the field has already dropped back to the popular list.
+				requestRef.current += 1;
 				setSuggestions( [] );
-				setOpen( popular.length > 0 );
+				setSearching( false );
 				return;
 			}
 
-			setOpen( true );
+			setSearching( true );
 			timer.current = setTimeout( async () => {
+				const requestId = ( requestRef.current += 1 );
 				try {
-					setSuggestions( await search( value.trim() ) );
-				} catch ( _ ) {}
+					const results = await search( value.trim() );
+					if ( requestId === requestRef.current ) {
+						setSuggestions( results );
+					}
+				} catch ( _ ) {
+				} finally {
+					if ( requestId === requestRef.current ) {
+						setSearching( false );
+					}
+				}
 			}, 250 );
 		},
-		[ popular, search ]
+		[ search ]
 	);
 
 	function addTerm( term ) {
@@ -120,7 +211,7 @@ export default function TermPicker( {
 		}
 		setInput( '' );
 		setSuggestions( [] );
-		setOpen( false );
+		close();
 		setTimeout( () => inputRef.current?.focus(), 0 );
 	}
 
@@ -137,22 +228,82 @@ export default function TermPicker( {
 		}
 	}
 
+	function activate( index ) {
+		const option = options[ index ];
+		if ( ! option ) {
+			return;
+		}
+		if ( option.type === 'create' ) {
+			handleCreate( typed );
+		} else {
+			addTerm( option.term );
+		}
+	}
+
 	function handleKeyDown( event ) {
-		if ( event.key !== 'Enter' ) {
-			return;
-		}
-		const trimmed = input.trim();
-		if ( ! trimmed ) {
-			return;
-		}
-		event.preventDefault();
-		const exact = suggestions.find(
-			( term ) => term.name.toLowerCase() === trimmed.toLowerCase()
-		);
-		if ( exact ) {
-			addTerm( exact );
-		} else if ( trimmed.length >= 2 ) {
-			handleCreate( trimmed );
+		switch ( event.key ) {
+			case 'ArrowDown':
+			case 'ArrowUp': {
+				event.preventDefault();
+				if ( ! listOpen ) {
+					setOpen( true );
+					return;
+				}
+				if ( options.length === 0 ) {
+					return;
+				}
+				const step = event.key === 'ArrowDown' ? 1 : -1;
+				setActiveIndex( ( current ) => {
+					const next = ( current < 0 ? -1 : current ) + step;
+					if ( next < 0 ) {
+						return options.length - 1;
+					}
+					if ( next >= options.length ) {
+						return 0;
+					}
+					return next;
+				} );
+				break;
+			}
+			case 'Home':
+				if ( listOpen && options.length > 0 ) {
+					event.preventDefault();
+					setActiveIndex( 0 );
+				}
+				break;
+			case 'End':
+				if ( listOpen && options.length > 0 ) {
+					event.preventDefault();
+					setActiveIndex( options.length - 1 );
+				}
+				break;
+			case 'Escape':
+				if ( open ) {
+					event.stopPropagation();
+					close();
+				}
+				break;
+			case 'Enter': {
+				// Checked before anything else: arrowing through the popular
+				// list and pressing Enter has to work with the field empty.
+				if ( active >= 0 ) {
+					event.preventDefault();
+					activate( active );
+					return;
+				}
+				if ( ! typed ) {
+					return;
+				}
+				// Nothing highlighted: commit an exact existing match, but never
+				// create. A new term takes choosing the "Create" row.
+				if ( exactMatch && ! selected.includes( exactMatch.id ) ) {
+					event.preventDefault();
+					addTerm( exactMatch );
+				}
+				break;
+			}
+			default:
+				break;
 		}
 	}
 
@@ -160,127 +311,144 @@ export default function TermPicker( {
 		onChange( selected.filter( ( termId ) => termId !== id ) );
 	}
 
-	/**
-	 * The trailing row of the search results: either "Already added" or a
-	 * "Create" affordance, depending on what the typed text matches.
-	 */
-	function renderCreateRow() {
-		const typed = input.trim();
-		const lc = typed.toLowerCase();
-		const exact = suggestions.find(
-			( term ) => term.name.toLowerCase() === lc
-		);
-		const already = exact
-			? selected.includes( exact.id )
-			: Object.values( names ).some(
-					( name ) => name.toLowerCase() === lc
-			  );
-
-		if ( already ) {
-			return (
-				<li
-					role="option"
-					aria-selected={ false }
-					className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
-				>
-					{ __( 'Already added', 'quickpostr' ) }
-				</li>
-			);
-		}
-
-		if ( exact ) {
-			return null;
-		}
-
-		return (
-			<li
-				role="option"
-				aria-selected={ false }
-				className="qp-tag-input__suggestion qp-tag-input__suggestion--create"
-				onMouseDown={ () => handleCreate( typed ) }
-			>
-				{ creating
-					? __( 'Creating…', 'quickpostr' )
-					: sprintf(
-							/* translators: %s: the term name typed by the user */
-							__( 'Create "%s"', 'quickpostr' ),
-							typed
-					  ) }
-			</li>
-		);
-	}
-
-	const showPopular = input.trim().length < 2;
-	const shown = ( showPopular ? popular : suggestions ).filter(
-		( term ) => ! selected.includes( term.id )
-	);
+	const optionId = ( index ) => `${ listId }-option-${ index }`;
 
 	return (
-		<div className="qp-tag-input__tags" ref={ wrapperRef }>
-			{ selected.map( ( id ) => (
-				<span key={ id } className={ `qp-tag-input__tag${ chipModifier }` }>
-					{ names[ id ] ?? `#${ id }` }
-					<button
-						type="button"
-						className="qp-tag-input__tag-remove"
-						aria-label={ sprintf(
-							labels.removeLabel,
-							names[ id ] ?? id
-						) }
-						onClick={ () => removeTerm( id ) }
+		<div className="qp-tag-input__field" ref={ wrapperRef }>
+			<label className="qp-tag-input__label" htmlFor={ inputId }>
+				{ labels.label }
+			</label>
+			<div className="qp-tag-input__tags">
+				{ selected.map( ( id ) => (
+					<span
+						key={ id }
+						className={ `qp-tag-input__tag${ chipModifier }` }
 					>
-						×
-					</button>
-				</span>
-			) ) }
-			<div className="qp-tag-input__search-wrap">
-				<input
-					ref={ inputRef }
-					type="text"
-					className="qp-tag-input__search"
-					value={ input }
-					onChange={ handleInput }
-					onKeyDown={ handleKeyDown }
-					onFocus={ handleFocus }
-					onBlur={ () => setOpen( false ) }
-					placeholder={ labels.placeholder }
-					aria-label={ labels.searchLabel }
-					role="combobox"
-					aria-autocomplete="list"
-					aria-expanded={ open }
-					disabled={ creating }
-				/>
-				{ open && (
-					<ul
-						className={ `qp-tag-input__suggestions${
-							showPopular
-								? ' qp-tag-input__suggestions--popular'
-								: ''
-						}` }
-						role="listbox"
-					>
-						{ showPopular && (
-							<li
-								className="qp-tag-input__suggestion-header"
-								role="presentation"
-							>
-								{ __( 'Popular', 'quickpostr' ) }
-							</li>
-						) }
-						{ shown.map( ( term ) => (
-							<li
-								key={ term.id }
-								role="option"
-								aria-selected={ false }
-								className="qp-tag-input__suggestion"
-								onMouseDown={ () => addTerm( term ) }
-							>
-								{ term.name }
-							</li>
-						) ) }
-						{ ! showPopular && renderCreateRow() }
-					</ul>
-				) }
+						{ names[ id ] ?? `#${ id }` }
+						<button
+							type="button"
+							className="qp-tag-input__tag-remove"
+							aria-label={ sprintf(
+								labels.removeLabel,
+								names[ id ] ?? id
+							) }
+							onClick={ () => removeTerm( id ) }
+						>
+							×
+						</button>
+					</span>
+				) ) }
+				<div className="qp-tag-input__search-wrap">
+					<input
+						id={ inputId }
+						ref={ inputRef }
+						type="text"
+						className="qp-tag-input__search"
+						value={ input }
+						onChange={ handleInput }
+						onKeyDown={ handleKeyDown }
+						onFocus={ handleFocus }
+						onBlur={ close }
+						placeholder={ labels.placeholder }
+						role="combobox"
+						aria-autocomplete="list"
+						aria-expanded={ listOpen }
+						aria-controls={ listId }
+						aria-activedescendant={
+							active >= 0 ? optionId( active ) : undefined
+						}
+						disabled={ creating }
+					/>
+					{ listOpen && (
+						<ul
+							id={ listId }
+							ref={ listRef }
+							className={ `qp-tag-input__suggestions${
+								showPopular
+									? ' qp-tag-input__suggestions--popular'
+									: ''
+							}` }
+							role="listbox"
+							aria-label={ labels.label }
+						>
+							{ showPopular && (
+								<li
+									className="qp-tag-input__suggestion-header"
+									role="presentation"
+								>
+									{ __( 'Popular', 'quickpostr' ) }
+								</li>
+							) }
+							{ options.map( ( option, index ) => {
+								const isActive = index === active;
+								const className = [
+									'qp-tag-input__suggestion',
+									option.type === 'create'
+										? 'qp-tag-input__suggestion--create'
+										: '',
+									isActive
+										? 'qp-tag-input__suggestion--active'
+										: '',
+								]
+									.filter( Boolean )
+									.join( ' ' );
+								return (
+									<li
+										key={
+											option.type === 'create'
+												? 'create'
+												: option.term.id
+										}
+										id={ optionId( index ) }
+										data-option
+										role="option"
+										aria-selected={ isActive }
+										className={ className }
+										onMouseDown={ () => activate( index ) }
+										onMouseEnter={ () =>
+											setActiveIndex( index )
+										}
+									>
+										{ option.type === 'create'
+											? sprintf(
+													/* translators: %s: the term name typed by the user */
+													__(
+														'Create "%s"',
+														'quickpostr'
+													),
+													typed
+											  )
+											: option.term.name }
+									</li>
+								);
+							} ) }
+							{ searching && ! showPopular && (
+								<li
+									className="qp-tag-input__suggestion qp-tag-input__suggestion--status"
+									role="presentation"
+								>
+									{ __( 'Searching…', 'quickpostr' ) }
+								</li>
+							) }
+							{ creating && (
+								<li
+									className="qp-tag-input__suggestion qp-tag-input__suggestion--status"
+									role="presentation"
+								>
+									{ __( 'Creating…', 'quickpostr' ) }
+								</li>
+							) }
+							{ alreadyAdded && (
+								<li
+									className="qp-tag-input__suggestion qp-tag-input__suggestion--already"
+									role="presentation"
+								>
+									{ __( 'Already added', 'quickpostr' ) }
+								</li>
+							) }
+						</ul>
+					) }
+				</div>
 			</div>
 		</div>
 	);
