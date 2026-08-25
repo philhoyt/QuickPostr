@@ -244,16 +244,28 @@
 }
 
 /* ── Tag input ──────────────────────────────────────────────────────────── */
+
+/*
+ * Two rows of "label  field". The label column is sized to the longer of the
+ * two labels, so both fields start at the same x whatever a translation makes
+ * of "Categories" and "Tags" -- which a fixed label width would not survive.
+ */
 .wp-block-quickpostr-composer .qp-tag-input {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr);
+	align-items: baseline;
+	column-gap: 0.625rem;
+	row-gap: 0.5rem;
 	margin-top: 0.75rem;
 }
 
-.wp-block-quickpostr-composer .qp-tag-input__field + .qp-tag-input__field {
-	margin-top: 0.75rem;
+/* Each field's label and row join the parent grid rather than forming their
+   own, which is what lets the two rows share one label column. */
+.wp-block-quickpostr-composer .qp-tag-input__field {
+	display: contents;
 }
 
 .wp-block-quickpostr-composer .qp-tag-input__label {
-	display: block;
 	font-size: 0.75rem;
 	font-weight: 600;
 	color: var(--qp-text-muted);
@@ -264,7 +276,6 @@
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 0.375rem;
-	margin-top: 0.375rem;
 }
 
 .wp-block-quickpostr-composer .qp-tag-input__tag {
