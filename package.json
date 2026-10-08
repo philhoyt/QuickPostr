@@ -8,7 +8,7 @@
     "lint:js": "wp-scripts lint-js src/blocks",
     "lint:css": "wp-scripts lint-style src/blocks/**/*.css",
     "plugin-zip": "wp-scripts plugin-zip",
-    "test:unit": "TZ=America/New_York wp-scripts test-unit-js",
+    "test:unit": "TZ=America/New_York wp-scripts test-unit-jest",
     "pot": "wp i18n make-pot . languages/quickpostr.pot --domain=quickpostr --exclude=vendor,node_modules,build,tests,lib"
   },
   "files": [
@@ -28,13 +28,19 @@
     "@wordpress/i18n": "*"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
     "@types/react": "^18.3.28",
-    "@wordpress/eslint-plugin": "^25.2.0",
+    "@wordpress/babel-preset-default": "^9.0.0",
+    "@wordpress/eslint-plugin": "^27.1.0",
+    "@wordpress/jest-preset-default": "^14.2.0",
     "@wordpress/rich-text": "^7.46.0",
-    "@wordpress/scripts": "^34.1.0",
-    "@wordpress/stylelint-config": "^23.38.0",
+    "@wordpress/scripts": "^36.1.0",
+    "@wordpress/stylelint-config": "^26.1.0",
     "ajv": "^8.20.0",
-    "eslint": "^10.4.0"
+    "babel-jest": "^30.5.2",
+    "eslint": "^10.4.0",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2"
   },
   "dependencies": {
     "micromodal": "^0.6.1"

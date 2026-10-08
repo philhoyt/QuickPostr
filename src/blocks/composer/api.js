@@ -11,7 +11,7 @@ const config = window.quickpostrConfig ?? {};
  * @param {string}      method
  * @param {string}      path   — relative to restUrl, e.g. '/wp/v2/posts'
  * @param {object|null} body
- * @return {Promise<any>} Parsed JSON response.
+ * @return {Promise<unknown>} Parsed JSON response.
  */
 async function request( method, path, body = null ) {
 	const url = ( config.restUrl ?? '' ).replace( /\/$/, '' ) + path;
@@ -169,9 +169,9 @@ export function requestVideoMuxrUpload() {
  * and needs no WordPress auth header (auth was established when the URL was
  * created). XHR is used instead of fetch() for upload progress events.
  *
- * @param {string}   uploadUrl  The Mux direct-upload URL.
- * @param {File}     file       The video file.
- * @param {Function} onProgress Called with an integer percentage (0–100).
+ * @param {string}                    uploadUrl  The Mux direct-upload URL.
+ * @param {File}                      file       The video file.
+ * @param {(percent: number) => void} onProgress Called with an integer percentage (0–100).
  * @return {Promise<void>} Resolves when the upload completes.
  */
 export function uploadToMux( uploadUrl, file, onProgress ) {
