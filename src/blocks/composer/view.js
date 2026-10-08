@@ -8,10 +8,9 @@
 import { createRoot } from '@wordpress/element';
 import Composer from './Composer.jsx';
 
-const el = document.getElementById( 'quickpostr-composer' );
-if ( el ) {
+document.querySelectorAll( '.quickpostr-composer-root' ).forEach( ( el ) => {
 	createRoot( el ).render( <Composer /> );
-}
+} );
 
 // Register the service worker so QuickPostr is installable as a PWA and can
 // receive shared photos. Served from the site root, so its scope is the whole

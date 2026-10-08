@@ -22,6 +22,7 @@
     "readme.txt"
   ],
   "peerDependencies": {
+    "@wordpress/a11y": "*",
     "@wordpress/blocks": "*",
     "@wordpress/element": "*",
     "@wordpress/i18n": "*"

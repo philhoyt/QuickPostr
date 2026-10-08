@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from '@wordpress/element';
+import { useState, useRef, useEffect, useId } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import {
 	createPost,
@@ -59,7 +59,21 @@ export default function VideoComposer( {
 	const [ uploadProgress, setUploadProgress ] = useState( 0 );
 
 	const fileInputRef = useRef( null );
+	const browseRef = useRef( null );
+	// Set by clearFile(): the remove button unmounts with the preview, so focus
+	// moves to the browse button once the dropzone is back.
+	const focusBrowseRef = useRef( false );
+	const progressLabelId = useId();
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
+
+	const hasMedia = !! ( file || preview || libraryMediaItem );
+
+	useEffect( () => {
+		if ( ! hasMedia && focusBrowseRef.current ) {
+			focusBrowseRef.current = false;
+			browseRef.current?.focus();
+		}
+	}, [ hasMedia ] );
 
 	const autoTitle = generateTitle(
 		'video',
@@ -167,6 +181,7 @@ export default function VideoComposer( {
 		if ( preview ) {
 			URL.revokeObjectURL( preview );
 		}
+		focusBrowseRef.current = true;
 		setFile( null );
 		setPreview( null );
 		setLibraryMediaItem( null );
@@ -313,11 +328,14 @@ export default function VideoComposer( {
 			: __( 'Post', 'quickpostr' );
 	}
 
-	function handleDropzoneKeyDown( e ) {
-		if ( e.key === 'Enter' || e.key === ' ' ) {
-			e.preventDefault();
-			fileInputRef.current?.click();
+	// Mouse convenience only: the wrapper is not focusable, so the keyboard path
+	// is the real buttons inside. Clicks on those must not also reach here, or
+	// the file dialog would open twice.
+	function handleDropzoneClick( e ) {
+		if ( e.target.closest( 'button' ) ) {
+			return;
 		}
+		fileInputRef.current?.click();
 	}
 
 	const dropzoneClass = [
@@ -329,17 +347,14 @@ export default function VideoComposer( {
 
 	return (
 		<div className="qp-video-composer">
-			{ ! file && ! preview && ! libraryMediaItem && (
+			{ ! hasMedia && (
+				// eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- drop target with a mouse shortcut; the keyboard path is the buttons inside.
 				<div
 					className={ dropzoneClass }
 					onDrop={ handleDrop }
 					onDragOver={ handleDragOver }
 					onDragLeave={ handleDragLeave }
-					onClick={ () => fileInputRef.current?.click() }
-					onKeyDown={ handleDropzoneKeyDown }
-					role="button"
-					tabIndex={ 0 }
-					aria-label={ __( 'Choose a video to upload', 'quickpostr' ) }
+					onClick={ handleDropzoneClick }
 				>
 					<svg
 						className="qp-video-dropzone__icon"
@@ -355,19 +370,21 @@ export default function VideoComposer( {
 					</svg>
 					<span className="qp-video-dropzone__label">
 						{ __( 'Drop a video here,', 'quickpostr' ) }{ ' ' }
-						<span className="qp-video-dropzone__browse">
-							{ __( 'browse', 'quickpostr' ) }
-						</span>
+						<button
+							type="button"
+							ref={ browseRef }
+							className="qp-video-dropzone__browse"
+							onClick={ () => fileInputRef.current?.click() }
+						>
+							{ __( 'browse files', 'quickpostr' ) }
+						</button>
 						{ window.wp?.media && (
 							<>
 								{ __( ', or', 'quickpostr' ) }{ ' ' }
 								<button
 									type="button"
 									className="qp-video-dropzone__library"
-									onClick={ ( e ) => {
-										e.stopPropagation();
-										openMediaLibrary();
-									} }
+									onClick={ openMediaLibrary }
 								>
 									{ __( 'choose from library', 'quickpostr' ) }
 								</button>
@@ -386,7 +403,7 @@ export default function VideoComposer( {
 				</div>
 			) }
 
-			{ ( file || preview || libraryMediaItem ) && (
+			{ hasMedia && (
 				<div className="qp-video-preview">
 					{ /* eslint-disable-next-line jsx-a11y/media-has-caption -- caption is optional user content, not a required accessibility feature for the composer preview */ }
 					<video
@@ -427,6 +444,7 @@ export default function VideoComposer( {
 					<div
 						className="qp-video-progress__bar"
 						role="progressbar"
+						aria-labelledby={ progressLabelId }
 						aria-valuenow={ uploadProgress }
 						aria-valuemin={ 0 }
 						aria-valuemax={ 100 }
@@ -436,7 +454,10 @@ export default function VideoComposer( {
 							style={ { width: `${ uploadProgress }%` } }
 						/>
 					</div>
-					<span className="qp-video-progress__label">
+					<span
+						className="qp-video-progress__label"
+						id={ progressLabelId }
+					>
 						{ sprintf(
 							/* translators: %d: upload progress percentage */
 							__( 'Uploading… %d%%', 'quickpostr' ),
@@ -493,11 +514,7 @@ export default function VideoComposer( {
 			</footer>
 
 			{ flash && (
-				<div
-					className="qp-composer-flash"
-					role="status"
-					aria-live="assertive"
-				>
+				<div className="qp-composer-flash" role="status">
 					{ __( 'Posted!', 'quickpostr' ) }
 				</div>
 			) }

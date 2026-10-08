@@ -1,4 +1,5 @@
 import { useBlockProps } from '@wordpress/block-editor';
+import { __ } from '@wordpress/i18n';
 
 /**
  * Editor preview for quickpostr/post-actions.
@@ -11,7 +12,7 @@ export default function Edit() {
 				type="button"
 				className="qp-post-actions__toggle"
 				disabled
-				aria-label="Post actions"
+				aria-label={ __( 'Post actions', 'quickpostr' ) }
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

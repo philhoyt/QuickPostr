@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
+import { speak } from '@wordpress/a11y';
 import TextComposer from './TextComposer.jsx';
 import PhotoComposer from './PhotoComposer.jsx';
 import VideoComposer from './VideoComposer.jsx';
@@ -120,9 +121,20 @@ export default function Composer() {
 		// A scheduled post will not appear in the theme's Query Loop yet, so
 		// reloading would look like the post vanished. Say what happened instead.
 		if ( wpPost?.status === 'future' ) {
+			speak(
+				sprintf(
+					/* translators: %s: the date and time the post is scheduled for. */
+					__( 'Scheduled for %s.', 'quickpostr' ),
+					formatForDisplay( wpPost.date )
+				)
+			);
 			setScheduledPost( wpPost );
 			return;
 		}
+
+		// The composers' visual "Posted!" flash is gone before the reload lands,
+		// so announce the outcome directly.
+		speak( __( 'Posted.', 'quickpostr' ) );
 
 		// Reload so the theme's Query Loop reflects the new post.
 		window.location.reload();
@@ -172,14 +184,13 @@ export default function Composer() {
 
 			<div
 				className="qp-composer__mode-bar"
-				role="tablist"
+				role="group"
 				aria-label={ __( 'Post type', 'quickpostr' ) }
 			>
 				{ [ 'status', 'photo', 'video', 'link' ].map( ( m ) => (
 					<button
 						key={ m }
-						role="tab"
-						aria-selected={ mode === m }
+						aria-pressed={ mode === m }
 						className={ `qp-composer__mode-btn${
 							mode === m ? ' qp-composer__mode-btn--active' : ''
 						}` }

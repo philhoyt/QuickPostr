@@ -1,4 +1,5 @@
 import { useBlockProps } from '@wordpress/block-editor';
+import { __ } from '@wordpress/i18n';
 
 /**
  * Editor preview for quickpostr/like-post.
@@ -11,7 +12,7 @@ export default function Edit() {
 				type="button"
 				className="qp-like-post__button"
 				disabled
-				aria-label="Like this post"
+				aria-label={ __( 'Like this post', 'quickpostr' ) }
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

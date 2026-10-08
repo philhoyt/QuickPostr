@@ -102,10 +102,11 @@ export function buildQuickpostrFields( geoData, video = null ) {
 /**
  * Upload a media file.
  *
- * @param {File} file
+ * @param {File}   file
+ * @param {string} alt  Optional alt text to store on the attachment.
  * @return {Promise<object>} The created media object (includes source_url).
  */
-export async function uploadMedia( file ) {
+export async function uploadMedia( file, alt = '' ) {
 	const url = ( config.restUrl ?? '' ).replace( /\/$/, '' ) + '/wp/v2/media';
 
 	const res = await fetch( url, {
@@ -130,7 +131,26 @@ export async function uploadMedia( file ) {
 		throw new Error( message );
 	}
 
-	return res.json();
+	const media = await res.json();
+
+	// The raw-body upload cannot carry fields, so the alt text is a follow-up
+	// write. The post content already carries the alt, so a failure here is
+	// not worth blocking the publish over.
+	const trimmedAlt = alt.trim();
+	if ( trimmedAlt && media?.id ) {
+		try {
+			const updated = await request(
+				'POST',
+				`/wp/v2/media/${ media.id }`,
+				{
+					alt_text: trimmedAlt,
+				}
+			);
+			return { ...media, ...updated };
+		} catch ( _ ) {}
+	}
+
+	return media;
 }
 
 /**

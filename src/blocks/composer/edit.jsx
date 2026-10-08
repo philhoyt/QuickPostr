@@ -2,7 +2,7 @@
  * Block editor preview for the QuickPostr Composer block.
  *
  * Renders a static, non-interactive mockup with InspectorControls for the
- * three block attributes. The real composer only runs on the front end.
+ * block attributes. The real composer only runs on the front end.
  */
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
@@ -13,6 +13,14 @@ import {
 	Notice,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+
+// Must match the `defaultMode` enum in block.json and the mode bar in Composer.jsx.
+const MODES = [
+	{ value: 'status', label: __( 'Status', 'quickpostr' ) },
+	{ value: 'photo', label: __( 'Photo', 'quickpostr' ) },
+	{ value: 'video', label: __( 'Video', 'quickpostr' ) },
+	{ value: 'link', label: __( 'Link', 'quickpostr' ) },
+];
 
 export default function Edit( { attributes, setAttributes } ) {
 	const { defaultMode, placeholderText } = attributes;
@@ -27,16 +35,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					<RadioControl
 						label={ __( 'Default Mode', 'quickpostr' ) }
 						selected={ defaultMode }
-						options={ [
-							{
-								label: __( 'Status', 'quickpostr' ),
-								value: 'status',
-							},
-							{
-								label: __( 'Photo', 'quickpostr' ),
-								value: 'photo',
-							},
-						] }
+						options={ MODES }
 						onChange={ ( value ) =>
 							setAttributes( { defaultMode: value } )
 						}
@@ -68,20 +67,16 @@ export default function Edit( { attributes, setAttributes } ) {
 					aria-hidden="true"
 				>
 					<div className="quickpostr-composer-preview__mode-bar">
-						<span
-							className={ `quickpostr-composer-preview__mode-btn${
-								defaultMode === 'status' ? ' is-active' : ''
-							}` }
-						>
-							{ __( 'Status', 'quickpostr' ) }
-						</span>
-						<span
-							className={ `quickpostr-composer-preview__mode-btn${
-								defaultMode === 'photo' ? ' is-active' : ''
-							}` }
-						>
-							{ __( 'Photo', 'quickpostr' ) }
-						</span>
+						{ MODES.map( ( { value, label } ) => (
+							<span
+								key={ value }
+								className={ `quickpostr-composer-preview__mode-btn${
+									defaultMode === value ? ' is-active' : ''
+								}` }
+							>
+								{ label }
+							</span>
+						) ) }
 					</div>
 
 					{ defaultMode === 'status' && (
@@ -96,6 +91,21 @@ export default function Edit( { attributes, setAttributes } ) {
 							<span>
 								{ __( 'Tap to add a photo', 'quickpostr' ) }
 							</span>
+						</div>
+					) }
+
+					{ defaultMode === 'video' && (
+						<div className="quickpostr-composer-preview__upload-zone">
+							<span>+</span>
+							<span>
+								{ __( 'Tap to add a video', 'quickpostr' ) }
+							</span>
+						</div>
+					) }
+
+					{ defaultMode === 'link' && (
+						<div className="quickpostr-composer-preview__textarea">
+							{ __( 'Paste a URL…', 'quickpostr' ) }
 						</div>
 					) }
 

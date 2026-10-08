@@ -71,7 +71,6 @@ $qp_wrapper_attributes = get_block_wrapper_attributes(
 		class="qp-post-actions__toggle"
 		aria-label="<?php esc_attr_e( 'Post actions', 'quickpostr' ); ?>"
 		aria-expanded="false"
-		aria-haspopup="true"
 	>
 		<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 			<circle cx="12" cy="5" r="2"/>
@@ -100,6 +99,7 @@ $qp_wrapper_attributes = get_block_wrapper_attributes(
 				<?php esc_html_e( 'Cancel', 'quickpostr' ); ?>
 			</button>
 		</div>
+		<div class="qp-post-actions__error" role="alert" hidden></div>
 		<?php endif; ?>
 	</div>
 </div>

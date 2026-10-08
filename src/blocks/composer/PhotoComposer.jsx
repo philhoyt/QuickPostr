@@ -1,10 +1,14 @@
-import { useState, useRef, useEffect } from '@wordpress/element';
+import { useState, useRef, useEffect, useId } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { createPost, uploadMedia, buildQuickpostrFields } from './api.js';
 import { toRestDate, titleDateString } from './postDate.js';
 import TagInput from './TagInput.jsx';
 import { generateTitle } from './useAutoTitle.js';
-import { buildSinglePhotoContent } from './photoContent.js';
+import {
+	buildSinglePhotoContent,
+	escapeAttr,
+	resolveAlt,
+} from './photoContent.js';
 
 const config = window.quickpostrConfig ?? {};
 const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
@@ -13,7 +17,7 @@ const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
  * Build serialized gallery block content as a core/gallery block with the
  * QuickPostr Slider block style. The output matches core/gallery save() for
  * WP 6.7+ (nested-images format) so the block editor validates cleanly.
- * @param {Array<{id: number, source_url: string}>} mediaItems
+ * @param {Array<{id: number, source_url: string, alt?: string}>} mediaItems
  * @param {string} captionText
  * @returns {string}
  */
@@ -22,7 +26,9 @@ function buildGalleryContent( mediaItems, captionText ) {
 		.map(
 			( m ) =>
 				`<!-- wp:image {"id":${ m.id },"sizeSlug":"large","linkDestination":"none"} -->\n` +
-				`<figure class="wp-block-image size-large"><img src="${ m.source_url }" alt="" class="wp-image-${ m.id }"/></figure>\n` +
+				`<figure class="wp-block-image size-large"><img src="${ m.source_url }" alt="${ escapeAttr(
+					resolveAlt( m.alt, captionText )
+				) }" class="wp-image-${ m.id }"/></figure>\n` +
 				`<!-- /wp:image -->`
 		)
 		.join( '\n' );
@@ -72,7 +78,7 @@ function validateImageFile( f ) {
  * Multiple images (2+) → format:gallery + core/gallery block content.
  *
  * Each photo is tracked as a unified object:
- *   { file: File|null, preview: string, mediaId: number|null, sourceUrl: string|null }
+ *   { file: File|null, preview: string, mediaId: number|null, sourceUrl: string|null, alt: string }
  *
  * Props:
  *   onSuccess    (wpPost, mediaUrl) => void
@@ -114,6 +120,15 @@ export default function PhotoComposer( {
 
 	const fileInputRef = useRef( null );
 	const dragIndexRef = useRef( null );
+	const browseRef = useRef( null );
+	const stripRef = useRef( null );
+	// Move buttons keyed `${ index }-prev` / `${ index }-next`.
+	const moveRefs = useRef( {} );
+	// Where focus should land after the next photos change: 'browse' once the
+	// media is cleared, or { index, dir } after a reorder. The control that had
+	// focus unmounts in both cases.
+	const pendingFocus = useRef( null );
+	const altIdBase = useId();
 	const defaultStatus = config.settings?.defaultStatus ?? 'publish';
 
 	const autoTitle = generateTitle(
@@ -148,6 +163,49 @@ export default function PhotoComposer( {
 		};
 	}, [ photos ] );
 
+	// Apply any focus request queued by clearFiles() / movePhoto() once the
+	// new controls exist.
+	useEffect( () => {
+		const target = pendingFocus.current;
+		if ( ! target ) {
+			return;
+		}
+		pendingFocus.current = null;
+
+		if ( target === 'browse' ) {
+			browseRef.current?.focus();
+			return;
+		}
+
+		const { index, dir } = target;
+		const other = dir === 'prev' ? 'next' : 'prev';
+		const button =
+			moveRefs.current[ `${ index }-${ dir }` ] ??
+			moveRefs.current[ `${ index }-${ other }` ];
+		if ( button ) {
+			button.focus();
+		} else {
+			stripRef.current?.focus();
+		}
+	}, [ photos ] );
+
+	function setMoveRef( index, dir ) {
+		return ( el ) => {
+			const key = `${ index }-${ dir }`;
+			if ( el ) {
+				moveRefs.current[ key ] = el;
+			} else {
+				delete moveRefs.current[ key ];
+			}
+		};
+	}
+
+	function setAlt( index, alt ) {
+		setPhotos( ( prev ) =>
+			prev.map( ( p, i ) => ( i === index ? { ...p, alt } : p ) )
+		);
+	}
+
 	function pickFiles( fileList ) {
 		if ( ! fileList || fileList.length === 0 ) {
 			return;
@@ -169,6 +227,7 @@ export default function PhotoComposer( {
 				preview: URL.createObjectURL( f ),
 				mediaId: null,
 				sourceUrl: null,
+				alt: '',
 			} ) )
 		);
 	}
@@ -196,6 +255,7 @@ export default function PhotoComposer( {
 	}
 
 	function clearFiles() {
+		pendingFocus.current = 'browse';
 		setPhotos( [] );
 		if ( fileInputRef.current ) {
 			fileInputRef.current.value = '';
@@ -226,6 +286,7 @@ export default function PhotoComposer( {
 					preview: a.sizes?.large?.url ?? a.url,
 					mediaId: a.id,
 					sourceUrl: a.url,
+					alt: a.alt ?? '',
 				} ) )
 			);
 		} );
@@ -237,6 +298,10 @@ export default function PhotoComposer( {
 		if ( fromIndex === toIndex ) {
 			return;
 		}
+		pendingFocus.current = {
+			index: toIndex,
+			dir: toIndex > fromIndex ? 'next' : 'prev',
+		};
 		setPhotos( ( prev ) => {
 			const next = [ ...prev ];
 			const [ item ] = next.splice( fromIndex, 1 );
@@ -262,12 +327,24 @@ export default function PhotoComposer( {
 			if ( isGallery ) {
 				// Gallery: use uploaded files or already-uploaded library items.
 				const mediaItems = isFromFiles
-					? await Promise.all(
-							photos.map( ( p ) => uploadMedia( p.file ) )
-					  )
+					? (
+							await Promise.all(
+								photos.map( ( p ) =>
+									uploadMedia(
+										p.file,
+										resolveAlt( p.alt, caption )
+									)
+								)
+							)
+					  ).map( ( m, i ) => ( {
+							id: m.id,
+							source_url: m.source_url,
+							alt: photos[ i ].alt,
+					  } ) )
 					: photos.map( ( p ) => ( {
 							id: p.mediaId,
 							source_url: p.sourceUrl,
+							alt: p.alt,
 					  } ) );
 
 				const baseFields = {
@@ -292,7 +369,10 @@ export default function PhotoComposer( {
 				let mediaId, mediaUrl;
 
 				if ( isFromFiles ) {
-					const media = await uploadMedia( photos[ 0 ].file );
+					const media = await uploadMedia(
+						photos[ 0 ].file,
+						resolveAlt( photos[ 0 ].alt, caption )
+					);
 					mediaId = media.id;
 					mediaUrl = media.source_url;
 				} else {
@@ -302,7 +382,12 @@ export default function PhotoComposer( {
 
 				const baseFields = {
 					title: title.trim(),
-					content: buildSinglePhotoContent( mediaId, mediaUrl, caption ),
+					content: buildSinglePhotoContent(
+						mediaId,
+						mediaUrl,
+						caption,
+						photos[ 0 ].alt
+					),
 					status: defaultStatus,
 					format: 'image',
 					tags: selectedTags,
@@ -341,11 +426,14 @@ export default function PhotoComposer( {
 		}
 	}
 
-	function handleDropzoneKeyDown( e ) {
-		if ( e.key === 'Enter' || e.key === ' ' ) {
-			e.preventDefault();
-			fileInputRef.current?.click();
+	// Mouse convenience only: the wrapper is not focusable, so the keyboard path
+	// is the real buttons inside. Clicks on those must not also reach here, or
+	// the file dialog would open twice.
+	function handleDropzoneClick( e ) {
+		if ( e.target.closest( 'button' ) ) {
+			return;
 		}
+		fileInputRef.current?.click();
 	}
 
 	const dropzoneClass = [
@@ -362,16 +450,13 @@ export default function PhotoComposer( {
 	return (
 		<div className="qp-photo-composer">
 			{ showDropzone && (
+				// eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- drop target with a mouse shortcut; the keyboard path is the buttons inside.
 				<div
 					className={ dropzoneClass }
 					onDrop={ handleDrop }
 					onDragOver={ handleDragOver }
 					onDragLeave={ handleDragLeave }
-					onClick={ () => fileInputRef.current?.click() }
-					onKeyDown={ handleDropzoneKeyDown }
-					role="button"
-					tabIndex={ 0 }
-					aria-label={ __( 'Choose photos to upload', 'quickpostr' ) }
+					onClick={ handleDropzoneClick }
 				>
 					<svg
 						className="qp-photo-dropzone__icon"
@@ -395,19 +480,21 @@ export default function PhotoComposer( {
 					</svg>
 					<span className="qp-photo-dropzone__label">
 						{ __( 'Drop photos here,', 'quickpostr' ) }{ ' ' }
-						<span className="qp-photo-dropzone__browse">
-							{ __( 'browse', 'quickpostr' ) }
-						</span>
+						<button
+							type="button"
+							ref={ browseRef }
+							className="qp-photo-dropzone__browse"
+							onClick={ () => fileInputRef.current?.click() }
+						>
+							{ __( 'browse files', 'quickpostr' ) }
+						</button>
 						{ window.wp?.media && (
 							<>
 								{ __( ', or', 'quickpostr' ) }{ ' ' }
 								<button
 									type="button"
 									className="qp-photo-dropzone__library"
-									onClick={ ( e ) => {
-										e.stopPropagation();
-										openMediaLibrary();
-									} }
+									onClick={ openMediaLibrary }
 								>
 									{ __( 'choose from library', 'quickpostr' ) }
 								</button>
@@ -443,11 +530,33 @@ export default function PhotoComposer( {
 					>
 						&#x2715;
 					</button>
+					<div className="qp-photo-alt">
+						<label
+							className="qp-photo-alt__label"
+							htmlFor={ `${ altIdBase }-0` }
+						>
+							{ __( 'Alt text', 'quickpostr' ) }
+						</label>
+						<input
+							id={ `${ altIdBase }-0` }
+							type="text"
+							className="qp-photo-alt__input"
+							value={ photos[ 0 ].alt ?? '' }
+							onChange={ ( e ) => setAlt( 0, e.target.value ) }
+							placeholder={ __(
+								'Describe the image for people who cannot see it',
+								'quickpostr'
+							) }
+							disabled={ submitting }
+						/>
+					</div>
 				</div>
 			) }
 
 			{ showStrip && (
-				<div className="qp-photo-strip">
+				// tabIndex -1 so focus has somewhere to land after a reorder
+				// leaves no move button at the new position.
+				<div className="qp-photo-strip" ref={ stripRef } tabIndex={ -1 }>
 					{ photos.map( ( photo, i ) => (
 						<div
 							key={ photo.preview }
@@ -459,10 +568,6 @@ export default function PhotoComposer( {
 							]
 								.filter( Boolean )
 								.join( ' ' ) }
-							draggable={ ! submitting }
-							onDragStart={ () => {
-								dragIndexRef.current = i;
-							} }
 							onDragOver={ ( e ) => {
 								e.preventDefault();
 								setDragOverIndex( i );
@@ -473,19 +578,28 @@ export default function PhotoComposer( {
 								}
 								setDragOverIndex( null );
 							} }
-							onDragEnd={ () => {
-								dragIndexRef.current = null;
-								setDragOverIndex( null );
-							} }
 						>
-							<img
-								src={ photo.preview }
-								alt=""
-								className="qp-photo-strip__thumb"
-							/>
+							<div className="qp-photo-strip__media">
+								{ /* The thumbnail is the drag handle, not the
+								   whole item, so the alt input below stays
+								   editable. */ }
+								<img
+									src={ photo.preview }
+									alt=""
+									className="qp-photo-strip__thumb"
+									draggable={ ! submitting }
+									onDragStart={ () => {
+										dragIndexRef.current = i;
+									} }
+									onDragEnd={ () => {
+										dragIndexRef.current = null;
+										setDragOverIndex( null );
+									} }
+								/>
 							{ i > 0 && (
 								<button
 									type="button"
+									ref={ setMoveRef( i, 'prev' ) }
 									className="qp-photo-strip__move qp-photo-strip__move--prev"
 									onClick={ () => movePhoto( i, i - 1 ) }
 									aria-label={ __( 'Move photo left', 'quickpostr' ) }
@@ -497,6 +611,7 @@ export default function PhotoComposer( {
 							{ i < photos.length - 1 && (
 								<button
 									type="button"
+									ref={ setMoveRef( i, 'next' ) }
 									className="qp-photo-strip__move qp-photo-strip__move--next"
 									onClick={ () => movePhoto( i, i + 1 ) }
 									aria-label={ __( 'Move photo right', 'quickpostr' ) }
@@ -505,6 +620,20 @@ export default function PhotoComposer( {
 									&#x203a;
 								</button>
 							) }
+							</div>
+							<input
+								type="text"
+								className="qp-photo-alt__input qp-photo-alt__input--strip"
+								value={ photo.alt ?? '' }
+								onChange={ ( e ) => setAlt( i, e.target.value ) }
+								placeholder={ __( 'Alt text', 'quickpostr' ) }
+								aria-label={ sprintf(
+									/* translators: %d: 1-based position of the photo in the gallery */
+									__( 'Alt text for photo %d', 'quickpostr' ),
+									i + 1
+								) }
+								disabled={ submitting }
+							/>
 						</div>
 					) ) }
 					<button
@@ -572,11 +701,7 @@ export default function PhotoComposer( {
 			</footer>
 
 			{ flash && (
-				<div
-					className="qp-composer-flash"
-					role="status"
-					aria-live="assertive"
-				>
+				<div className="qp-composer-flash" role="status">
 					{ __( 'Posted!', 'quickpostr' ) }
 				</div>
 			) }

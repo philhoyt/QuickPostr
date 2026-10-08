@@ -37,7 +37,7 @@ $qp_wrapper_attributes = get_block_wrapper_attributes(
 );
 ?>
 <div <?php echo $qp_wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
-	<button type="button" class="qp-share-post__btn" hidden>
+	<button type="button" class="qp-share-post__btn" aria-expanded="false" hidden>
 		<svg class="qp-share-post__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
 			<circle cx="18" cy="5" r="3"/>
 			<circle cx="6" cy="12" r="3"/>

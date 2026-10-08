@@ -309,6 +309,9 @@ export default function TermPicker( {
 
 	function removeTerm( id ) {
 		onChange( selected.filter( ( termId ) => termId !== id ) );
+		// The remove button unmounts with its chip; park focus on the combobox
+		// the same way addTerm() does.
+		setTimeout( () => inputRef.current?.focus(), 0 );
 	}
 
 	const optionId = ( index ) => `${ listId }-option-${ index }`;

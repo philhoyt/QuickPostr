@@ -6,6 +6,7 @@
  * on browsers that do not support navigator.share (Chrome/Firefox on macOS desktop).
  */
 import { __ } from '@wordpress/i18n';
+import { speak } from '@wordpress/a11y';
 
 ( function () {
 	const X_ICON =
@@ -16,14 +17,43 @@ import { __ } from '@wordpress/i18n';
 		'<svg class="qp-share-post__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 	const COPY_LABEL = __( 'Copy link', 'quickpostr' );
 	const COPIED_LABEL = __( 'Copied!', 'quickpostr' );
+	const COPY_FAILED_LABEL = __( 'Copy failed', 'quickpostr' );
 
 	let openPopover = null;
+	let openTrigger = null;
 
 	function closePopover() {
 		if ( openPopover ) {
+			const hadFocus = openPopover.contains(
+				openPopover.ownerDocument.activeElement
+			);
 			openPopover.hidden = true;
+			if ( openTrigger ) {
+				openTrigger.setAttribute( 'aria-expanded', 'false' );
+				if ( hadFocus ) {
+					openTrigger.focus();
+				}
+			}
 			openPopover = null;
+			openTrigger = null;
 		}
+	}
+
+	function showPopover( popover, trigger ) {
+		popover.hidden = false;
+		trigger.setAttribute( 'aria-expanded', 'true' );
+		openPopover = popover;
+		openTrigger = trigger;
+		const first = popover.querySelector( 'a[href], button' );
+		if ( first ) {
+			first.focus();
+		}
+	}
+
+	function wrapItem( el ) {
+		const li = document.createElement( 'li' );
+		li.appendChild( el );
+		return li;
 	}
 
 	function buildPopover( title, url ) {
@@ -34,10 +64,9 @@ import { __ } from '@wordpress/i18n';
 			'https://www.facebook.com/sharer/sharer.php?' +
 			new URLSearchParams( { u: url } ).toString();
 
-		const popover = document.createElement( 'div' );
+		const popover = document.createElement( 'ul' );
 		popover.className = 'qp-share-post__popover';
 		popover.hidden = true;
-		popover.setAttribute( 'role', 'menu' );
 		popover.addEventListener( 'click', function ( e ) {
 			e.stopPropagation();
 		} );
@@ -47,7 +76,6 @@ import { __ } from '@wordpress/i18n';
 		xLink.target = '_blank';
 		xLink.rel = 'noopener noreferrer';
 		xLink.className = 'qp-share-post__social-link';
-		xLink.setAttribute( 'role', 'menuitem' );
 		xLink.innerHTML = X_ICON + ' ' + __( 'X / Twitter', 'quickpostr' );
 		xLink.addEventListener( 'click', closePopover );
 
@@ -56,30 +84,40 @@ import { __ } from '@wordpress/i18n';
 		fbLink.target = '_blank';
 		fbLink.rel = 'noopener noreferrer';
 		fbLink.className = 'qp-share-post__social-link';
-		fbLink.setAttribute( 'role', 'menuitem' );
 		fbLink.innerHTML = FB_ICON + ' ' + __( 'Facebook', 'quickpostr' );
 		fbLink.addEventListener( 'click', closePopover );
 
 		const copyBtn = document.createElement( 'button' );
 		copyBtn.type = 'button';
 		copyBtn.className = 'qp-share-post__social-link';
-		copyBtn.setAttribute( 'role', 'menuitem' );
 		copyBtn.innerHTML = LINK_ICON + ' ' + COPY_LABEL;
+
+		function showCopyFeedback( label ) {
+			copyBtn.textContent = label;
+			speak( label );
+			setTimeout( function () {
+				copyBtn.innerHTML = LINK_ICON + ' ' + COPY_LABEL;
+			}, 2000 );
+		}
+
 		copyBtn.addEventListener( 'click', function () {
+			if ( ! navigator.clipboard ) {
+				showCopyFeedback( COPY_FAILED_LABEL );
+				return;
+			}
 			navigator.clipboard
 				.writeText( url )
 				.then( function () {
-					copyBtn.textContent = COPIED_LABEL;
-					setTimeout( function () {
-						copyBtn.innerHTML = LINK_ICON + ' ' + COPY_LABEL;
-					}, 2000 );
+					showCopyFeedback( COPIED_LABEL );
 				} )
-				.catch( function () {} );
+				.catch( function () {
+					showCopyFeedback( COPY_FAILED_LABEL );
+				} );
 		} );
 
-		popover.appendChild( xLink );
-		popover.appendChild( fbLink );
-		popover.appendChild( copyBtn );
+		popover.appendChild( wrapItem( xLink ) );
+		popover.appendChild( wrapItem( fbLink ) );
+		popover.appendChild( wrapItem( copyBtn ) );
 
 		return popover;
 	}
@@ -97,6 +135,8 @@ import { __ } from '@wordpress/i18n';
 			btn.hidden = false;
 
 			if ( navigator.share ) {
+				// Native share sheet: the button is not a disclosure trigger.
+				btn.removeAttribute( 'aria-expanded' );
 				btn.addEventListener( 'click', function () {
 					navigator.share( { title, url } ).catch( function () {} );
 				} );
@@ -108,12 +148,12 @@ import { __ } from '@wordpress/i18n';
 
 			btn.addEventListener( 'click', function ( e ) {
 				e.stopPropagation();
-				if ( openPopover && openPopover !== popover ) {
+				if ( openPopover === popover ) {
 					closePopover();
+					return;
 				}
-				const isNowOpen = popover.hidden;
-				popover.hidden = ! isNowOpen;
-				openPopover = isNowOpen ? popover : null;
+				closePopover();
+				showPopover( popover, btn );
 			} );
 		} );
 
