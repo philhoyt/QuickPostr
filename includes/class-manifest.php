@@ -181,6 +181,9 @@ class QuickPostr_Manifest {
 
 		status_header( 200 );
 		header( 'Content-Type: application/manifest+json; charset=utf-8' );
+		// The manifest only changes with settings, site name or icon; a day of
+		// browser/proxy caching spares a full WordPress bootstrap per page view.
+		header( 'Cache-Control: public, max-age=' . DAY_IN_SECONDS );
 		echo wp_json_encode( $manifest );
 		exit;
 	}
@@ -203,6 +206,9 @@ class QuickPostr_Manifest {
 		status_header( 200 );
 		header( 'Content-Type: application/javascript; charset=utf-8' );
 		header( 'Service-Worker-Allowed: /' );
+		// Explicit so intermediaries do not cache a stale worker; the browser
+		// byte-compares on each navigation and picks up plugin updates promptly.
+		header( 'Cache-Control: no-cache' );
 		// The file is a plugin-bundled static JS asset, not user input, and is
 		// served with a JavaScript content type — HTML escaping does not apply.
 		echo file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -218,9 +224,10 @@ class QuickPostr_Manifest {
 	 * screen; on success the uploaded attachment ID is handed to the composer
 	 * via ?qp_share so the user can review and post.
 	 *
-	 * Two guards stand in for the missing nonce: the request is refused when the
-	 * browser reports an explicitly cross-site initiator, and each user is rate
-	 * limited. See is_cross_site_request() for why that check is safe here.
+	 * Three guards stand in for the missing nonce: the request is refused when
+	 * the browser reports a cross-site initiator (Fetch Metadata), refused when
+	 * an Origin or Referer header names another host, and each user is rate
+	 * limited. See is_cross_site_request() for why these checks are safe here.
 	 */
 	private function handle_share(): void {
 		$share_url = home_url( '/quickpostr-share/' );
@@ -265,6 +272,15 @@ class QuickPostr_Manifest {
 			exit;
 		}
 
+		// The manifest advertises image/* but that is a hint to the share
+		// sheet, not a constraint the browser enforces. Anything else the site
+		// would accept as an upload is refused here and removed again.
+		if ( ! wp_attachment_is_image( $attachment_id ) ) {
+			wp_delete_attachment( $attachment_id, true );
+			wp_safe_redirect( $composer_url );
+			exit;
+		}
+
 		// Flag the upload as pending so it is swept later if the user never
 		// publishes a post that uses it. claim_shared_uploads() clears the flag
 		// once the image is referenced by a saved post.
@@ -282,21 +298,47 @@ class QuickPostr_Manifest {
 	 * browser sends `Sec-Fetch-Site: none` — the same value as a bookmark or a
 	 * typed URL. A form on someone else's site posting here sends `cross-site`.
 	 *
-	 * Only that one explicit value is refused. A missing header (older browsers,
-	 * proxies that strip it) passes, so this can only ever reject a request the
-	 * browser has positively identified as cross-site — it cannot break a real
-	 * share.
+	 * Only `none` and `same-origin` are accepted when the header is present:
+	 * `cross-site` is another site's form, and `same-site` is a sibling
+	 * subdomain, which has no business posting here either. A missing header
+	 * (older browsers, proxies that strip it) falls through to the second
+	 * check, so this cannot break a real share.
+	 *
+	 * The second check reads Origin, else Referer, which browsers have sent
+	 * for far longer than Fetch Metadata: when one is present its host must be
+	 * this site's. A share-sheet launch carries neither or a same-origin one.
 	 *
 	 * @return bool
 	 */
 	private function is_cross_site_request(): bool {
-		if ( empty( $_SERVER['HTTP_SEC_FETCH_SITE'] ) ) {
+		if ( ! empty( $_SERVER['HTTP_SEC_FETCH_SITE'] ) ) {
+			$site = sanitize_text_field( wp_unslash( $_SERVER['HTTP_SEC_FETCH_SITE'] ) );
+
+			if ( ! in_array( $site, array( 'none', 'same-origin' ), true ) ) {
+				return true;
+			}
+		}
+
+		$source = '';
+		if ( ! empty( $_SERVER['HTTP_ORIGIN'] ) ) {
+			$source = sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) );
+		} elseif ( ! empty( $_SERVER['HTTP_REFERER'] ) ) {
+			$source = sanitize_text_field( wp_unslash( $_SERVER['HTTP_REFERER'] ) );
+		}
+
+		// Browsers send the literal string "null" for opaque origins.
+		if ( '' === $source || 'null' === $source ) {
 			return false;
 		}
 
-		$site = sanitize_text_field( wp_unslash( $_SERVER['HTTP_SEC_FETCH_SITE'] ) );
+		$source_host = wp_parse_url( $source, PHP_URL_HOST );
+		$home_host   = wp_parse_url( home_url(), PHP_URL_HOST );
 
-		return 'cross-site' === $site;
+		if ( ! is_string( $source_host ) || ! is_string( $home_host ) ) {
+			return false;
+		}
+
+		return strtolower( $source_host ) !== strtolower( $home_host );
 	}
 
 	/**
@@ -305,7 +347,9 @@ class QuickPostr_Manifest {
 	 * The endpoint writes a file to the media library on every call, so without
 	 * a ceiling a single session could be driven to fill the uploads directory.
 	 * Sharing is a deliberate, one-at-a-time gesture, so the limit is generous
-	 * enough never to be met by hand.
+	 * enough never to be met by hand. The read-then-write is not atomic without
+	 * a persistent object cache, so a burst of truly simultaneous requests can
+	 * overshoot by a few; the ceiling is a brake, not a hard quota.
 	 *
 	 * @param int $user_id The sharing user.
 	 * @return bool True when the user has exhausted the window.
@@ -362,6 +406,13 @@ class QuickPostr_Manifest {
 			if ( ! $attachment_id || ! get_post_meta( $attachment_id, self::PENDING_META, true ) ) {
 				continue;
 			}
+
+			// The content is user-controlled, so an ID in it is only a claim.
+			// Only the user who shared the upload may claim it for their post.
+			if ( (int) get_post_field( 'post_author', $attachment_id ) !== (int) $post->post_author ) {
+				continue;
+			}
+
 			delete_post_meta( $attachment_id, self::PENDING_META );
 			if ( (int) wp_get_post_parent_id( $attachment_id ) === 0 ) {
 				wp_update_post(
@@ -379,39 +430,56 @@ class QuickPostr_Manifest {
 	 *
 	 * Runs on the daily cron hook. Any attachment still flagged pending past the
 	 * TTL was shared into the composer but never published, so it is removed.
+	 * Works in batches of 50 until none are left or a time budget is spent, so
+	 * a backlog cannot outgrow the sweep (the rate limit alone allows far more
+	 * than 50 shares a day) while a single run stays bounded.
+	 *
+	 * @param int $ttl Optional. Seconds an unclaimed upload may live. Defaults
+	 *                 to the filtered TTL; uninstall passes 0 to sweep all.
 	 */
-	public function cleanup_pending_shares(): void {
-		$cutoff = time() - $this->pending_ttl();
+	public function cleanup_pending_shares( int $ttl = -1 ): void {
+		$cutoff   = time() - ( $ttl >= 0 ? $ttl : $this->pending_ttl() );
+		$deadline = microtime( true ) + 20;
+		$batch    = 50;
 
-		$attachments = get_posts(
-			array(
-				'post_type'      => 'attachment',
-				'post_status'    => 'inherit',
-				'posts_per_page' => 50,
-				'fields'         => 'ids',
-				'no_found_rows'  => true,
-				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- bounded sweep on the indexed pending-share key, runs once daily on cron.
-				'meta_query'     => array(
-					array(
-						'key'     => self::PENDING_META,
-						'value'   => $cutoff,
-						'compare' => '<=',
-						'type'    => 'NUMERIC',
+		do {
+			$attachments = get_posts(
+				array(
+					'post_type'      => 'attachment',
+					'post_status'    => 'inherit',
+					'posts_per_page' => $batch,
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- bounded sweep on the indexed pending-share key, runs once daily on cron.
+					'meta_query'     => array(
+						array(
+							'key'     => self::PENDING_META,
+							'value'   => $cutoff,
+							'compare' => '<=',
+							'type'    => 'NUMERIC',
+						),
 					),
-				),
-			)
-		);
+				)
+			);
 
-		foreach ( $attachments as $attachment_id ) {
-			wp_delete_attachment( $attachment_id, true );
-		}
+			$found = count( $attachments );
+
+			foreach ( $attachments as $attachment_id ) {
+				wp_delete_attachment( $attachment_id, true );
+			}
+		} while ( $found === $batch && microtime( true ) < $deadline );
 	}
 
 	/**
 	 * Print the manifest link tag in the document head on the front end.
+	 *
+	 * Only for users who can post: the PWA exists to share into the composer,
+	 * and the service worker is only ever registered from the composer, which
+	 * renders for edit_posts users. Printing it for every visitor made every
+	 * anonymous page view trigger a manifest fetch and a WordPress bootstrap.
 	 */
 	public function print_manifest_link(): void {
-		if ( is_admin() ) {
+		if ( is_admin() || ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
 		printf(

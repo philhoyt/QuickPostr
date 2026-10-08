@@ -91,7 +91,7 @@ class QuickPostr_Settings {
 
 		add_settings_field(
 			'allowed_roles',
-			esc_html__( 'Allowed Roles', 'quickpostr' ),
+			esc_html__( 'Show Composer To', 'quickpostr' ),
 			array( $this, 'field_allowed_roles' ),
 			'quickpostr',
 			'quickpostr_general'
@@ -213,6 +213,13 @@ class QuickPostr_Settings {
 				esc_html( translate_user_role( $role_data['name'] ) )
 			);
 		}
+
+		// Visibility only: this is not an access control. Whether a user may
+		// publish is decided by WordPress capabilities, exactly as in wp-admin.
+		printf(
+			'<p class="description">%s</p>',
+			esc_html__( 'Controls which roles see the composer on the front end. Who may publish is governed by WordPress capabilities, as in the block editor.', 'quickpostr' )
+		);
 	}
 
 	/**

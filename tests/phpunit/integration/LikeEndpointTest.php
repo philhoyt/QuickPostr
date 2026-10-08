@@ -157,4 +157,129 @@ final class LikeEndpointTest extends QuickPostrTestCase {
 			'Likes are stored as comments but must not inflate the visible count.'
 		);
 	}
+
+	/**
+	 * SEC-01: per-post dedupe alone lets one client write a row on every post.
+	 */
+	public function test_anonymous_likes_are_rate_limited_per_ip(): void {
+		add_filter( 'quickpostr_like_rate_limit', static fn() => 2 );
+
+		$posts = self::factory()->post->create_many( 3, array( 'post_status' => 'publish' ) );
+
+		$this->assertSame( 200, $this->like( array( 'name' => 'Bot' ), $posts[0] )->get_status() );
+		$this->assertSame( 200, $this->like( array( 'name' => 'Bot' ), $posts[1] )->get_status() );
+
+		$third = $this->like( array( 'name' => 'Bot' ), $posts[2] );
+		$this->assertSame( 429, $third->get_status() );
+		$this->assertSame( 'rest_like_rate_limited', $third->get_data()['code'] );
+		$this->assertSame( 0, ( new \QuickPostr_Rest() )->get_like_count( $posts[2] ) );
+	}
+
+	public function test_overlong_names_are_rejected(): void {
+		$response = $this->like( array( 'name' => str_repeat( 'a', 101 ) ) );
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'rest_invalid_param', $response->get_data()['code'] );
+	}
+
+	/**
+	 * SEC-03: a published object of a non-public post type must be
+	 * indistinguishable from a missing one.
+	 */
+	public function test_non_public_post_types_cannot_be_liked_or_enumerated(): void {
+		register_post_type( 'qp_hidden', array( 'public' => false ) );
+		$hidden = self::factory()->post->create(
+			array(
+				'post_type'   => 'qp_hidden',
+				'post_status' => 'publish',
+			)
+		);
+
+		$response = $this->like( array( 'name' => 'Ada' ), $hidden );
+
+		$this->assertSame( 404, $response->get_status() );
+		$this->assertSame(
+			0,
+			get_comments(
+				array(
+					'post_id' => $hidden,
+					'count'   => true,
+				)
+			)
+		);
+	}
+
+	/**
+	 * PRF-02: the count is cached in post meta and kept honest by the comment
+	 * hooks, so a feed never counts likes per post.
+	 */
+	public function test_like_count_is_cached_in_post_meta_and_tracks_deletions(): void {
+		$this->like( array( 'name' => 'Ada' ) );
+
+		$this->assertSame( 1, (int) get_post_meta( $this->post_id, \QuickPostr_Rest::LIKE_COUNT_META, true ) );
+
+		$comments = get_comments(
+			array(
+				'post_id' => $this->post_id,
+				'type'    => 'quickpostr_like',
+			)
+		);
+		wp_delete_comment( $comments[0]->comment_ID, true );
+
+		$this->assertSame( 0, (int) get_post_meta( $this->post_id, \QuickPostr_Rest::LIKE_COUNT_META, true ) );
+		$this->assertSame( 0, ( new \QuickPostr_Rest() )->get_like_count( $this->post_id ) );
+	}
+
+	public function test_posts_without_a_cached_count_are_backfilled_on_read(): void {
+		$this->like( array( 'name' => 'Ada' ) );
+		delete_post_meta( $this->post_id, \QuickPostr_Rest::LIKE_COUNT_META );
+
+		$this->assertSame( 1, ( new \QuickPostr_Rest() )->get_like_count( $this->post_id ) );
+		$this->assertSame( '1', get_post_meta( $this->post_id, \QuickPostr_Rest::LIKE_COUNT_META, true ) );
+	}
+
+	/**
+	 * PRV-01: core's exporter and eraser select by email, so a logged-in like
+	 * must carry the account email to be reachable by them.
+	 */
+	public function test_logged_in_likes_record_the_account_email(): void {
+		$user_id = self::factory()->user->create(
+			array(
+				'role'       => 'subscriber',
+				'user_email' => 'ada@example.test',
+			)
+		);
+		wp_set_current_user( $user_id );
+
+		$this->like();
+
+		$comments = get_comments(
+			array(
+				'post_id' => $this->post_id,
+				'type'    => 'quickpostr_like',
+			)
+		);
+		$this->assertSame( 'ada@example.test', $comments[0]->comment_author_email );
+		$this->assertSame( $user_id, (int) $comments[0]->user_id );
+	}
+
+	/**
+	 * The viewer's own likes are primed in one query per page; the toggle
+	 * route must keep that cache in step with what it just wrote.
+	 */
+	public function test_user_like_lookup_reflects_toggles_within_a_request(): void {
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+		$rest = new \QuickPostr_Rest();
+
+		// Prime via the_posts, as a Query Loop would.
+		$rest->prime_user_likes( array( get_post( $this->post_id ) ) );
+		$this->assertFalse( $rest->get_user_like_comment_id( $this->post_id, $user_id ) );
+
+		$this->like();
+		$this->assertNotFalse( $rest->get_user_like_comment_id( $this->post_id, $user_id ) );
+
+		$this->like();
+		$this->assertFalse( $rest->get_user_like_comment_id( $this->post_id, $user_id ) );
+	}
 }

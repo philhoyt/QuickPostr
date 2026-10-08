@@ -47,13 +47,13 @@ A **QuickPostr Slider** block style is also registered for `core/gallery`, turni
 
 All settings are at **Settings → QuickPostr**.
 
-* **Allowed Roles** -- which roles can see and use the Composer block. Default: administrator, editor, author.
+* **Show Composer To** -- which roles see the Composer block on the front end. Default: administrator, editor, author. This controls visibility only; who may publish is decided by WordPress capabilities, as it is in the block editor.
 * **Default Post Status** -- publish or draft. Set to draft to queue posts for review.
 * **Default Category** -- applied to every new post.
 * **Hide Admin Bar** -- hides the WordPress admin bar for non-administrator roles.
 * **Hide Admin Bar (Administrators)** -- separate toggle for the administrator role.
 * **Front-End Post Management** -- enables the Edit and Delete actions in the Post Actions block.
-* **Strip Photo Metadata** -- strips EXIF data (GPS, camera info) from JPEG uploads. Applies EXIF orientation to pixel data before stripping so images display correctly. Silently skipped if Imagick is unavailable.
+* **Strip Photo Metadata** -- strips EXIF/XMP data (GPS, camera info) from JPEG, PNG and WebP uploads. Applies EXIF orientation to pixel data before stripping so images display correctly. Silently skipped if Imagick is unavailable.
 
 Settings are stored in a single `wp_options` row under `quickpostr_settings`.
 
@@ -89,7 +89,16 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 
 = Does EXIF stripping work for all image types? =
 
-Only JPEG. PNG and WebP uploads are not processed.
+JPEG, PNG and WebP, when the server has the Imagick extension. Other formats (HEIC, GIF, AVIF) and every format on a GD-only server keep their metadata.
+
+= What personal data does QuickPostr handle? =
+
+* **Likes** are stored as comments: the liker's user account and email when logged in, or the name and optional email they typed plus a one-way hash of their IP address when logged out. Likes appear in the WordPress personal-data export and are deleted by an erasure request (Tools → Export/Erase Personal Data). The like button also remembers liked posts in the visitor's browser (`localStorage`).
+* **Location** (with the GeoTagr companion plugin) sends the author's coordinates or typed place name to the configured geocoding provider (OpenStreetMap Nominatim, Google or Mapbox), which sees their IP address. The resulting place and coordinates are stored on the post and are public.
+* **Shared photos** arriving through the device share sheet are uploaded before the author publishes. Unpublished ones are deleted after 24 hours.
+* **Photo metadata** (including GPS) is stripped on upload when the setting is on and Imagick is available.
+
+QuickPostr adds suggested text covering all of this under Settings → Privacy → Policy Guide. Uninstalling removes all like records, pending shared uploads, the plugin's post meta, options and transients.
 
 == Changelog ==
 

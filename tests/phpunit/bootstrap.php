@@ -4,8 +4,8 @@
  *
  * These are fast, isolated unit tests that mock WordPress functions with
  * Brain Monkey — no WordPress install or database required. Integration tests
- * that need a real WP runtime (WP_UnitTestCase) are intentionally out of scope
- * here because the WP core test library is not yet PHPUnit 13 compatible.
+ * that need a real WP runtime (WP_UnitTestCase) live in tests/phpunit/integration
+ * and use integration-bootstrap.php instead.
  *
  * @package QuickPostr
  */
@@ -21,3 +21,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once dirname( __DIR__, 2 ) . '/includes/class-quickpostr.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-settings.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-rest.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-manifest.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-privacy.php';

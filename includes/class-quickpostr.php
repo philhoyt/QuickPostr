@@ -17,25 +17,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 class QuickPostr {
 
 	/**
+	 * Option recording the plugin version whose one-time setup last ran.
+	 * Autoloaded: it is a few bytes read on every request to decide whether
+	 * maybe_upgrade() has work to do.
+	 */
+	const VERSION_OPTION = 'quickpostr_version';
+
+	/**
 	 * Initialise all subsystems.
 	 */
 	public function init(): void {
 		( new QuickPostr_Settings() )->init();
 		( new QuickPostr_Rest() )->init();
 		( new QuickPostr_Manifest() )->init();
+		( new QuickPostr_Privacy() )->init();
 
 		add_action( 'init', array( $this, 'register_taxonomy' ) );
 		add_action( 'init', array( $this, 'register_post_meta' ) );
-		add_action( 'init', array( $this, 'seed_terms' ) );
 		add_action( 'init', array( $this, 'register_block' ) );
 		add_action( 'init', array( $this, 'register_block_patterns' ) );
+		// After register_taxonomy (priority 10) so seeding can see the taxonomy.
+		add_action( 'init', array( $this, 'maybe_upgrade' ), 20 );
 		add_filter( 'block_categories_all', array( $this, 'register_block_category' ), 10, 1 );
 		add_filter( 'render_block_core/gallery', array( $this, 'maybe_enqueue_slider_script' ), 10, 2 );
 		add_filter( 'get_comments_number', array( $this, 'exclude_like_comments_from_count' ), 10, 2 );
 		add_action( 'rest_after_insert_post', array( $this, 'assign_source_terms' ), 10, 2 );
 		add_filter( 'the_title', array( $this, 'suppress_title' ), 10, 2 );
 		add_filter( 'show_admin_bar', array( $this, 'maybe_suppress_admin_bar' ), 10, 1 );
-		add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
 		add_filter( 'wp_handle_upload', array( $this, 'maybe_strip_exif' ), 10, 1 );
 		add_filter( 'wp_update_attachment_metadata', array( $this, 'fix_rotated_video_dimensions' ), 10, 2 );
 		add_filter( 'render_block_core/video', array( $this, 'set_video_aspect_ratio_auto' ), 10, 1 );
@@ -230,11 +238,16 @@ class QuickPostr {
 			'post',
 			'_quickpostr_post',
 			array(
-				'type'          => 'string',
-				'single'        => true,
-				'default'       => '',
-				'show_in_rest'  => true,
-				'auth_callback' => function () {
+				'type'              => 'string',
+				'single'            => true,
+				'default'           => '',
+				'show_in_rest'      => true,
+				// The key is a flag: anything truthy is stored as the canonical
+				// '1' that get_draft()'s meta_query matches on.
+				'sanitize_callback' => static function ( $value ): string {
+					return '' === (string) $value || '0' === (string) $value ? '' : '1';
+				},
+				'auth_callback'     => function () {
 					return current_user_can( 'edit_posts' );
 				},
 			)
@@ -242,28 +255,23 @@ class QuickPostr {
 	}
 
 	/**
-	 * Suggest privacy-policy text describing the data likes collect.
+	 * Run one-time setup whenever the stored version differs from the code.
 	 *
-	 * Likes are the only place the plugin stores anything about a visitor: a
-	 * display name, an optional email address, and a salted hash of the IP used
-	 * to stop the same person liking a post repeatedly. The raw address is not
-	 * kept.
-	 *
-	 * @return void
+	 * Activation hooks do not fire on plugin updates — Plugin_Upgrader
+	 * reactivates silently — so anything that used to live only in
+	 * quickpostr_activate() never ran on a site updated in place. This covers
+	 * both paths: activation clears the option, and every version bump changes
+	 * it. One autoloaded option read per request is the whole cost.
 	 */
-	public function add_privacy_policy_content(): void {
-		if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
+	public function maybe_upgrade(): void {
+		if ( get_option( self::VERSION_OPTION ) === QUICKPOSTR_VERSION ) {
 			return;
 		}
 
-		$content = '<p>' . __( 'When you like a post, QuickPostr records that like so the count stays accurate and you are not counted twice.', 'quickpostr' ) . '</p>'
-			. '<p>' . __( 'If you are logged in, the like is stored against your user account. If you are not logged in, QuickPostr stores the name you enter, the email address you enter if you choose to provide one, and a one-way hash of your IP address. The hash is used only to recognise a repeat like on the same post — your IP address itself is not stored.', 'quickpostr' ) . '</p>'
-			. '<p>' . __( 'Likes are removed if the post they belong to is deleted, and all like records are removed if the plugin is uninstalled.', 'quickpostr' ) . '</p>';
+		$this->seed_terms();
+		( new QuickPostr_Manifest() )->schedule_cleanup();
 
-		wp_add_privacy_policy_content(
-			__( 'QuickPostr', 'quickpostr' ),
-			wp_kses_post( wpautop( $content, false ) )
-		);
+		update_option( self::VERSION_OPTION, QUICKPOSTR_VERSION, true );
 	}
 
 	/**
@@ -291,7 +299,9 @@ class QuickPostr {
 
 	/**
 	 * Ensure the required taxonomy terms exist.
-	 * Uses wp_insert_term which is a no-op if the term already exists.
+	 *
+	 * Runs from maybe_upgrade() — once per version, not once per request. The
+	 * taxonomy must already be registered when this is called.
 	 */
 	public function seed_terms(): void {
 		$terms = array( 'app', 'status', 'photo', 'link', 'video', 'gallery' );
@@ -455,12 +465,14 @@ class QuickPostr {
 	}
 
 	/**
-	 * Strip EXIF metadata from uploaded JPEG images when the setting is enabled.
+	 * Strip EXIF/XMP metadata from uploaded images when the setting is enabled.
 	 *
-	 * Calls autoOrient() before stripImage() so that the EXIF orientation is
-	 * baked into the pixel data before the tag is removed. Without this step,
-	 * stripping the orientation tag leaves the pixels in the camera's raw
-	 * orientation, causing images to appear rotated on display.
+	 * Covers JPEG, PNG and WebP — all three can carry GPS coordinates, and the
+	 * PWA share target accepts any image/* a phone offers. Calls autoOrient()
+	 * before stripImage() so that the EXIF orientation is baked into the pixel
+	 * data before the tag is removed. Without this step, stripping the
+	 * orientation tag leaves the pixels in the camera's raw orientation,
+	 * causing images to appear rotated on display.
 	 *
 	 * Fails silently so uploads are never blocked if stripping is unavailable.
 	 *
@@ -476,7 +488,7 @@ class QuickPostr {
 		$file = $upload['file'] ?? '';
 		$type = $upload['type'] ?? '';
 
-		if ( ! $file || 'image/jpeg' !== $type ) {
+		if ( ! $file || ! in_array( $type, array( 'image/jpeg', 'image/png', 'image/webp' ), true ) ) {
 			return $upload;
 		}
 
