@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.18.0
+Stable tag: 0.19.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,26 @@ JPEG, PNG and WebP, when the server has the Imagick extension. Other formats (HE
 QuickPostr adds suggested text covering all of this under Settings → Privacy → Policy Guide. Uninstalling removes all like records, pending shared uploads, the plugin's post meta, options and transients.
 
 == Changelog ==
+
+= 0.19.0 =
+* Add: Alt text field for each photo in the composer; the caption is used when it is left empty.
+* Add: The post title now lives in a chip above the editor, next to the date chip.
+* Add: Likes appear in the personal-data export and are deleted by an erasure request (Tools > Export/Erase Personal Data); the suggested privacy-policy text covers geocoding, shared uploads and browser storage, and the readme has a privacy FAQ.
+* Add: Likes from logged-out visitors are rate limited per IP address and the submitted name is capped at 100 characters.
+* Change: The composer, like button, post actions menu, share popover and gallery slider work with a keyboard and a screen reader: visible focus rings, announced status, correct toggle and dialog semantics, focus kept in place when items appear or disappear, reduced-motion support.
+* Change: Location search runs when you press Enter or the Search button instead of on every keystroke, as the OpenStreetMap Nominatim usage policy requires.
+* Change: Category and tag pickers are labelled and keyboard-navigable, categories come first, and the Post button sits on the same row.
+* Change: The "Allowed Roles" setting is now "Show Composer To". It controls who sees the composer; publishing is governed by WordPress capabilities.
+* Change: Like counts are cached per post, so a feed no longer runs a comment query for every post.
+* Change: Photo metadata stripping covers PNG and WebP as well as JPEG.
+* Change: The PWA manifest link is only output for users who can post, and the manifest is cacheable.
+* Change: Uninstalling also removes the plugin's post meta, unused shared uploads, transients and version option.
+* Fix: The service worker and manifest no longer redirect to trailing-slash URLs, so the share target installs on sites with pretty permalinks.
+* Fix: The daily cleanup of unused shared uploads schedules itself on sites updated in place; it previously ran only after reactivating the plugin.
+* Fix: Bold and Italic toolbar buttons report their state correctly, the draft banner and like dialog meet contrast requirements, and the Delete item hides while its confirmation is shown.
+* Fix: Files that are not images are refused by the share target and removed.
+* Security: The like endpoint checks public viewability, so posts of non-public types can be neither enumerated nor liked.
+* Security: The share target refuses requests from other sites, checks the Origin and Referer headers, and only the user who shared an upload can attach it to a post.
 
 = 0.18.0 =
 * Add: A "Composer with post feed" block pattern. Insert it on any page to get the composer above a feed of your posts, each with the author avatar, date, actions menu, featured image, title, content, and like and share buttons. Find it in the inserter under the QuickPostr category. When GeoTagr is active the pattern also shows the post's location.
