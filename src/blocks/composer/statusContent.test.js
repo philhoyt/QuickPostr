@@ -57,6 +57,25 @@ describe( 'buildStatusContent', () => {
 		).toBe( `${ block( 'one' ) }\n\n${ block( 'two' ) }` );
 	} );
 
+	it( 'balances an inline format that spans a blank line', () => {
+		// Bold switched on, Enter twice, more text: the editor DOM holds one
+		// <b> across the break. Each paragraph must close and reopen it.
+		expect( buildStatusContent( 'a <b>one<br><br>two</b> b' ) ).toBe(
+			`${ block( 'a <b>one</b>' ) }\n\n${ block( '<b>two</b> b' ) }`
+		);
+		expect( buildStatusContent( '<b>x <i>y<br><br>z</i></b>' ) ).toBe(
+			`${ block( '<b>x <i>y</i></b>' ) }\n\n${ block(
+				'<b><i>z</i></b>'
+			) }`
+		);
+	} );
+
+	it( 'keeps link attributes', () => {
+		const html =
+			'see <a href="https://x/?a=1&amp;b=2" target="_blank">x</a>';
+		expect( buildStatusContent( html ) ).toBe( block( html ) );
+	} );
+
 	it( 'removes HTML comments so nothing typed can inject a delimiter', () => {
 		expect(
 			buildStatusContent( 'one<!-- /wp:paragraph --><!-- wp:html -->two' )
