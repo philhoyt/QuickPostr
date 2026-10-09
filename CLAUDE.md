@@ -88,6 +88,13 @@ Manual smoke tests (load the plugin in a browser):
   WordPress fork, `parenSpacing` stops being honoured, and every `( foo )` in the
   codebase becomes a lint error (728 of them, when this happened).
 
+- `.npmrc` sets `legacy-peer-deps=true`. `@wordpress/scripts` 36 declares
+  optional peers (vitest, vite) whose peer ranges npm's strict resolver cannot
+  satisfy together; the project uses neither. Do not remove it, or `npm ci`
+  fails with ERESOLVE.
+- JS tests stay on Jest via `wp-scripts test-unit-jest` and `jest.config.cjs`
+  (`@wordpress/jest-preset-default`). `test-unit-js` now means Vitest.
+- `.nvmrc` must satisfy `@wordpress/scripts`' `engines.node`; CI reads it.
 - Build toolchain: `@wordpress/scripts` + custom `webpack.config.js` (async entry, Blockendar pattern)
 - Two bundles: `index.js` (editor) and `composer-view.js` (front end)
 - React is externalized — use `@wordpress/element` (`createRoot`), not `react-dom/client`

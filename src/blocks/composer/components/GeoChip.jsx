@@ -120,14 +120,30 @@ export default function GeoChip( {
 		}
 	}
 
+	// Typing only updates the field. Geocoding runs on Enter or the Search
+	// button: Nominatim's usage policy forbids search-as-you-type, and an
+	// explicit search also stops every keystroke leaking to a third party.
 	function handleSearchChange( event ) {
 		const value = event.target.value;
 		setQuery( value );
+		if ( ! value.trim() ) {
+			clearResults();
+		}
+	}
+
+	function runSearch() {
 		const bias =
 			geoData?.lat !== null && geoData?.lat !== undefined
 				? { lat: geoData.lat, lng: geoData.lng }
 				: null;
-		search( value, bias );
+		search( query, bias );
+	}
+
+	function handleSearchKeyDown( event ) {
+		if ( event.key === 'Enter' ) {
+			event.preventDefault();
+			runSearch();
+		}
 	}
 
 	function handleUseTypedName() {
@@ -145,13 +161,6 @@ export default function GeoChip( {
 		clearResults();
 		onDismiss();
 		toggleRef.current?.focus();
-	}
-
-	function handleResultKeyDown( event, result ) {
-		if ( event.key === 'Enter' || event.key === ' ' ) {
-			event.preventDefault();
-			commit( result );
-		}
 	}
 
 	return (
@@ -229,7 +238,7 @@ export default function GeoChip( {
 					<div className="qp-geo-search">
 						<input
 							ref={ searchRef }
-							type="text"
+							type="search"
 							className="qp-geo-search__input"
 							placeholder={ __(
 								'Search for a place…',
@@ -237,8 +246,18 @@ export default function GeoChip( {
 							) }
 							value={ query }
 							onChange={ handleSearchChange }
+							onKeyDown={ handleSearchKeyDown }
 							aria-label={ __( 'Search location', 'quickpostr' ) }
+							enterKeyHint="search"
 						/>
+						<button
+							type="button"
+							className="qp-geo-search__button"
+							onClick={ runSearch }
+							disabled={ ! query.trim() || loading }
+						>
+							{ __( 'Search', 'quickpostr' ) }
+						</button>
 					</div>
 
 					{ loading && (
@@ -262,7 +281,6 @@ export default function GeoChip( {
 					{ results.length > 0 && (
 						<ul
 							className="qp-geo-search__results"
-							role="listbox"
 							aria-label={ __(
 								'Location suggestions',
 								'quickpostr'
@@ -283,15 +301,14 @@ export default function GeoChip( {
 									<li
 										key={ index }
 										className="qp-geo-search__result"
-										role="option"
-										aria-selected="false"
-										tabIndex={ 0 }
-										onClick={ () => commit( result ) }
-										onKeyDown={ ( event ) =>
-											handleResultKeyDown( event, result )
-										}
 									>
-										{ optionLabel }
+										<button
+											type="button"
+											className="qp-geo-search__result-btn"
+											onClick={ () => commit( result ) }
+										>
+											{ optionLabel }
+										</button>
 									</li>
 								);
 							} ) }

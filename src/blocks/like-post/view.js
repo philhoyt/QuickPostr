@@ -61,7 +61,7 @@ import { __ } from '@wordpress/i18n';
 			'</h2>' +
 			loginSection +
 			'<form class="qp-like-modal__form" novalidate>' +
-			'<div class="qp-like-modal__error" hidden></div>' +
+			'<div class="qp-like-modal__error" role="alert" hidden></div>' +
 			'<label class="qp-like-modal__label" for="qp-like-name">' +
 			__( 'Name', 'quickpostr' ) +
 			'</label>' +
@@ -185,10 +185,28 @@ import { __ } from '@wordpress/i18n';
 						'quickpostr'
 					);
 				errorEl.hidden = false;
+				nameInput.focus();
 			} )
 			.finally( function () {
 				submitBtn.disabled = false;
 			} );
+	}
+
+	/**
+	 * Reflect liked state on the button. The accessible name stays constant
+	 * ("Like this post"); aria-pressed carries the state. Once an anonymous
+	 * visitor has liked, the button no longer opens the dialog, so drop
+	 * aria-haspopup.
+	 *
+	 * @param {HTMLElement} button The like button.
+	 * @param {boolean}     liked  Whether the post is liked.
+	 */
+	function setLikedState( button, liked ) {
+		button.classList.toggle( 'is-liked', liked );
+		button.setAttribute( 'aria-pressed', liked ? 'true' : 'false' );
+		if ( liked ) {
+			button.removeAttribute( 'aria-haspopup' );
+		}
 	}
 
 	function applyLikedToAllBlocks( postId, liked, count ) {
@@ -198,17 +216,7 @@ import { __ } from '@wordpress/i18n';
 				const button = wrapper.querySelector( '.qp-like-post__button' );
 				const countEl = wrapper.querySelector( '.qp-like-post__count' );
 				if ( button ) {
-					button.classList.toggle( 'is-liked', liked );
-					button.setAttribute(
-						'aria-pressed',
-						liked ? 'true' : 'false'
-					);
-					button.setAttribute(
-						'aria-label',
-						liked
-							? __( 'Unlike this post', 'quickpostr' )
-							: __( 'Like this post', 'quickpostr' )
-					);
+					setLikedState( button, liked );
 				}
 				if ( countEl ) {
 					countEl.textContent = count;
@@ -236,12 +244,7 @@ import { __ } from '@wordpress/i18n';
 			try {
 				if ( localStorage.getItem( 'qp_liked_' + postId ) === 'true' ) {
 					liked = true;
-					button.classList.add( 'is-liked' );
-					button.setAttribute( 'aria-pressed', 'true' );
-					button.setAttribute(
-						'aria-label',
-						__( 'Unlike this post', 'quickpostr' )
-					);
+					setLikedState( button, true );
 				}
 			} catch ( e ) {
 				// localStorage unavailable.
@@ -268,12 +271,7 @@ import { __ } from '@wordpress/i18n';
 
 			liked = ! liked;
 			count = liked ? count + 1 : count - 1;
-			button.classList.toggle( 'is-liked', liked );
-			button.setAttribute( 'aria-pressed', liked ? 'true' : 'false' );
-			button.setAttribute(
-				'aria-label',
-				liked ? 'Unlike this post' : 'Like this post'
-			);
+			setLikedState( button, liked );
 			countEl.textContent = count;
 
 			fetch( config.restUrl + 'quickpostr/v1/posts/' + postId + '/like', {
@@ -292,33 +290,13 @@ import { __ } from '@wordpress/i18n';
 				.then( function ( data ) {
 					liked = data.liked;
 					count = data.count;
-					button.classList.toggle( 'is-liked', liked );
-					button.setAttribute(
-						'aria-pressed',
-						liked ? 'true' : 'false'
-					);
-					button.setAttribute(
-						'aria-label',
-						liked
-							? __( 'Unlike this post', 'quickpostr' )
-							: __( 'Like this post', 'quickpostr' )
-					);
+					setLikedState( button, liked );
 					countEl.textContent = count;
 				} )
 				.catch( function () {
 					liked = prevLiked;
 					count = prevCount;
-					button.classList.toggle( 'is-liked', prevLiked );
-					button.setAttribute(
-						'aria-pressed',
-						prevLiked ? 'true' : 'false'
-					);
-					button.setAttribute(
-						'aria-label',
-						prevLiked
-							? __( 'Unlike this post', 'quickpostr' )
-							: __( 'Like this post', 'quickpostr' )
-					);
+					setLikedState( button, prevLiked );
 					countEl.textContent = prevCount;
 				} )
 				.finally( function () {

@@ -13,26 +13,45 @@ const DRAFT_SAVE_DELAY = 800;
 
 /**
  * Minimal rich-text toolbar button.
- * @param {Object}   root0
- * @param {string}   root0.label
- * @param {Function} root0.onMouseDown
- * @param {*}        root0.children
+ *
+ * The command runs from onClick so it fires for keyboard activation too;
+ * onMouseDown only prevents the contenteditable from blurring (and losing its
+ * selection) before the click lands.
+ * @param {Object}         root0
+ * @param {string}         root0.label
+ * @param {Function}       root0.onClick
+ * @param {boolean|undefined} root0.pressed
+ * @param {*}              root0.children
  */
-function ToolbarButton( { label, onMouseDown, children } ) {
+function ToolbarButton( { label, onClick, pressed, children } ) {
 	return (
 		<button
 			type="button"
 			className="qp-rich-editor__toolbar-btn"
 			aria-label={ label }
-			onMouseDown={ ( e ) => {
-				// Prevent blur on the contenteditable before command runs.
-				e.preventDefault();
-				onMouseDown();
-			} }
+			aria-pressed={ pressed }
+			onMouseDown={ ( e ) => e.preventDefault() }
+			onClick={ onClick }
 		>
 			{ children }
 		</button>
 	);
+}
+
+/**
+ * Read the current bold/italic state of the selection. queryCommandState can
+ * throw in some browsers when there is no selection, so treat that as "off".
+ * @return {{bold: boolean, italic: boolean}} Current format state.
+ */
+function readFormatState() {
+	try {
+		return {
+			bold: document.queryCommandState( 'bold' ),
+			italic: document.queryCommandState( 'italic' ),
+		};
+	} catch ( _ ) {
+		return { bold: false, italic: false };
+	}
 }
 
 /**
@@ -53,6 +72,30 @@ function ToolbarButton( { label, onMouseDown, children } ) {
  */
 function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 	const [ isEmpty, setIsEmpty ] = useState( true );
+	// Drives aria-pressed on the Bold / Italic buttons.
+	const [ formats, setFormats ] = useState( { bold: false, italic: false } );
+
+	// Track the selection so the toolbar reflects the formatting at the caret.
+	// Only reads when the selection is inside this editor.
+	useEffect( () => {
+		function handleSelectionChange() {
+			const el = editorRef.current;
+			const selection = document.getSelection();
+			if ( ! el || ! selection?.anchorNode ) {
+				return;
+			}
+			if ( ! el.contains( selection.anchorNode ) ) {
+				return;
+			}
+			setFormats( readFormatState() );
+		}
+		document.addEventListener( 'selectionchange', handleSelectionChange );
+		return () =>
+			document.removeEventListener(
+				'selectionchange',
+				handleSelectionChange
+			);
+	}, [ editorRef ] );
 
 	function handleInput() {
 		const el = editorRef.current;
@@ -61,6 +104,7 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 		}
 		const empty = el.innerText.trim() === '';
 		setIsEmpty( empty );
+		setFormats( readFormatState() );
 		// Read normalized HTML via @wordpress/rich-text.
 		const rawHtml = empty ? '' : el.innerHTML;
 		const value = create( { html: rawHtml } );
@@ -100,17 +144,19 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 			>
 				<ToolbarButton
 					label={ __( 'Bold', 'quickpostr' ) }
-					onMouseDown={ () => execFormat( 'bold' ) }
+					pressed={ formats.bold }
+					onClick={ () => execFormat( 'bold' ) }
 				>
 					<strong>B</strong>
 				</ToolbarButton>
 				<ToolbarButton
 					label={ __( 'Italic', 'quickpostr' ) }
-					onMouseDown={ () => execFormat( 'italic' ) }
+					pressed={ formats.italic }
+					onClick={ () => execFormat( 'italic' ) }
 				>
 					<em>I</em>
 				</ToolbarButton>
-				<ToolbarButton label={ __( 'Link', 'quickpostr' ) } onMouseDown={ handleLink }>
+				<ToolbarButton label={ __( 'Link', 'quickpostr' ) } onClick={ handleLink }>
 					&#128279;
 				</ToolbarButton>
 			</div>
@@ -401,10 +447,7 @@ export default function TextComposer( {
 				/>
 				{ /* Grouped so the count never wraps away from the button. */ }
 				<div className="qp-composer__actions-end">
-					<span
-						className="qp-text-composer__char-count"
-						aria-live="polite"
-					>
+					<span className="qp-text-composer__char-count">
 						{ editorRef.current?.innerText?.length ?? 0 }
 					</span>
 					<button
@@ -420,11 +463,7 @@ export default function TextComposer( {
 			</footer>
 
 			{ flash && (
-				<div
-					className="qp-composer-flash"
-					role="status"
-					aria-live="assertive"
-				>
+				<div className="qp-composer-flash" role="status">
 					{ __( 'Posted!', 'quickpostr' ) }
 				</div>
 			) }

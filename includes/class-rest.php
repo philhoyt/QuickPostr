@@ -28,11 +28,34 @@ class QuickPostr_Rest {
 	const LIKE_IP_META = '_quickpostr_like_ip';
 
 	/**
+	 * Post meta key caching the approved like count.
+	 *
+	 * Likes are comments, and counting them per post on every render was an
+	 * N+1 against wp_comments. The count is written on every like toggle and on
+	 * comment deletion/status change, and backfilled lazily for posts that
+	 * predate the key.
+	 */
+	const LIKE_COUNT_META = '_quickpostr_like_count';
+
+	/**
+	 * Per-request cache of the current user's like comment IDs, keyed by post
+	 * ID. Primed in bulk from the_posts so a feed of N posts costs one comment
+	 * query rather than N. Static so the instance created in render.php shares
+	 * it with the one bootstrapped on plugins_loaded.
+	 *
+	 * @var array<int, array<int, int|false>> user ID => [ post ID => comment ID|false ]
+	 */
+	private static array $user_like_cache = array();
+
+	/**
 	 * Register hooks.
 	 */
 	public function init(): void {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this, 'register_post_fields' ) );
+		add_filter( 'the_posts', array( $this, 'prime_user_likes' ), 10, 1 );
+		add_action( 'deleted_comment', array( $this, 'refresh_like_count_for_comment' ), 10, 2 );
+		add_action( 'transition_comment_status', array( $this, 'refresh_like_count_on_status_change' ), 10, 3 );
 	}
 
 	/**
@@ -394,8 +417,12 @@ class QuickPostr_Rest {
 	/**
 	 * Register the like toggle route.
 	 *
-	 * Public endpoint — auth is handled inside toggle_like so both logged-in
-	 * users (toggle) and anonymous visitors (name + email, one-way) can like.
+	 * Public endpoint — `permission_callback` is `__return_true` on purpose:
+	 * anonymous visitors are allowed to like, so there is no capability to
+	 * check. Auth is handled inside toggle_like so both logged-in users (toggle)
+	 * and anonymous visitors (name + email, one-way) can like. The anonymous
+	 * path is bounded by per-post dedupe (email and IP hash), a per-IP rate
+	 * limit, and length caps on the submitted fields.
 	 */
 	public function register_like_routes(): void {
 		register_rest_route(
@@ -412,13 +439,20 @@ class QuickPostr_Rest {
 						},
 						'sanitize_callback' => 'absint',
 					),
+					// A custom sanitize_callback replaces core's schema handling
+					// for the arg, so maxLength is only enforced when the schema
+					// validator is named explicitly.
 					'name'  => array(
 						'type'              => 'string',
+						'maxLength'         => 100,
+						'validate_callback' => 'rest_validate_request_arg',
 						'sanitize_callback' => 'sanitize_text_field',
 						'default'           => '',
 					),
 					'email' => array(
 						'type'              => 'string',
+						'maxLength'         => 254,
+						'validate_callback' => 'rest_validate_request_arg',
 						'sanitize_callback' => 'sanitize_email',
 						'default'           => '',
 					),
@@ -441,7 +475,10 @@ class QuickPostr_Rest {
 		$post_id = absint( $request->get_param( 'id' ) );
 		$post    = get_post( $post_id );
 
-		if ( ! $post || 'publish' !== $post->post_status ) {
+		// Judged on public visibility, not post_status alone: a `publish`
+		// object of a non-public post type must look exactly like a missing
+		// one, otherwise this unauthenticated route enumerates them.
+		if ( ! $post || ! is_post_publicly_viewable( $post ) ) {
 			return new \WP_Error(
 				'rest_post_not_found',
 				esc_html__( 'Post not found.', 'quickpostr' ),
@@ -458,19 +495,24 @@ class QuickPostr_Rest {
 				$liked = false;
 			} else {
 				$quickpostr_user = wp_get_current_user();
-				$display_name    = $quickpostr_user->display_name ? $quickpostr_user->display_name : $quickpostr_user->user_login;
 
+				// comment_author_email is set so core's personal-data exporter
+				// and eraser, which select comments by email, reach this row.
 				wp_insert_comment(
 					array(
-						'comment_post_ID'  => $post_id,
-						'user_id'          => $user_id,
-						'comment_type'     => 'quickpostr_like',
-						'comment_content'  => sanitize_text_field( $display_name ) . esc_html__( ' liked this post', 'quickpostr' ),
-						'comment_approved' => 1,
+						'comment_post_ID'      => $post_id,
+						'user_id'              => $user_id,
+						'comment_author'       => sanitize_text_field( $quickpostr_user->display_name ? $quickpostr_user->display_name : $quickpostr_user->user_login ),
+						'comment_author_email' => $quickpostr_user->user_email,
+						'comment_type'         => 'quickpostr_like',
+						'comment_content'      => $this->like_comment_content(),
+						'comment_approved'     => 1,
 					)
 				);
 				$liked = true;
 			}
+
+			self::$user_like_cache[ $user_id ][ $post_id ] = $liked ? $this->get_user_like_comment_id( $post_id, $user_id, true ) : false;
 		} else {
 			$name  = (string) $request->get_param( 'name' );
 			$email = (string) $request->get_param( 'email' );
@@ -481,6 +523,25 @@ class QuickPostr_Rest {
 					'rest_missing_name',
 					esc_html__( 'Name is required to like this post.', 'quickpostr' ),
 					array( 'status' => 400 )
+				);
+			}
+
+			// Without an address there is nothing to dedupe or rate limit on
+			// beyond an email the client chooses, so an anonymous like cannot
+			// be bounded. Effectively unreachable under a real web server.
+			if ( '' === $ip ) {
+				return new \WP_Error(
+					'rest_like_unavailable',
+					esc_html__( 'Likes are unavailable right now.', 'quickpostr' ),
+					array( 'status' => 403 )
+				);
+			}
+
+			if ( $this->like_rate_limit_exceeded( $ip ) ) {
+				return new \WP_Error(
+					'rest_like_rate_limited',
+					esc_html__( 'Too many likes. Please try again in a minute.', 'quickpostr' ),
+					array( 'status' => 429 )
 				);
 			}
 
@@ -497,19 +558,21 @@ class QuickPostr_Rest {
 
 			// The raw IP is deliberately not stored. Dedupe only needs equality,
 			// so a salted hash serves the same purpose without retaining an
-			// identifier that would otherwise need exporting and erasing.
+			// identifier that would otherwise need exporting and erasing. The
+			// visitor's name lives only in comment_author, which core's eraser
+			// anonymises — it is not repeated in comment_content.
 			$comment_id = wp_insert_comment(
 				array(
 					'comment_post_ID'      => $post_id,
 					'comment_author'       => $name,
 					'comment_author_email' => $email,
 					'comment_type'         => 'quickpostr_like',
-					'comment_content'      => $name . esc_html__( ' liked this post', 'quickpostr' ),
+					'comment_content'      => $this->like_comment_content(),
 					'comment_approved'     => 1,
 				)
 			);
 
-			if ( $comment_id && '' !== $ip ) {
+			if ( $comment_id ) {
 				update_comment_meta( (int) $comment_id, self::LIKE_IP_META, $this->hash_ip( $ip ) );
 			}
 
@@ -519,19 +582,83 @@ class QuickPostr_Rest {
 		return rest_ensure_response(
 			array(
 				'liked' => $liked,
-				'count' => $this->get_like_count( $post_id ),
+				'count' => $this->refresh_like_count( $post_id ),
 			)
 		);
 	}
 
 	/**
-	 * Return the number of quickpostr_like comments on a post.
+	 * The stored body of a like comment.
+	 *
+	 * Deliberately constant: the liker's name belongs in comment_author only,
+	 * where core's privacy tools know to anonymise it.
+	 *
+	 * @return string
+	 */
+	private function like_comment_content(): string {
+		return __( 'Liked this post.', 'quickpostr' );
+	}
+
+	/**
+	 * Whether this IP has exhausted the anonymous like allowance.
+	 *
+	 * Per-post dedupe alone still lets one client insert a row on every
+	 * published post as fast as it can send requests. This caps the rate; the
+	 * limit is generous enough that a person liking their way down a feed never
+	 * meets it.
+	 *
+	 * @param string $ip Originating IP address.
+	 * @return bool True when the window is exhausted.
+	 */
+	private function like_rate_limit_exceeded( string $ip ): bool {
+		/**
+		 * Filter how many anonymous likes one IP address may submit per minute.
+		 *
+		 * @param int $limit Likes per minute. 0 disables the limit.
+		 */
+		$limit = (int) apply_filters( 'quickpostr_like_rate_limit', 20 );
+		if ( $limit <= 0 ) {
+			return false;
+		}
+
+		$key   = 'quickpostr_like_rate_' . md5( $this->hash_ip( $ip ) );
+		$count = (int) get_transient( $key );
+
+		if ( $count >= $limit ) {
+			return true;
+		}
+
+		set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
+
+		return false;
+	}
+
+	/**
+	 * Return the number of approved quickpostr_like comments on a post.
+	 *
+	 * Reads the cached count from post meta, which the Query Loop's meta cache
+	 * primes for the whole page in one query. Posts liked before the cache
+	 * existed have no key yet and are counted and backfilled on first read.
 	 *
 	 * @param int $post_id The post ID.
 	 * @return int
 	 */
 	public function get_like_count( int $post_id ): int {
-		return (int) get_comments(
+		if ( metadata_exists( 'post', $post_id, self::LIKE_COUNT_META ) ) {
+			return (int) get_post_meta( $post_id, self::LIKE_COUNT_META, true );
+		}
+
+		return $this->refresh_like_count( $post_id );
+	}
+
+	/**
+	 * Recount a post's approved likes from wp_comments and store the result.
+	 *
+	 * @param int $post_id The post ID.
+	 * @return int The fresh count.
+	 */
+	public function refresh_like_count( int $post_id ): int {
+		$count = (int) get_comments(
 			array(
 				'post_id' => $post_id,
 				'type'    => 'quickpostr_like',
@@ -539,16 +666,123 @@ class QuickPostr_Rest {
 				'count'   => true,
 			)
 		);
+
+		update_post_meta( $post_id, self::LIKE_COUNT_META, $count );
+
+		return $count;
 	}
 
 	/**
-	 * Return the comment ID of the current user's like-comment on a post, or false.
+	 * Keep the cached count honest when a like comment is deleted outside the
+	 * toggle route (admin comments screen, post deletion cascade, uninstall).
 	 *
-	 * @param int $post_id The post ID.
-	 * @param int $user_id The user ID.
+	 * @param int               $comment_id The deleted comment ID.
+	 * @param \WP_Comment|mixed $comment    The comment object, when WordPress supplies it.
+	 */
+	public function refresh_like_count_for_comment( int $comment_id, $comment = null ): void {
+		if ( ! $comment instanceof \WP_Comment ) {
+			$comment = get_comment( $comment_id );
+		}
+
+		if ( ! $comment instanceof \WP_Comment || 'quickpostr_like' !== $comment->comment_type ) {
+			return;
+		}
+
+		$post_id = (int) $comment->comment_post_ID;
+
+		// The post itself may be mid-deletion; nothing to cache then.
+		if ( ! get_post( $post_id ) ) {
+			return;
+		}
+
+		$this->refresh_like_count( $post_id );
+		self::$user_like_cache = array();
+	}
+
+	/**
+	 * Keep the cached count honest when a like is approved, unapproved or
+	 * trashed from the comments screen.
+	 *
+	 * @param int|string  $new_status New comment status.
+	 * @param int|string  $old_status Old comment status.
+	 * @param \WP_Comment $comment    The comment.
+	 */
+	public function refresh_like_count_on_status_change( $new_status, $old_status, \WP_Comment $comment ): void {
+		if ( 'quickpostr_like' !== $comment->comment_type ) {
+			return;
+		}
+
+		$this->refresh_like_count( (int) $comment->comment_post_ID );
+		self::$user_like_cache = array();
+	}
+
+	/**
+	 * Prime the current user's like lookups for every post in a query.
+	 *
+	 * Runs on the_posts for the main query and every Query Loop, so the
+	 * like-post block's "have I liked this?" check costs one comment query per
+	 * page instead of one per post. Only post IDs not already cached are
+	 * fetched.
+	 *
+	 * @param array $posts The query's posts (WP_Post objects or IDs).
+	 * @return array Unchanged.
+	 */
+	public function prime_user_likes( array $posts ): array {
+		if ( empty( $posts ) || ! is_user_logged_in() ) {
+			return $posts;
+		}
+
+		$user_id  = get_current_user_id();
+		$post_ids = array();
+
+		foreach ( $posts as $post ) {
+			$id = $post instanceof \WP_Post ? (int) $post->ID : (int) $post;
+			if ( $id > 0 && ! isset( self::$user_like_cache[ $user_id ][ $id ] ) ) {
+				$post_ids[] = $id;
+			}
+		}
+
+		if ( empty( $post_ids ) ) {
+			return $posts;
+		}
+
+		foreach ( $post_ids as $id ) {
+			self::$user_like_cache[ $user_id ][ $id ] = false;
+		}
+
+		$comments = get_comments(
+			array(
+				'post__in' => $post_ids,
+				'user_id'  => $user_id,
+				'type'     => 'quickpostr_like',
+				'status'   => 'approve',
+				'number'   => count( $post_ids ),
+			)
+		);
+
+		foreach ( $comments as $comment ) {
+			self::$user_like_cache[ $user_id ][ (int) $comment->comment_post_ID ] = (int) $comment->comment_ID;
+		}
+
+		return $posts;
+	}
+
+	/**
+	 * Return the comment ID of the user's like-comment on a post, or false.
+	 *
+	 * Served from the per-request cache when prime_user_likes() has seen the
+	 * post; otherwise a single bounded query, whose result is cached too.
+	 *
+	 * @param int  $post_id The post ID.
+	 * @param int  $user_id The user ID.
+	 * @param bool $fresh   Bypass the cache (after a write).
 	 * @return int|false
 	 */
-	public function get_user_like_comment_id( int $post_id, int $user_id ): int|false {
+	public function get_user_like_comment_id( int $post_id, int $user_id, bool $fresh = false ): int|false {
+		if ( ! $fresh && isset( self::$user_like_cache[ $user_id ][ $post_id ] ) ) {
+			return self::$user_like_cache[ $user_id ][ $post_id ];
+		}
+
 		$comments = get_comments(
 			array(
 				'post_id' => $post_id,
@@ -559,11 +793,11 @@ class QuickPostr_Rest {
 			)
 		);
 
-		if ( ! empty( $comments ) ) {
-			return (int) $comments[0]->comment_ID;
-		}
+		$comment_id = ! empty( $comments ) ? (int) $comments[0]->comment_ID : false;
 
-		return false;
+		self::$user_like_cache[ $user_id ][ $post_id ] = $comment_id;
+
+		return $comment_id;
 	}
 
 	/**
@@ -701,14 +935,20 @@ class QuickPostr_Rest {
 	public function get_draft(): \WP_REST_Response {
 		$query = new \WP_Query(
 			array(
-				'post_type'      => 'post',
-				'post_status'    => 'draft',
-				'author'         => get_current_user_id(),
-				'posts_per_page' => 1,
-				'orderby'        => 'modified',
-				'order'          => 'DESC',
+				'post_type'              => 'post',
+				'post_status'            => 'draft',
+				'author'                 => get_current_user_id(),
+				'posts_per_page'         => 1,
+				'orderby'                => 'modified',
+				'order'                  => 'DESC',
+				// Single-row lookup: no pagination total, no cache priming — the
+				// post is re-fetched through the core controller below anyway.
+				'no_found_rows'          => true,
+				'fields'                 => 'ids',
+				'update_post_term_cache' => false,
+				'update_post_meta_cache' => false,
 				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- _quickpostr_post is an indexed flag on QuickPostr posts only.
-				'meta_query'     => array(
+				'meta_query'             => array(
 					array(
 						'key'   => '_quickpostr_post',
 						'value' => '1',
@@ -721,7 +961,7 @@ class QuickPostr_Rest {
 			return rest_ensure_response( null );
 		}
 
-		$post_id       = $query->posts[0]->ID;
+		$post_id       = (int) $query->posts[0];
 		$inner_request = new \WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id );
 		$inner_request->set_query_params(
 			array(

@@ -27,6 +27,7 @@ require_once QUICKPOSTR_PATH . 'includes/class-quickpostr.php';
 require_once QUICKPOSTR_PATH . 'includes/class-settings.php';
 require_once QUICKPOSTR_PATH . 'includes/class-rest.php';
 require_once QUICKPOSTR_PATH . 'includes/class-manifest.php';
+require_once QUICKPOSTR_PATH . 'includes/class-privacy.php';
 
 // Plugin Update Checker — GitHub release-based updates.
 $quickpostr_puc = QUICKPOSTR_PATH . 'lib/plugin-update-checker/plugin-update-checker.php';
@@ -50,12 +51,16 @@ register_deactivation_hook( __FILE__, 'quickpostr_deactivate' );
  * run for a freshly activated plugin — so they are registered here explicitly
  * before flushing, otherwise the manifest/share/service-worker routes 404
  * until permalinks are next saved.
+ *
+ * Term seeding and the cleanup cron are not done here: activation does not
+ * fire on updates, so they live in QuickPostr::maybe_upgrade(), which runs on
+ * the next request because the version option is cleared below.
  */
 function quickpostr_activate(): void {
 	$quickpostr_manifest = new QuickPostr_Manifest();
 	$quickpostr_manifest->register_rewrite_rules();
-	$quickpostr_manifest->schedule_cleanup();
 	flush_rewrite_rules();
+	delete_option( QuickPostr::VERSION_OPTION );
 }
 
 /**

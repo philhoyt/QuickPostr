@@ -25,7 +25,7 @@
 		"defaultMode": {
 			"type": "string",
 			"default": "status",
-			"enum": [ "status", "photo", "video" ]
+			"enum": [ "status", "photo", "video", "link" ]
 		},
 		"placeholderText": {
 			"type": "string",

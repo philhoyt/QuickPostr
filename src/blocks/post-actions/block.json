@@ -1,22 +1,32 @@
 {
-    "$schema": "https://schemas.wp.org/trunk/block.json",
-    "apiVersion": 3,
-    "name": "quickpostr/post-actions",
-    "version": "0.18.0",
-    "icon": "ellipsis",
-    "title": "Post Actions",
-    "category": "quickpostr",
-    "description": "Kebab menu (⋮) with Edit and Delete actions for the current post. Place inside a Query Loop post template.",
-    "keywords": [ "edit", "delete", "actions", "menu", "quickpostr" ],
-    "textdomain": "quickpostr",
-    "supports": {
-        "html": false,
-        "reusable": false,
-        "lock": false
-    },
-    "usesContext": [ "postId", "postType" ],
-    "editorScript": "file:./index.js",
-    "viewScript": "quickpostr-post-actions-view",
-    "style": "file:./style.css",
-    "render": "file:./render.php"
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "quickpostr/post-actions",
+	"version": "0.18.0",
+	"icon": "ellipsis",
+	"title": "Post Actions",
+	"category": "quickpostr",
+	"description": "Kebab menu (⋮) with Edit and Delete actions for the current post. Place inside a Query Loop post template.",
+	"keywords": [
+		"edit",
+		"delete",
+		"actions",
+		"menu",
+		"quickpostr"
+	],
+	"textdomain": "quickpostr",
+	"supports": {
+		"html": false,
+		"reusable": false,
+		"lock": false
+	},
+	"example": {},
+	"usesContext": [
+		"postId",
+		"postType"
+	],
+	"editorScript": "file:./index.js",
+	"viewScript": "quickpostr-post-actions-view",
+	"style": "file:./style.css",
+	"render": "file:./render.php"
 }

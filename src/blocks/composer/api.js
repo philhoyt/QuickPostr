@@ -11,7 +11,7 @@ const config = window.quickpostrConfig ?? {};
  * @param {string}      method
  * @param {string}      path   — relative to restUrl, e.g. '/wp/v2/posts'
  * @param {object|null} body
- * @return {Promise<any>} Parsed JSON response.
+ * @return {Promise<unknown>} Parsed JSON response.
  */
 async function request( method, path, body = null ) {
 	const url = ( config.restUrl ?? '' ).replace( /\/$/, '' ) + path;
@@ -102,10 +102,11 @@ export function buildQuickpostrFields( geoData, video = null ) {
 /**
  * Upload a media file.
  *
- * @param {File} file
+ * @param {File}   file
+ * @param {string} alt  Optional alt text to store on the attachment.
  * @return {Promise<object>} The created media object (includes source_url).
  */
-export async function uploadMedia( file ) {
+export async function uploadMedia( file, alt = '' ) {
 	const url = ( config.restUrl ?? '' ).replace( /\/$/, '' ) + '/wp/v2/media';
 
 	const res = await fetch( url, {
@@ -130,7 +131,26 @@ export async function uploadMedia( file ) {
 		throw new Error( message );
 	}
 
-	return res.json();
+	const media = await res.json();
+
+	// The raw-body upload cannot carry fields, so the alt text is a follow-up
+	// write. The post content already carries the alt, so a failure here is
+	// not worth blocking the publish over.
+	const trimmedAlt = alt.trim();
+	if ( trimmedAlt && media?.id ) {
+		try {
+			const updated = await request(
+				'POST',
+				`/wp/v2/media/${ media.id }`,
+				{
+					alt_text: trimmedAlt,
+				}
+			);
+			return { ...media, ...updated };
+		} catch ( _ ) {}
+	}
+
+	return media;
 }
 
 /**
@@ -149,9 +169,9 @@ export function requestVideoMuxrUpload() {
  * and needs no WordPress auth header (auth was established when the URL was
  * created). XHR is used instead of fetch() for upload progress events.
  *
- * @param {string}   uploadUrl  The Mux direct-upload URL.
- * @param {File}     file       The video file.
- * @param {Function} onProgress Called with an integer percentage (0–100).
+ * @param {string}                    uploadUrl  The Mux direct-upload URL.
+ * @param {File}                      file       The video file.
+ * @param {(percent: number) => void} onProgress Called with an integer percentage (0–100).
  * @return {Promise<void>} Resolves when the upload completes.
  */
 export function uploadToMux( uploadUrl, file, onProgress ) {

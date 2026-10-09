@@ -1,10 +1,19 @@
 import { useState, useRef, useCallback } from '@wordpress/element';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
-const DEBOUNCE_MS = 300;
 
 /**
- * Provider-aware forward geocode hook (debounced 300 ms).
+ * Minimum spacing between geocoding requests.
+ *
+ * The OSMF Nominatim usage policy caps clients at one request per second and
+ * forbids client-side autocomplete outright, so searches are only ever
+ * triggered by an explicit action (Enter or the Search button) and never
+ * closer together than this.
+ */
+const MIN_INTERVAL_MS = 1000;
+
+/**
+ * Provider-aware forward geocode hook.
  *
  * Reads window.quickpostrConfig.geoTagrGeocoding to determine which
  * geocoding backend to use:
@@ -18,7 +27,8 @@ const DEBOUNCE_MS = 300;
  * server's IP.
  *
  * Returns { results, loading, hasSearched, search, clearResults } where:
- *  - search(query, bias?) triggers a debounced geocode request
+ *  - search(query, bias?) runs a geocode request, delayed only as far as
+ *    needed to respect MIN_INTERVAL_MS since the previous one
  *  - hasSearched becomes true after the first completed search (used to
  *    show "No results found" only after the user has actually searched)
  */
@@ -27,6 +37,7 @@ export default function useNominatimSearch() {
 	const [ loading, setLoading ] = useState( false );
 	const [ hasSearched, setHasSearched ] = useState( false );
 	const timerRef = useRef( null );
+	const lastRequestRef = useRef( 0 );
 
 	const search = useCallback( ( query, bias = null ) => {
 		clearTimeout( timerRef.current );
@@ -37,9 +48,16 @@ export default function useNominatimSearch() {
 			return;
 		}
 
+		const wait = Math.max(
+			0,
+			lastRequestRef.current + MIN_INTERVAL_MS - Date.now()
+		);
+
+		setLoading( true );
+		setHasSearched( false );
+
 		timerRef.current = setTimeout( async () => {
-			setLoading( true );
-			setHasSearched( false );
+			lastRequestRef.current = Date.now();
 
 			const geoConfig = window.quickpostrConfig?.geoTagrGeocoding;
 			const provider = geoConfig?.provider ?? 'nominatim';
@@ -100,11 +118,13 @@ export default function useNominatimSearch() {
 				setLoading( false );
 				setHasSearched( true );
 			}
-		}, DEBOUNCE_MS );
+		}, wait );
 	}, [] );
 
 	const clearResults = useCallback( () => {
+		clearTimeout( timerRef.current );
 		setResults( [] );
+		setLoading( false );
 		setHasSearched( false );
 	}, [] );
 

@@ -74,7 +74,7 @@
 	position: relative;
 	width: 100%;
 	max-width: 380px;
-	background: #fff;
+	background: var( --wp--preset--color--base, #fff );
 	border-radius: var( --wp--custom--border-radius--sm, 8px );
 	box-shadow: 0 8px 32px rgba( 0, 0, 0, 0.18 );
 	padding: 28px 28px 24px;
@@ -184,7 +184,7 @@
 	font-family: inherit;
 	font-size: 0.9375rem;
 	color: var( --wp--preset--color--contrast, #111 );
-	background: #fff;
+	background: var( --wp--preset--color--base, #fff );
 	border: 1px solid rgba( 0, 0, 0, 0.2 );
 	border-radius: var( --wp--custom--border-radius--sm, 6px );
 	box-sizing: border-box;
@@ -194,7 +194,7 @@
 .qp-like-modal__input:focus {
 	outline: none;
 	border-color: #e11d48;
-	box-shadow: 0 0 0 3px rgba( 225, 29, 72, 0.12 );
+	box-shadow: 0 0 0 2px #e11d48;
 }
 
 .qp-like-modal__submit {

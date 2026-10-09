@@ -18,7 +18,8 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Single source of truth, shared with CI; must satisfy @wordpress/scripts' engines.node.
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install JS dependencies

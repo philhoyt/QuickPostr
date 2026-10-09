@@ -4,10 +4,13 @@
  *
  * Runs when the plugin is deleted from the Plugins screen — not on deactivation.
  *
- * Removes what the plugin created about *people*: the like records, which carry
- * visitor names, email addresses and a hashed IP. Posts the user wrote through
- * the composer are their own content and are deliberately left alone; deleting
- * them here would destroy work the plugin merely helped create.
+ * Removes everything the plugin created: the like records (which carry visitor
+ * names, email addresses and a hashed IP), photos shared into the composer but
+ * never published, the plugin's own post meta, its taxonomy terms, option,
+ * transients and cron event. Posts the user wrote through the composer are
+ * their own content and are deliberately left alone; deleting them here would
+ * destroy work the plugin merely helped create. Meta owned by companion
+ * plugins (_geo_tagr_*, _videomuxr_*) is theirs to remove.
  *
  * @package QuickPostr
  */
@@ -16,6 +19,8 @@
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
+
+require_once __DIR__ . '/includes/class-manifest.php';
 
 /**
  * Delete every like-comment, including its meta.
@@ -70,11 +75,44 @@ function quickpostr_uninstall_delete_terms(): void {
 	}
 }
 
+/**
+ * Remove transients by prefix, including their timeout rows.
+ *
+ * Transients expire on their own, but an unexpired one would otherwise sit in
+ * wp_options after the plugin is gone.
+ *
+ * @param string $prefix The transient name prefix (without `_transient_`).
+ */
+function quickpostr_uninstall_delete_transients( string $prefix ): void {
+	global $wpdb;
+
+	$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- no API deletes transients by prefix; one-off at uninstall.
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+			$wpdb->esc_like( '_transient_' . $prefix ) . '%',
+			$wpdb->esc_like( '_transient_timeout_' . $prefix ) . '%'
+		)
+	);
+}
+
 quickpostr_uninstall_delete_likes();
 quickpostr_uninstall_delete_terms();
 
-// Settings and the scheduled sweep.
+// Shared uploads that were never published, however recent, then the flag
+// itself in case any attachment survived the sweep.
+( new QuickPostr_Manifest() )->cleanup_pending_shares( 0 );
+delete_post_meta_by_key( QuickPostr_Manifest::PENDING_META );
+
+// The plugin's own post meta. Deleting a meta key leaves the post intact.
+delete_post_meta_by_key( '_quickpostr_post' );
+delete_post_meta_by_key( '_quickpostr_custom_title' );
+delete_post_meta_by_key( '_quickpostr_like_count' );
+
+// Options, transients and the scheduled sweep.
 delete_option( 'quickpostr_settings' );
+delete_option( 'quickpostr_version' );
+quickpostr_uninstall_delete_transients( 'quickpostr_share_rate_' );
+quickpostr_uninstall_delete_transients( 'quickpostr_like_rate_' );
 wp_clear_scheduled_hook( 'quickpostr_cleanup_pending_shares' );
 
 // Rewrite rules referenced the PWA routes that no longer exist.

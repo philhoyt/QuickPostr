@@ -208,8 +208,14 @@ export default function LinkComposer( {
 						className="qp-link-composer__fetch-btn"
 						onClick={ handleFetch }
 						disabled={ ! url.trim() || fetching }
+						aria-busy={ fetching }
+						aria-label={
+							fetching
+								? __( 'Fetching preview…', 'quickpostr' )
+								: undefined
+						}
 					>
-						{ fetching ? '…' : __( 'Preview', 'quickpostr' ) }
+						{ __( 'Preview', 'quickpostr' ) }
 					</button>
 				) }
 			</div>
@@ -271,11 +277,7 @@ export default function LinkComposer( {
 			</footer>
 
 			{ flash && (
-				<div
-					className="qp-composer-flash"
-					role="status"
-					aria-live="assertive"
-				>
+				<div className="qp-composer-flash" role="status">
 					{ __( 'Posted!', 'quickpostr' ) }
 				</div>
 			) }

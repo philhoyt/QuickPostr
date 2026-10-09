@@ -61,8 +61,12 @@ $qp_wrapper_attributes = get_block_wrapper_attributes(
 	<button
 		type="button"
 		class="qp-like-post__button<?php echo $qp_liked ? ' is-liked' : ''; ?>"
-		aria-label="<?php echo $qp_liked ? esc_attr__( 'Unlike this post', 'quickpostr' ) : esc_attr__( 'Like this post', 'quickpostr' ); ?>"
+		aria-label="<?php esc_attr_e( 'Like this post', 'quickpostr' ); ?>"
+		<?php if ( $qp_logged_in ) : ?>
 		aria-pressed="<?php echo $qp_liked ? 'true' : 'false'; ?>"
+		<?php else : ?>
+		aria-haspopup="dialog"
+		<?php endif; ?>
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"

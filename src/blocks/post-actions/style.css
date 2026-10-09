@@ -135,3 +135,16 @@
 .qp-post-actions__confirm-no:hover {
 	background: rgba( 0, 0, 0, 0.05 );
 }
+
+/* ── Delete failure message ──────────────────────────────────────────────── */
+
+.qp-post-actions__error {
+	padding: 8px 14px;
+	border-top: 1px solid rgba( 0, 0, 0, 0.08 );
+	font-size: 0.8125rem;
+	color: #b91c1c;
+}
+
+.qp-post-actions__error[hidden] {
+	display: none;
+}

@@ -28,6 +28,9 @@ $quickpostr_location_block = $quickpostr_has_geo
 	? '<!-- wp:geotagr/location-name {"style":{"elements":{"link":{"color":{"text":"var:preset|color|accent-4"}}},"typography":{"fontSize":"0.6rem"}},"textColor":"accent-4"} /-->'
 	: '';
 
+// Built outside the heredoc so the string is translatable and make-pot sees it.
+$quickpostr_no_results = esc_html__( 'Sorry, but nothing was found. Please try a search with different keywords.', 'quickpostr' );
+
 return <<<HTML
 <!-- wp:quickpostr/composer /-->
 
@@ -65,7 +68,7 @@ return <<<HTML
 <!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|60"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)"><!-- wp:query-no-results -->
 <!-- wp:paragraph -->
-<p>Sorry, but nothing was found. Please try a search with different keywords.</p>
+<p>{$quickpostr_no_results}</p>
 <!-- /wp:paragraph -->
 <!-- /wp:query-no-results --></div>
 <!-- /wp:group -->

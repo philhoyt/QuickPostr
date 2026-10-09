@@ -19,6 +19,18 @@ import { __, sprintf } from '@wordpress/i18n';
 	const CHEVRON_RIGHT =
 		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
 
+	// Used to build unique ids for the per-gallery instructions element.
+	let galleryCount = 0;
+
+	function slideLabel( index, total ) {
+		return sprintf(
+			/* translators: 1: current image number, 2: total number of images */
+			__( 'Image %1$d of %2$d', 'quickpostr' ),
+			index + 1,
+			total
+		);
+	}
+
 	function initCoreGallery( gallery ) {
 		const slides = Array.from(
 			gallery.querySelectorAll( ':scope > figure.wp-block-image' )
@@ -50,13 +62,24 @@ import { __, sprintf } from '@wordpress/i18n';
 		wrapper.appendChild( gallery );
 
 		// Pill counter — injected into the wrapper (absolutely positioned).
+		// Visual only; the live region below carries the screen-reader text.
 		const pill = document.createElement( 'div' );
 		pill.className = 'qp-media-gallery__pill';
 		pill.setAttribute( 'aria-hidden', 'true' );
 		pill.textContent = '1/' + total;
 		wrapper.appendChild( pill );
 
-		// Prev / next arrows — injected into the wrapper.
+		// Visually-hidden live region announcing the current slide.
+		const liveRegion = document.createElement( 'div' );
+		liveRegion.className = 'qp-media-gallery__sr-only';
+		liveRegion.setAttribute( 'aria-live', 'polite' );
+		liveRegion.setAttribute( 'aria-atomic', 'true' );
+		liveRegion.textContent = slideLabel( 0, total );
+		wrapper.appendChild( liveRegion );
+
+		// Prev / next arrows — injected into the wrapper. They use
+		// aria-disabled rather than `disabled` so a focused arrow does not
+		// drop focus when it becomes unavailable at either end.
 		const prevBtn = document.createElement( 'button' );
 		prevBtn.type = 'button';
 		prevBtn.className =
@@ -66,8 +89,11 @@ import { __, sprintf } from '@wordpress/i18n';
 			__( 'Previous image', 'quickpostr' )
 		);
 		prevBtn.innerHTML = CHEVRON_LEFT;
-		prevBtn.disabled = true;
+		prevBtn.setAttribute( 'aria-disabled', 'true' );
 		prevBtn.addEventListener( 'click', function () {
+			if ( prevBtn.getAttribute( 'aria-disabled' ) === 'true' ) {
+				return;
+			}
 			goTo( current - 1 );
 		} );
 		wrapper.appendChild( prevBtn );
@@ -78,7 +104,11 @@ import { __, sprintf } from '@wordpress/i18n';
 			'qp-media-gallery__arrow qp-media-gallery__arrow--next';
 		nextBtn.setAttribute( 'aria-label', __( 'Next image', 'quickpostr' ) );
 		nextBtn.innerHTML = CHEVRON_RIGHT;
+		nextBtn.setAttribute( 'aria-disabled', 'false' );
 		nextBtn.addEventListener( 'click', function () {
+			if ( nextBtn.getAttribute( 'aria-disabled' ) === 'true' ) {
+				return;
+			}
 			goTo( current + 1 );
 		} );
 		wrapper.appendChild( nextBtn );
@@ -98,15 +128,10 @@ import { __, sprintf } from '@wordpress/i18n';
 			btn.className =
 				'qp-media-gallery__dot' +
 				( i === 0 ? ' qp-media-gallery__dot--active' : '' );
-			btn.setAttribute(
-				'aria-label',
-				sprintf(
-					/* translators: 1: current image number, 2: total number of images */
-					__( 'Image %1$d of %2$d', 'quickpostr' ),
-					i + 1,
-					total
-				)
-			);
+			btn.setAttribute( 'aria-label', slideLabel( i, total ) );
+			if ( i === 0 ) {
+				btn.setAttribute( 'aria-current', 'true' );
+			}
 			btn.addEventListener( 'click', function () {
 				goTo( i );
 			} );
@@ -116,15 +141,28 @@ import { __, sprintf } from '@wordpress/i18n';
 		function updateControls() {
 			const dots = dotsNav.querySelectorAll( '.qp-media-gallery__dot' );
 			dots.forEach( function ( dot, i ) {
+				const isActive = i === current;
 				dot.classList.toggle(
 					'qp-media-gallery__dot--active',
-					i === current
+					isActive
 				);
+				if ( isActive ) {
+					dot.setAttribute( 'aria-current', 'true' );
+				} else {
+					dot.removeAttribute( 'aria-current' );
+				}
 			} );
 
-			prevBtn.disabled = current === 0;
-			nextBtn.disabled = current === total - 1;
+			prevBtn.setAttribute(
+				'aria-disabled',
+				current === 0 ? 'true' : 'false'
+			);
+			nextBtn.setAttribute(
+				'aria-disabled',
+				current === total - 1 ? 'true' : 'false'
+			);
 
+			liveRegion.textContent = slideLabel( current, total );
 			pill.textContent = current + 1 + '/' + total;
 			pill.classList.add( 'qp-media-gallery__pill--visible' );
 			clearTimeout( pillTimer );
@@ -137,7 +175,11 @@ import { __, sprintf } from '@wordpress/i18n';
 			current = Math.max( 0, Math.min( index, total - 1 ) );
 			gallery.scrollTo( {
 				left: current * gallery.offsetWidth,
-				behavior: 'smooth',
+				behavior: window.matchMedia(
+					'(prefers-reduced-motion: reduce)'
+				).matches
+					? 'auto'
+					: 'smooth',
 			} );
 			updateControls();
 		}
@@ -248,8 +290,30 @@ import { __, sprintf } from '@wordpress/i18n';
 			{ passive: true }
 		);
 
-		// Keyboard navigation.
+		// Keyboard navigation. The gallery is a focusable, named carousel
+		// region with visually-hidden instructions for the arrow keys.
+		galleryCount++;
+		const instructions = document.createElement( 'span' );
+		instructions.id = 'qp-media-gallery-instructions-' + galleryCount;
+		instructions.className = 'qp-media-gallery__sr-only';
+		instructions.textContent = __(
+			'Use the left and right arrow keys to change slides.',
+			'quickpostr'
+		);
+		wrapper.appendChild( instructions );
+
 		gallery.setAttribute( 'tabindex', '0' );
+		gallery.setAttribute( 'role', 'region' );
+		gallery.setAttribute(
+			'aria-roledescription',
+			/* translators: screen-reader description of the gallery widget type */
+			__( 'carousel', 'quickpostr' )
+		);
+		gallery.setAttribute(
+			'aria-label',
+			__( 'Image gallery', 'quickpostr' )
+		);
+		gallery.setAttribute( 'aria-describedby', instructions.id );
 		gallery.addEventListener( 'keydown', function ( e ) {
 			if ( e.key === 'ArrowRight' ) {
 				e.preventDefault();

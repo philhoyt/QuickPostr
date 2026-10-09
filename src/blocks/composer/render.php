@@ -91,7 +91,10 @@ wp_add_inline_script(
 
 // Block wrapper attributes (handles align, color, spacing supports).
 $qp_wrapper_attributes = get_block_wrapper_attributes(
-	array( 'id' => 'quickpostr-composer' )
+	array(
+		'id'    => 'quickpostr-composer',
+		'class' => 'quickpostr-composer-root',
+	)
 );
 ?>
 <div <?php echo $qp_wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
