@@ -27,8 +27,11 @@
         "lint:fix": "phpcbf",
         "analyse": "phpstan analyse --memory-limit=1G",
         "test": "phpunit --testsuite unit --bootstrap tests/phpunit/bootstrap.php",
-        "test:integration": "phpunit --testsuite integration --bootstrap tests/phpunit/integration-bootstrap.php",
-        "test:coverage": "php -d extension=pcov -d pcov.enabled=1 -d pcov.directory=includes vendor/bin/phpunit --testsuite integration --bootstrap tests/phpunit/integration-bootstrap.php --coverage-text",
+        "test:integration": "npm run test:php:integration",
+        "test:coverage": [
+            "npm run env:phpunit:start -- --xdebug=coverage",
+            "npm run test:php:integration -- --coverage-text"
+        ],
         "test:all": [
             "@test",
             "@test:integration"

@@ -4,19 +4,22 @@
  *
  * Boots a real WordPress against a throwaway database, so tests can exercise
  * capability checks, REST routes and hook wiring against the actual runtime
- * rather than mocks. Requires bin/install-wp-tests.sh to have been run.
+ * rather than mocks.
+ *
+ * Runs inside the wp-env PHPUnit environment (.wp-env.phpunit.json), which
+ * ships the WordPress core test library and points WP_TESTS_DIR at it. That
+ * environment is separate from the E2E one on purpose: the core bootstrap
+ * drops every table in the database it is given.
  *
  * @package QuickPostr
  */
 
 $quickpostr_tests_dir = getenv( 'WP_TESTS_DIR' );
-if ( ! $quickpostr_tests_dir ) {
-	$quickpostr_tests_dir = '/tmp/wordpress-tests-lib';
-}
 
-if ( ! file_exists( $quickpostr_tests_dir . '/includes/functions.php' ) ) {
-	fwrite( STDERR, "Could not find the WordPress test library at {$quickpostr_tests_dir}.\n" );
-	fwrite( STDERR, "Run: bin/install-wp-tests.sh <db-name> <db-user> <db-pass> [db-host] [wp-version]\n" );
+if ( ! $quickpostr_tests_dir || ! file_exists( $quickpostr_tests_dir . '/includes/functions.php' ) ) {
+	fwrite( STDERR, "WP_TESTS_DIR is not set or does not contain the WordPress test library.\n" );
+	fwrite( STDERR, "Run the integration suite inside wp-env:\n" );
+	fwrite( STDERR, "  npm run env:phpunit:start && composer test:integration\n" );
 	exit( 1 );
 }
 

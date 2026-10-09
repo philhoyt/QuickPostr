@@ -39,6 +39,13 @@ wp-content/
 # PHPUnit
 .phpunit.result.cache
 
+# Playwright failure artifacts (screenshots, traces, storage state)
+/artifacts
+
+# wp-env local overrides
+.wp-env.override.json
+.wp-env.phpunit.override.json
+
 # Coverage output
 /coverage
 /.phpunit.cache
