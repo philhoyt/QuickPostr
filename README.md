@@ -53,17 +53,27 @@ composer lint             # PHPCS + WPCS
 composer lint:fix         # phpcbf auto-fix
 composer analyse          # PHPStan static analysis
 composer test             # PHPUnit unit suite (no WordPress, no DB)
-composer test:integration # PHPUnit against a real WordPress + DB
+composer test:integration # PHPUnit against a real WordPress + DB (inside wp-env)
 composer test:all         # both suites
-composer test:coverage    # integration suite with line coverage (needs pcov)
+composer test:coverage    # integration suite with line coverage (wp-env + Xdebug)
 ```
 
-The integration suite needs the WordPress core test library and a **throwaway**
-database — the harness drops all tables in it on every run:
+Both WordPress runtimes come from [`@wordpress/env`](https://www.npmjs.com/package/@wordpress/env)
+and need Docker running:
 
 ```bash
-bin/install-wp-tests.sh <db-name> <db-user> <db-pass> [db-host] [wp-version]
+npm run env:start          # WordPress 7.1.3 on http://localhost:8888 with the plugin active
+npm run test:e2e           # Playwright specs in tests/e2e/specs (starts the environment if needed)
+npm run env:stop
+
+npm run env:phpunit:start  # a second, isolated environment on :8890 for PHPUnit
+composer test:integration  # runs inside it; WP_UnitTestCase drops every table it is given,
+npm run env:phpunit:stop   # which is why it never shares the E2E site
 ```
+
+Port clash with another wp-env project? Put different `port`/`testsPort` values in the
+gitignored `.wp-env.override.json` and `.wp-env.phpunit.override.json`, and run the E2E suite
+with `WP_BASE_URL=http://localhost:<port> npm run test:e2e`.
 
 ## Releases
 
@@ -86,13 +96,13 @@ assets.
 
 | Setting | Default | Notes |
 |---|---|---|
-| Allowed Roles | administrator, editor, author | Controls who sees the Composer block. |
+| Show Composer To | administrator, editor, author | Controls who sees the Composer block. Publishing itself is governed by WordPress capabilities. |
 | Default Post Status | publish | Set to `draft` to queue all posts for review. |
 | Default Category | none | Applied to every new post. |
 | Hide Admin Bar | on | Hides the admin bar for non-administrator roles. |
 | Hide Admin Bar (Administrators) | off | Separate toggle for the administrator role. |
 | Front-End Post Management | on | Enables the Edit and Delete actions in the Post Actions block. |
-| Strip Photo Metadata | on | Strips EXIF on JPEG upload via `Imagick::stripImage()`. Silently skipped if Imagick is unavailable. |
+| Strip Photo Metadata | on | Strips EXIF/XMP on JPEG, PNG and WebP upload via `Imagick::stripImage()`. Silently skipped if Imagick is unavailable. |
 
 Settings are stored in a single `wp_options` row under `quickpostr_settings`.
 
