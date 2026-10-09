@@ -28,28 +28,41 @@ composer test:all          # both
 composer test:coverage     # integration + line coverage (needs pcov)
 
 # JS tests
-npm run test:unit
+npm run test:unit          # Jest
+npm run test:e2e           # Playwright, against the wp-env site (starts it if needed)
+
+# WordPress environments (Docker, via @wordpress/env)
+npm run env:start          # E2E + manual-check site, WordPress 7.1.3 on :8888
+npm run env:stop
+npm run env:phpunit:start  # separate environment on :8890, PHPUnit only
+npm run env:phpunit:stop
 ```
 
-### Integration test setup (one time)
+### WordPress runtimes
 
-The integration suite needs the WordPress core test library and a **throwaway**
-database — the harness drops all tables in it on every run.
+Both the integration suite and the E2E suite run against `@wordpress/env`.
+There are two config files on purpose: `.wp-env.json` (E2E, port 8888) and
+`.wp-env.phpunit.json` (PHPUnit, port 8890). `WP_UnitTestCase`'s bootstrap
+drops every table in the database it connects to, so PHPUnit must never run
+in the E2E environment. `composer test:integration` already targets the
+PHPUnit one; wp-env ships the core test library and sets `WP_TESTS_DIR`
+inside its containers. The unit suite (`composer test`) needs neither Docker
+nor WordPress.
 
-```bash
-bin/install-wp-tests.sh <db-name> <db-user> <db-pass> [db-host] [wp-version]
-```
+Both files pin `core` to `WordPress/WordPress#7.1.3` and `phpVersion` to the
+plugin minimum. `/wp-compat` is what moves those deliberately.
 
-With Local by Flywheel, the host is the mysqld socket path:
+If another wp-env project already holds those ports, set `port` in the
+gitignored `.wp-env.override.json` / `.wp-env.phpunit.override.json` and run
+E2E with `WP_BASE_URL=http://localhost:<port> npm run test:e2e`. Both configs
+set `testsEnvironment: false`, so each one starts a single site.
 
-```bash
-SOCK="$HOME/Library/Application Support/Local/run/<site-id>/mysql/mysqld.sock"
-bin/install-wp-tests.sh quickpostr_tests root root "localhost:$SOCK" 7.1
-```
+The E2E config uses `plugins: ["."]` so wp-env activates the plugin itself;
+the PHPUnit config only maps the directory, because the integration bootstrap
+loads `quickpostr.php` directly and never needs the plugin active.
 
-Local must be running for the integration suite; the unit suite has no such
-dependency. PHPUnit is pinned to ^9.6 because the WordPress core test library
-caps there — `yoast/phpunit-polyfills` supports at most PHPUnit 12, and
+PHPUnit is pinned to ^9.6 because the WordPress core test library caps
+there — `yoast/phpunit-polyfills` supports at most PHPUnit 12, and
 wordpress-develop pins polyfills to ^1.1, which tops out at 9.
 
 ## Before every commit — checklist

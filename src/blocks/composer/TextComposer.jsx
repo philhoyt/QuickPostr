@@ -39,19 +39,40 @@ function ToolbarButton( { label, onClick, pressed, children } ) {
 }
 
 /**
- * Read the current bold/italic state of the selection. queryCommandState can
- * throw in some browsers when there is no selection, so treat that as "off".
+ * Read the bold/italic state at the selection by walking up from the anchor
+ * node to the editor root and looking for the formatting elements.
+ *
+ * document.queryCommandState() is not used: Chromium derives "bold" from the
+ * computed font-weight, so a theme or plugin stylesheet that renders
+ * <b>/<strong> below 700 makes it report false for text that is in fact bold
+ * (the E2E suite caught exactly that on the default theme).
+ *
+ * @param {HTMLElement|null} root The contenteditable element.
  * @return {{bold: boolean, italic: boolean}} Current format state.
  */
-function readFormatState() {
-	try {
-		return {
-			bold: document.queryCommandState( 'bold' ),
-			italic: document.queryCommandState( 'italic' ),
-		};
-	} catch ( _ ) {
-		return { bold: false, italic: false };
+function readFormatState( root ) {
+	const off = { bold: false, italic: false };
+	const selection = root?.ownerDocument.getSelection();
+	const anchor = selection?.anchorNode;
+
+	if ( ! root || ! anchor || ! root.contains( anchor ) ) {
+		return off;
 	}
+
+	const state = { ...off };
+	let el = anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : anchor;
+
+	while ( el && el !== root ) {
+		if ( el.tagName === 'B' || el.tagName === 'STRONG' ) {
+			state.bold = true;
+		}
+		if ( el.tagName === 'I' || el.tagName === 'EM' ) {
+			state.italic = true;
+		}
+		el = el.parentElement;
+	}
+
+	return state;
 }
 
 /**
@@ -87,7 +108,7 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 			if ( ! el.contains( selection.anchorNode ) ) {
 				return;
 			}
-			setFormats( readFormatState() );
+			setFormats( readFormatState( el ) );
 		}
 		document.addEventListener( 'selectionchange', handleSelectionChange );
 		return () =>
@@ -104,7 +125,7 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 		}
 		const empty = el.innerText.trim() === '';
 		setIsEmpty( empty );
-		setFormats( readFormatState() );
+		setFormats( readFormatState( el ) );
 		// Read normalized HTML via @wordpress/rich-text.
 		const rawHtml = empty ? '' : el.innerHTML;
 		const value = create( { html: rawHtml } );

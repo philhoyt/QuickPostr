@@ -148,3 +148,11 @@
 .qp-post-actions__error[hidden] {
 	display: none;
 }
+
+/*
+ * The items set display explicitly, which beats the UA stylesheet's [hidden]
+ * rule; without this the Delete item stayed visible beside "Yes, delete".
+ */
+.qp-post-actions__item[hidden] {
+	display: none;
+}
