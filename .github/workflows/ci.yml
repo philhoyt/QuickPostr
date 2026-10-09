@@ -118,7 +118,19 @@ jobs:
       - name: Start the WordPress environment
         run: npm run env:start
 
+      - name: Show environment state
+        # Makes a wrong mount or an inactive plugin visible in the log
+        # instead of surfacing as "element not found" in every spec.
+        run: |
+          npx wp-env run cli wp plugin list --fields=name,status,version
+          npx wp-env run cli wp eval 'echo "composer block registered: ", var_export( WP_Block_Type_Registry::get_instance()->is_registered( "quickpostr/composer" ), true ), PHP_EOL;'
+          npx wp-env run cli wp option get permalink_structure
+
       - name: End-to-end tests
+        # wp-scripts runs `playwright install` for every browser unless told
+        # not to; Chromium is already installed with its system deps above.
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: npm run test:e2e
 
       - name: Upload failure artifacts

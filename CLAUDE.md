@@ -52,11 +52,14 @@ nor WordPress.
 Both files pin `core` to `WordPress/WordPress#7.1.3` and `phpVersion` to the
 plugin minimum. `/wp-compat` is what moves those deliberately.
 
-If another wp-env project already holds those ports, set `port`/`testsPort`
-in the gitignored `.wp-env.override.json` / `.wp-env.phpunit.override.json`
-and run E2E with `WP_BASE_URL=http://localhost:<port> npm run test:e2e`.
-wp-env refuses a `port` equal to its `testsPort` (default 8889), so pick
-pairs.
+If another wp-env project already holds those ports, set `port` in the
+gitignored `.wp-env.override.json` / `.wp-env.phpunit.override.json` and run
+E2E with `WP_BASE_URL=http://localhost:<port> npm run test:e2e`. Both configs
+set `testsEnvironment: false`, so each one starts a single site.
+
+The E2E config uses `plugins: ["."]` so wp-env activates the plugin itself;
+the PHPUnit config only maps the directory, because the integration bootstrap
+loads `quickpostr.php` directly and never needs the plugin active.
 
 PHPUnit is pinned to ^9.6 because the WordPress core test library caps
 there — `yoast/phpunit-polyfills` supports at most PHPUnit 12, and

@@ -71,9 +71,9 @@ composer test:integration  # runs inside it; WP_UnitTestCase drops every table i
 npm run env:phpunit:stop   # which is why it never shares the E2E site
 ```
 
-Port clash with another wp-env project? Put different `port`/`testsPort` values in the
-gitignored `.wp-env.override.json` and `.wp-env.phpunit.override.json`, and run the E2E suite
-with `WP_BASE_URL=http://localhost:<port> npm run test:e2e`.
+Port clash with another wp-env project? Put a different `port` in the gitignored
+`.wp-env.override.json` and `.wp-env.phpunit.override.json`, and run the E2E suite with
+`WP_BASE_URL=http://localhost:<port> npm run test:e2e`.
 
 ## Releases
 
