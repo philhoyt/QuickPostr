@@ -964,7 +964,9 @@
 .wp-block-quickpostr-composer .qp-draft-banner__resume {
 	padding: 0.25rem 0.625rem;
 	background: var(--qp-accent);
-	color: #000;
+
+	/* White on accent, like the submit button; black on #0073aa was 4.0:1. */
+	color: #fff;
 	border: none;
 	border-radius: var(--qp-radius-pill);
 	font-family: inherit;

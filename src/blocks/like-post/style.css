@@ -173,7 +173,9 @@
 
 .qp-like-modal__optional {
 	font-weight: 400;
-	color: var( --wp--preset--color--contrast-2, #888 );
+
+	/* #666 on the white dialog is 5.7:1; the old #888 fallback was 3.5:1. */
+	color: var( --wp--preset--color--contrast-2, #666 );
 }
 
 .qp-like-modal__input {
