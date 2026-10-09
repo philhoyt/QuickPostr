@@ -11,6 +11,7 @@ test.describe( 'Composer: status post', () => {
 		composerPage,
 	} ) => {
 		const text = `E2E status ${ Date.now() }`;
+		const secondLine = 'Second paragraph.';
 		let createdId = null;
 
 		try {
@@ -22,6 +23,10 @@ test.describe( 'Composer: status post', () => {
 			const editor = root.locator( '.qp-rich-editor__content' );
 			await editor.click();
 			await page.keyboard.type( text );
+			// A blank line starts a new paragraph block.
+			await page.keyboard.press( 'Enter' );
+			await page.keyboard.press( 'Enter' );
+			await page.keyboard.type( secondLine );
 
 			// exact: the title and date chips are also named "…post…".
 			const submit = root.getByRole( 'button', {
@@ -59,9 +64,25 @@ test.describe( 'Composer: status post', () => {
 			} );
 
 			expect( post.status ).toBe( 'publish' );
-			expect( post.content.raw ).toContain( text );
-			// Content under 55 characters becomes the title verbatim.
-			expect( post.title.raw ).toBe( text );
+
+			// Stored as core/paragraph blocks, one per line, and nothing
+			// outside them: stripping every block leaves only whitespace.
+			const raw = post.content.raw;
+			expect( raw ).toContain( `<p>${ text }</p>` );
+			expect( raw ).toContain( `<p>${ secondLine }</p>` );
+			expect( raw.match( /<!-- wp:paragraph -->/g ) ).toHaveLength( 2 );
+			expect(
+				raw
+					.replace(
+						/<!-- wp:paragraph -->\n<p>[^]*?<\/p>\n<!-- \/wp:paragraph -->/g,
+						''
+					)
+					.trim()
+			).toBe( '' );
+
+			// The generated title joins the paragraphs with a space and, at
+			// under 55 characters, is the content verbatim.
+			expect( post.title.raw ).toBe( `${ text } ${ secondLine }` );
 
 			// The private quickpostr_source taxonomy has no REST surface.
 			const terms = wp( [

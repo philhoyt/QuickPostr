@@ -83,6 +83,25 @@ final class GenerateTitleTest extends TestCase {
 		);
 	}
 
+	public function test_paragraph_blocks_are_joined_with_a_space(): void {
+		$content = "<!-- wp:paragraph -->\n<p>First one</p>\n<!-- /wp:paragraph -->\n\n"
+			. "<!-- wp:paragraph -->\n<p>second two</p>\n<!-- /wp:paragraph -->";
+
+		$this->assertSame(
+			'First one second two',
+			$this->plugin->generate_title( $content, 'status', 'May 29, 2026' )
+		);
+	}
+
+	public function test_paragraph_block_inline_markup_is_stripped(): void {
+		$content = "<!-- wp:paragraph -->\n<p>Read <strong>this</strong> <a href=\"https://example.com\">link</a></p>\n<!-- /wp:paragraph -->";
+
+		$this->assertSame(
+			'Read this link',
+			$this->plugin->generate_title( $content, 'status', 'May 29, 2026' )
+		);
+	}
+
 	public function test_long_content_truncates_on_word_boundary_with_ellipsis(): void {
 		$content = 'The quick brown fox jumps over the lazy dog and then keeps on running far away';
 		$title   = $this->plugin->generate_title( $content, 'status', 'May 29, 2026' );
