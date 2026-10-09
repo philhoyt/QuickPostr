@@ -42,6 +42,7 @@ class QuickPostr_Manifest {
 	public function init(): void {
 		add_action( 'init', array( $this, 'register_rewrite_rules' ) );
 		add_filter( 'query_vars', array( $this, 'register_query_vars' ) );
+		add_filter( 'redirect_canonical', array( $this, 'skip_canonical_redirect' ) );
 		add_action( 'template_redirect', array( $this, 'maybe_serve_route' ) );
 		add_action( 'wp_head', array( $this, 'print_manifest_link' ) );
 		add_action( 'wp_after_insert_post', array( $this, 'claim_shared_uploads' ), 10, 2 );
@@ -100,6 +101,28 @@ class QuickPostr_Manifest {
 		$vars[] = 'quickpostr_sw';
 		$vars[] = 'quickpostr_share';
 		return $vars;
+	}
+
+	/**
+	 * Keep WordPress from redirecting the PWA routes to trailing-slash URLs.
+	 *
+	 * With a permalink structure that ends in a slash (the default),
+	 * redirect_canonical() sends /quickpostr-sw.js to /quickpostr-sw.js/ before
+	 * template_redirect ever runs. Browsers refuse to register a service worker
+	 * whose script is behind a redirect, so the share target silently never
+	 * installed on such sites; the manifest fetch was redirected the same way.
+	 *
+	 * @param string|false $redirect_url URL WordPress wants to redirect to.
+	 * @return string|false False for the plugin's routes, the URL otherwise.
+	 */
+	public function skip_canonical_redirect( $redirect_url ) {
+		foreach ( array( 'quickpostr_manifest', 'quickpostr_sw', 'quickpostr_share' ) as $var ) {
+			if ( get_query_var( $var ) ) {
+				return false;
+			}
+		}
+
+		return $redirect_url;
 	}
 
 	/**

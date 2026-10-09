@@ -136,6 +136,82 @@ final class ManifestTest extends QuickPostrTestCase {
 		$this->assertFalse( wp_next_scheduled( QuickPostr_Manifest::CLEANUP_HOOK ) );
 	}
 
+	/**
+	 * With trailing-slash permalinks, core wanted to 301 the service worker
+	 * to /quickpostr-sw.js/, which browsers reject for worker scripts.
+	 *
+	 * @dataProvider pwa_routes
+	 *
+	 * @param string $path  The PWA route.
+	 * @param string $query The query var that identifies it.
+	 */
+	public function test_pwa_routes_are_not_canonically_redirected( string $path, string $query ): void {
+		global $wp_rewrite;
+
+		$wp_rewrite->set_permalink_structure( '/%postname%/' );
+		( new QuickPostr_Manifest() )->register_rewrite_rules();
+		$wp_rewrite->flush_rules();
+
+		$this->go_to( home_url( $path ) );
+
+		$this->assertSame( '1', get_query_var( $query ), 'The rewrite rule must match the route.' );
+
+		// redirect_canonical() returns the target URL when it would redirect
+		// and nothing at all when it would not.
+		$this->assertEmpty(
+			redirect_canonical( home_url( $path ), false ),
+			'redirect_canonical() must leave the route alone.'
+		);
+
+		// Without the plugin's filter, core does want to redirect the two
+		// slash-less routes, which is the bug this guards against.
+		remove_all_filters( 'redirect_canonical' );
+		if ( '/' !== substr( $path, -1 ) ) {
+			$this->assertSame(
+				home_url( $path . '/' ),
+				redirect_canonical( home_url( $path ), false ),
+				'Core adds a trailing slash here; the filter is what prevents it.'
+			);
+		}
+
+		$wp_rewrite->set_permalink_structure( '' );
+		$wp_rewrite->flush_rules();
+	}
+
+	/**
+	 * The filter is targeted: an ordinary page keeps its canonical redirect.
+	 */
+	public function test_ordinary_pages_are_still_canonically_redirected(): void {
+		global $wp_rewrite;
+
+		$wp_rewrite->set_permalink_structure( '/%postname%/' );
+		$wp_rewrite->flush_rules();
+
+		$page = self::factory()->post->create(
+			array(
+				'post_type' => 'page',
+				'post_name' => 'ordinary',
+			)
+		);
+		$this->go_to( home_url( '/?page_id=' . $page ) );
+
+		$this->assertSame(
+			home_url( '/ordinary/' ),
+			redirect_canonical( home_url( '/?page_id=' . $page ), false )
+		);
+
+		$wp_rewrite->set_permalink_structure( '' );
+		$wp_rewrite->flush_rules();
+	}
+
+	public function pwa_routes(): array {
+		return array(
+			'service worker' => array( '/quickpostr-sw.js', 'quickpostr_sw' ),
+			'manifest'       => array( '/quickpostr-manifest.json', 'quickpostr_manifest' ),
+			'share target'   => array( '/quickpostr-share/', 'quickpostr_share' ),
+		);
+	}
+
 	public function test_manifest_link_is_only_printed_for_users_who_can_post(): void {
 		$manifest = new QuickPostr_Manifest();
 
