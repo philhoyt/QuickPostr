@@ -3,6 +3,7 @@ import { __ } from '@wordpress/i18n';
 import { createPost, fetchLinkPreview, buildQuickpostrFields } from './api.js';
 import { toRestDate, titleDateString } from './postDate.js';
 import { generateTitle } from './useAutoTitle.js';
+import { escapeAttr } from './photoContent.js';
 import TagInput from './TagInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
@@ -125,8 +126,13 @@ export default function LinkComposer( {
 			if ( bbAvailable && preview ) {
 				content = serializeLinkCard( preview );
 			} else {
-				const label = preview?.title || trimmed;
-				content = `<p><a href="${ trimmed }">${ label }</a></p>`;
+				// A paragraph block, not raw HTML, so the post is block-native
+				// like the link-card path. escapeAttr() covers text too.
+				const label = escapeAttr( preview?.title || trimmed );
+				content =
+					'<!-- wp:paragraph -->\n' +
+					`<p><a href="${ escapeAttr( trimmed ) }">${ label }</a></p>\n` +
+					'<!-- /wp:paragraph -->';
 			}
 
 			const fields = {
