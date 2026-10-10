@@ -18,7 +18,7 @@ const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
  * QuickPostr Slider block style. The output matches core/gallery save() for
  * WP 6.7+ (nested-images format) so the block editor validates cleanly.
  * @param {Array<{id: number, source_url: string, alt?: string}>} mediaItems
- * @param {string} captionText
+ * @param {string}                                                captionText
  * @returns {string}
  */
 function buildGalleryContent( mediaItems, captionText ) {
@@ -26,7 +26,9 @@ function buildGalleryContent( mediaItems, captionText ) {
 		.map(
 			( m ) =>
 				`<!-- wp:image {"id":${ m.id },"sizeSlug":"large","linkDestination":"none"} -->\n` +
-				`<figure class="wp-block-image size-large"><img src="${ m.source_url }" alt="${ escapeAttr(
+				`<figure class="wp-block-image size-large"><img src="${
+					m.source_url
+				}" alt="${ escapeAttr(
 					resolveAlt( m.alt, captionText )
 				) }" class="wp-image-${ m.id }"/></figure>\n` +
 				`<!-- /wp:image -->`
@@ -86,11 +88,11 @@ function validateImageFile( f ) {
  *   postDate     {string} — datetime-local value, '' for "now"
  *   initialPhoto {object|null} — a pre-loaded photo (e.g. a PWA-shared image),
  *                in the library-pick shape { file, preview, mediaId, sourceUrl }
- * @param {Object}        root0
- * @param {Function}      root0.onSuccess
- * @param {object}        root0.geoData
- * @param {string}        root0.postDate
- * @param {object|null}   root0.initialPhoto
+ * @param {Object}      root0
+ * @param {Function}    root0.onSuccess
+ * @param {object}      root0.geoData
+ * @param {string}      root0.postDate
+ * @param {object|null} root0.initialPhoto
  */
 export default function PhotoComposer( {
 	onSuccess,
@@ -148,7 +150,9 @@ export default function PhotoComposer( {
 	// Only fills an empty composer so it never clobbers a user's own pick.
 	useEffect( () => {
 		if ( initialPhoto ) {
-			setPhotos( ( prev ) => ( prev.length === 0 ? [ initialPhoto ] : prev ) );
+			setPhotos( ( prev ) =>
+				prev.length === 0 ? [ initialPhoto ] : prev
+			);
 		}
 	}, [ initialPhoto ] );
 
@@ -275,10 +279,7 @@ export default function PhotoComposer( {
 		}
 
 		frame.on( 'select', () => {
-			const attachments = frame
-				.state()
-				.get( 'selection' )
-				.toJSON();
+			const attachments = frame.state().get( 'selection' ).toJSON();
 			setError( null );
 			setPhotos(
 				attachments.map( ( a ) => ( {
@@ -496,7 +497,10 @@ export default function PhotoComposer( {
 									className="qp-photo-dropzone__library"
 									onClick={ openMediaLibrary }
 								>
-									{ __( 'choose from library', 'quickpostr' ) }
+									{ __(
+										'choose from library',
+										'quickpostr'
+									) }
 								</button>
 							</>
 						) }
@@ -556,7 +560,11 @@ export default function PhotoComposer( {
 			{ showStrip && (
 				// tabIndex -1 so focus has somewhere to land after a reorder
 				// leaves no move button at the new position.
-				<div className="qp-photo-strip" ref={ stripRef } tabIndex={ -1 }>
+				<div
+					className="qp-photo-strip"
+					ref={ stripRef }
+					tabIndex={ -1 }
+				>
 					{ photos.map( ( photo, i ) => (
 						<div
 							key={ photo.preview }
@@ -596,36 +604,44 @@ export default function PhotoComposer( {
 										setDragOverIndex( null );
 									} }
 								/>
-							{ i > 0 && (
-								<button
-									type="button"
-									ref={ setMoveRef( i, 'prev' ) }
-									className="qp-photo-strip__move qp-photo-strip__move--prev"
-									onClick={ () => movePhoto( i, i - 1 ) }
-									aria-label={ __( 'Move photo left', 'quickpostr' ) }
-									disabled={ submitting }
-								>
-									&#x2039;
-								</button>
-							) }
-							{ i < photos.length - 1 && (
-								<button
-									type="button"
-									ref={ setMoveRef( i, 'next' ) }
-									className="qp-photo-strip__move qp-photo-strip__move--next"
-									onClick={ () => movePhoto( i, i + 1 ) }
-									aria-label={ __( 'Move photo right', 'quickpostr' ) }
-									disabled={ submitting }
-								>
-									&#x203a;
-								</button>
-							) }
+								{ i > 0 && (
+									<button
+										type="button"
+										ref={ setMoveRef( i, 'prev' ) }
+										className="qp-photo-strip__move qp-photo-strip__move--prev"
+										onClick={ () => movePhoto( i, i - 1 ) }
+										aria-label={ __(
+											'Move photo left',
+											'quickpostr'
+										) }
+										disabled={ submitting }
+									>
+										&#x2039;
+									</button>
+								) }
+								{ i < photos.length - 1 && (
+									<button
+										type="button"
+										ref={ setMoveRef( i, 'next' ) }
+										className="qp-photo-strip__move qp-photo-strip__move--next"
+										onClick={ () => movePhoto( i, i + 1 ) }
+										aria-label={ __(
+											'Move photo right',
+											'quickpostr'
+										) }
+										disabled={ submitting }
+									>
+										&#x203a;
+									</button>
+								) }
 							</div>
 							<input
 								type="text"
 								className="qp-photo-alt__input qp-photo-alt__input--strip"
 								value={ photo.alt ?? '' }
-								onChange={ ( e ) => setAlt( i, e.target.value ) }
+								onChange={ ( e ) =>
+									setAlt( i, e.target.value )
+								}
 								placeholder={ __( 'Alt text', 'quickpostr' ) }
 								aria-label={ sprintf(
 									/* translators: %d: 1-based position of the photo in the gallery */

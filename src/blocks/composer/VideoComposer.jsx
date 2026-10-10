@@ -113,7 +113,10 @@ export default function VideoComposer( {
 			setError(
 				sprintf(
 					/* translators: %d: maximum file size in MB */
-					__( 'File too large — maximum size is %d MB.', 'quickpostr' ),
+					__(
+						'File too large — maximum size is %d MB.',
+						'quickpostr'
+					),
 					mb
 				)
 			);
@@ -168,7 +171,10 @@ export default function VideoComposer( {
 				URL.revokeObjectURL( preview );
 			}
 			setPreview( null );
-			setLibraryMediaItem( { id: attachment.id, source_url: attachment.url } );
+			setLibraryMediaItem( {
+				id: attachment.id,
+				source_url: attachment.url,
+			} );
 			if ( fileInputRef.current ) {
 				fileInputRef.current.value = '';
 			}
@@ -288,7 +294,10 @@ export default function VideoComposer( {
 			setFlash( true );
 			setTimeout( () => setFlash( false ), 2500 );
 		} catch ( err ) {
-			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
+			setError(
+				err.message ??
+					__( 'Failed to publish. Please try again.', 'quickpostr' )
+			);
 		} finally {
 			setSubmitting( false );
 			setPhase( 'idle' );
@@ -304,7 +313,12 @@ export default function VideoComposer( {
 		return `${ videoBlock }\n\n<!-- wp:paragraph --><p>${ captionText }</p><!-- /wp:paragraph -->`;
 	}
 
-	function buildMuxVideoContent( playbackId, assetId, aspectRatio, captionText ) {
+	function buildMuxVideoContent(
+		playbackId,
+		assetId,
+		aspectRatio,
+		captionText
+	) {
 		const attrs = JSON.stringify( { playbackId, assetId, aspectRatio } );
 		const muxBlock = `<!-- wp:videomuxr/video ${ attrs } /-->`;
 		if ( ! captionText.trim() ) {
@@ -365,7 +379,14 @@ export default function VideoComposer( {
 						stroke="currentColor"
 						strokeWidth="1.5"
 					>
-						<rect x="2" y="6" width="15" height="12" rx="2" ry="2" />
+						<rect
+							x="2"
+							y="6"
+							width="15"
+							height="12"
+							rx="2"
+							ry="2"
+						/>
 						<polyline points="22 8 17 12 22 16 22 8" />
 					</svg>
 					<span className="qp-video-dropzone__label">
@@ -386,7 +407,10 @@ export default function VideoComposer( {
 									className="qp-video-dropzone__library"
 									onClick={ openMediaLibrary }
 								>
-									{ __( 'choose from library', 'quickpostr' ) }
+									{ __(
+										'choose from library',
+										'quickpostr'
+									) }
 								</button>
 							</>
 						) }
@@ -426,7 +450,10 @@ export default function VideoComposer( {
 			{ ( file || libraryMediaItem ) && (
 				<textarea
 					className="qp-video-caption"
-					placeholder={ __( 'Add a caption… (optional)', 'quickpostr' ) }
+					placeholder={ __(
+						'Add a caption… (optional)',
+						'quickpostr'
+					) }
 					value={ caption }
 					onChange={ ( e ) => setCaption( e.target.value ) }
 					disabled={ submitting }
@@ -473,7 +500,10 @@ export default function VideoComposer( {
 					role="status"
 					aria-live="polite"
 				>
-					<span className="qp-video-processing__spinner" aria-hidden="true" />
+					<span
+						className="qp-video-processing__spinner"
+						aria-hidden="true"
+					/>
 					<span>
 						{ __(
 							'Processing video… this can take a minute.',

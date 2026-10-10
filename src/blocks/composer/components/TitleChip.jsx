@@ -73,8 +73,7 @@ export default function TitleChip( {
 	}
 
 	const hasOverride = !! value.trim();
-	const label =
-		value.trim() || autoTitle || __( 'Title', 'quickpostr' );
+	const label = value.trim() || autoTitle || __( 'Title', 'quickpostr' );
 
 	return (
 		<div
@@ -98,7 +97,10 @@ export default function TitleChip( {
 						hasOverride
 							? sprintf(
 									/* translators: %s: the post title the user typed. */
-									__( 'Post title: %s. Change it.', 'quickpostr' ),
+									__(
+										'Post title: %s. Change it.',
+										'quickpostr'
+									),
 									label
 							  )
 							: __( 'Add a post title (optional)', 'quickpostr' )

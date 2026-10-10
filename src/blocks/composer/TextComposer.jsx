@@ -2,7 +2,13 @@ import { useState, useRef, useCallback, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
-import { createPost, updatePost, getDraft, discardDraft, buildQuickpostrFields } from './api.js';
+import {
+	createPost,
+	updatePost,
+	getDraft,
+	discardDraft,
+	buildQuickpostrFields,
+} from './api.js';
 import { toRestDate, titleDateString } from './postDate.js';
 import {
 	buildStatusContent,
@@ -21,11 +27,11 @@ const DRAFT_SAVE_DELAY = 800;
  * The command runs from onClick so it fires for keyboard activation too;
  * onMouseDown only prevents the contenteditable from blurring (and losing its
  * selection) before the click lands.
- * @param {Object}         root0
- * @param {string}         root0.label
- * @param {Function}       root0.onClick
+ * @param {Object}            root0
+ * @param {string}            root0.label
+ * @param {Function}          root0.onClick
  * @param {boolean|undefined} root0.pressed
- * @param {*}              root0.children
+ * @param {*}                 root0.children
  */
 function ToolbarButton( { label, onClick, pressed, children } ) {
 	return (
@@ -181,7 +187,10 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 				>
 					<em>I</em>
 				</ToolbarButton>
-				<ToolbarButton label={ __( 'Link', 'quickpostr' ) } onClick={ handleLink }>
+				<ToolbarButton
+					label={ __( 'Link', 'quickpostr' ) }
+					onClick={ handleLink }
+				>
 					&#128279;
 				</ToolbarButton>
 			</div>
@@ -398,7 +407,10 @@ export default function TextComposer( {
 			setFlash( true );
 			setTimeout( () => setFlash( false ), 2500 );
 		} catch ( err ) {
-			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
+			setError(
+				err.message ??
+					__( 'Failed to publish. Please try again.', 'quickpostr' )
+			);
 		} finally {
 			setSubmitting( false );
 		}
@@ -434,7 +446,9 @@ export default function TextComposer( {
 		<div className="qp-text-composer" onKeyDown={ handleKeyDown }>
 			{ draftBanner && (
 				<div className="qp-draft-banner" role="status">
-					<span>{ __( 'Resume your saved draft?', 'quickpostr' ) }</span>
+					<span>
+						{ __( 'Resume your saved draft?', 'quickpostr' ) }
+					</span>
 					<div className="qp-draft-banner__actions">
 						<button
 							type="button"
@@ -483,10 +497,16 @@ export default function TextComposer( {
 						className="qp-composer-submit"
 						onClick={ handleSubmit }
 						disabled={ ! hasContent || submitting }
-						aria-label={ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
+						aria-label={
+							submitting
+								? __( 'Publishing…', 'quickpostr' )
+								: submitLabel
+						}
 						type="button"
 					>
-						{ submitting ? __( 'Publishing…', 'quickpostr' ) : submitLabel }
+						{ submitting
+							? __( 'Publishing…', 'quickpostr' )
+							: submitLabel }
 					</button>
 				</div>
 			</footer>

@@ -184,7 +184,10 @@ export default function GeoChip( {
 						hasLocation
 							? sprintf(
 									/* translators: %s: the attached place name. */
-									__( 'Location: %s. Change it.', 'quickpostr' ),
+									__(
+										'Location: %s. Change it.',
+										'quickpostr'
+									),
 									label
 							  )
 							: __( 'Add location', 'quickpostr' )
@@ -261,7 +264,10 @@ export default function GeoChip( {
 					</div>
 
 					{ loading && (
-						<p className="qp-geo-search__loading" aria-live="polite">
+						<p
+							className="qp-geo-search__loading"
+							aria-live="polite"
+						>
 							{ __( 'Searching…', 'quickpostr' ) }
 						</p>
 					) }

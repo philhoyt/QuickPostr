@@ -119,7 +119,9 @@ export default function TermPicker( {
 				term.name.toLowerCase().includes( typedLc )
 		  )
 		: suggestions;
-	const available = source.filter( ( term ) => ! selected.includes( term.id ) );
+	const available = source.filter(
+		( term ) => ! selected.includes( term.id )
+	);
 
 	const exactMatch = showPopular
 		? null
@@ -142,7 +144,8 @@ export default function TermPicker( {
 	];
 
 	const hasRows =
-		options.length > 0 || ( ! showPopular && ( alreadyAdded || searching ) );
+		options.length > 0 ||
+		( ! showPopular && ( alreadyAdded || searching ) );
 	const listOpen = open && hasRows;
 	// Guards the gap between a keystroke shrinking the list and the next render.
 	const active = activeIndex < options.length ? activeIndex : -1;

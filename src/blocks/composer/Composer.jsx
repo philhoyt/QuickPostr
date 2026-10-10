@@ -89,7 +89,8 @@ export default function Composer() {
 	}, [ openChip ] );
 
 	// A draft with a future date is not scheduled, so the chip must not imply it.
-	const canSchedule = ( config.settings?.defaultStatus ?? 'publish' ) === 'publish';
+	const canSchedule =
+		( config.settings?.defaultStatus ?? 'publish' ) === 'publish';
 
 	// Set when WordPress schedules the post instead of publishing it.
 	const [ scheduledPost, setScheduledPost ] = useState( null );
@@ -258,10 +259,7 @@ export default function Composer() {
 				</div>
 			) }
 
-			<div
-				className="qp-composer__body"
-				hidden={ !! scheduledPost }
-			>
+			<div className="qp-composer__body" hidden={ !! scheduledPost }>
 				{ mode === 'status' && (
 					<TextComposer
 						onSuccess={ handleSuccess }

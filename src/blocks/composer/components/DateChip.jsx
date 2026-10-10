@@ -1,10 +1,6 @@
 import { useState, useRef, useId, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import {
-	siteNowLocalString,
-	formatForDisplay,
-	isFuture,
-} from '../postDate.js';
+import { siteNowLocalString, formatForDisplay, isFuture } from '../postDate.js';
 
 /**
  * Post date chip — collapsed to "Now" until the user picks a date.
@@ -121,10 +117,16 @@ export default function DateChip( {
 						hasCustomDate
 							? sprintf(
 									/* translators: %s: the chosen post date and time. */
-									__( 'Post date: %s. Change it.', 'quickpostr' ),
+									__(
+										'Post date: %s. Change it.',
+										'quickpostr'
+									),
 									label
 							  )
-							: __( 'Set a post date. Currently now.', 'quickpostr' )
+							: __(
+									'Set a post date. Currently now.',
+									'quickpostr'
+							  )
 					}
 				>
 					<svg
@@ -146,7 +148,10 @@ export default function DateChip( {
 						type="button"
 						className="qp-chip__clear"
 						onClick={ handleReset }
-						aria-label={ __( 'Reset post date to now', 'quickpostr' ) }
+						aria-label={ __(
+							'Reset post date to now',
+							'quickpostr'
+						) }
 					>
 						&#x2715;
 					</button>
@@ -155,10 +160,7 @@ export default function DateChip( {
 
 			{ isOpen && (
 				<div className="qp-chip__panel" id={ panelId }>
-					<label
-						className="qp-chip__panel-label"
-						htmlFor={ inputId }
-					>
+					<label className="qp-chip__panel-label" htmlFor={ inputId }>
 						{ __( 'Post date and time', 'quickpostr' ) }
 					</label>
 					<div className="qp-chip__panel-row">
