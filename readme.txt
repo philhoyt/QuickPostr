@@ -4,7 +4,7 @@ Tags: composer, post, social, front-end, gutenberg
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.19.0
+Stable tag: 0.20.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,12 @@ JPEG, PNG and WebP, when the server has the Imagick extension. Other formats (HE
 QuickPostr adds suggested text covering all of this under Settings → Privacy → Policy Guide. Uninstalling removes all like records, pending shared uploads, the plugin's post meta, options and transients.
 
 == Changelog ==
+
+= 0.20.0 =
+* Add: Status posts are stored as Paragraph blocks, so they open in the block editor as blocks and render through the Post Content block without a Classic block.
+* Change: A blank line in the status composer starts a new paragraph; a single line break stays inside the paragraph. Bold, italic and links that cross a blank line are closed and reopened in each paragraph.
+* Change: Resuming a saved draft restores its text and formatting from the block markup; drafts saved by earlier versions still resume.
+* Change: A link post made without Better Bookmarks is stored as a Paragraph block with an escaped link.
 
 = 0.19.0 =
 * Add: Alt text field for each photo in the composer; the caption is used when it is left empty.
