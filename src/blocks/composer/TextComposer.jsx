@@ -4,6 +4,10 @@ import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
 import { createPost, updatePost, getDraft, discardDraft, buildQuickpostrFields } from './api.js';
 import { toRestDate, titleDateString } from './postDate.js';
+import {
+	buildStatusContent,
+	statusContentToEditorHtml,
+} from './statusContent.js';
 import TagInput from './TagInput.jsx';
 
 const config = window.quickpostrConfig ?? {};
@@ -269,11 +273,12 @@ export default function TextComposer( {
 
 	/**
 	 * Schedule a debounced draft save whenever content changes.
-	 * @param {string} content
+	 * @param {string} editorHtml
 	 */
-	function scheduleDraftSave( content ) {
+	function scheduleDraftSave( editorHtml ) {
 		clearTimeout( draftTimer.current );
 		draftTimer.current = setTimeout( async () => {
+			const content = buildStatusContent( editorHtml );
 			if ( ! content ) {
 				return;
 			}
@@ -302,7 +307,8 @@ export default function TextComposer( {
 	}
 
 	function resumeDraft() {
-		const raw = draftPost?.content?.raw ?? '';
+		// Stored as paragraph blocks; the editor wants flat inline HTML.
+		const raw = statusContentToEditorHtml( draftPost?.content?.raw ?? '' );
 		setDraftId( draftPost.id );
 		setHtml( raw );
 		if ( editorRef.current ) {
@@ -333,7 +339,9 @@ export default function TextComposer( {
 		// back to state alone risks passing the guard on visible text while
 		// posting empty content, which WordPress rejects with "Content, title,
 		// and excerpt are empty."
-		const content = html || editorRef.current?.innerHTML || '';
+		const content = buildStatusContent(
+			html || editorRef.current?.innerHTML || ''
+		);
 
 		setSubmitting( true );
 		setError( null );
