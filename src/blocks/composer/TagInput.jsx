@@ -1,5 +1,5 @@
 import { useMemo } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	searchTags,
 	createTag,
@@ -25,11 +25,11 @@ import TermPicker from './components/TermPicker.jsx';
  *   selectedCategories {number[]}  — array of category IDs
  *   onTagsChange       (ids) => void
  *   onCategoriesChange (ids) => void
- * @param {Object}   root0
- * @param {number[]} root0.selectedTags
- * @param {number[]} root0.selectedCategories
- * @param {Function} root0.onTagsChange
- * @param {Function} root0.onCategoriesChange
+ * @param {Object}                  root0
+ * @param {number[]}                root0.selectedTags
+ * @param {number[]}                root0.selectedCategories
+ * @param {(ids: number[]) => void} root0.onTagsChange
+ * @param {(ids: number[]) => void} root0.onCategoriesChange
  */
 export default function TagInput( {
 	selectedTags,
@@ -67,8 +67,12 @@ export default function TagInput( {
 				labels={ {
 					label: __( 'Categories', 'quickpostr' ),
 					placeholder: __( 'Add categories…', 'quickpostr' ),
-					/* translators: %s: category name */
-					removeLabel: __( 'Remove category %s', 'quickpostr' ),
+					removeLabel: ( name ) =>
+						sprintf(
+							/* translators: %s: category name */
+							__( 'Remove category %s', 'quickpostr' ),
+							name
+						),
 				} }
 			/>
 
@@ -79,8 +83,12 @@ export default function TagInput( {
 				labels={ {
 					label: __( 'Tags', 'quickpostr' ),
 					placeholder: __( 'Add tags…', 'quickpostr' ),
-					/* translators: %s: tag name */
-					removeLabel: __( 'Remove tag %s', 'quickpostr' ),
+					removeLabel: ( name ) =>
+						sprintf(
+							/* translators: %s: tag name */
+							__( 'Remove tag %s', 'quickpostr' ),
+							name
+						),
 				} }
 			/>
 		</div>

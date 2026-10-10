@@ -7,6 +7,11 @@ module.exports = [
 	{
 		ignores: [ 'build/**', 'vendor/**', 'node_modules/**', 'lib/**' ],
 	},
+	{
+		// Flat config only matches *.js / *.mjs / *.cjs by default; opt the
+		// block components in so the WordPress rules and prettier apply to JSX.
+		files: [ '**/*.js', '**/*.jsx' ],
+	},
 	...wpPlugin.configs.recommended,
 	{
 		languageOptions: {

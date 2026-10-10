@@ -18,13 +18,13 @@ import { __, sprintf } from '@wordpress/i18n';
  *   disabled  {boolean}
  *   isOpen    {boolean}  — whether this chip's panel is the open one
  *   onToggle  () => void
- * @param {Object}   root0
- * @param {string}   root0.value
- * @param {Function} root0.onChange
- * @param {string}   root0.autoTitle
- * @param {boolean}  root0.disabled
- * @param {boolean}  root0.isOpen
- * @param {Function} root0.onToggle
+ * @param {Object}                  root0
+ * @param {string}                  root0.value
+ * @param {(value: string) => void} root0.onChange
+ * @param {string}                  root0.autoTitle
+ * @param {boolean}                 root0.disabled
+ * @param {boolean}                 root0.isOpen
+ * @param {() => void}              root0.onToggle
  */
 export default function TitleChip( {
 	value,
@@ -73,14 +73,14 @@ export default function TitleChip( {
 	}
 
 	const hasOverride = !! value.trim();
-	const label =
-		value.trim() || autoTitle || __( 'Title', 'quickpostr' );
+	const label = value.trim() || autoTitle || __( 'Title', 'quickpostr' );
 
 	return (
 		<div
 			className={ `qp-chip qp-chip--title${
 				isOpen ? ' qp-chip--open' : ''
 			}` }
+			role="presentation"
 			onKeyDown={ handleKeyDown }
 		>
 			<div className="qp-chip__header">
@@ -98,7 +98,10 @@ export default function TitleChip( {
 						hasOverride
 							? sprintf(
 									/* translators: %s: the post title the user typed. */
-									__( 'Post title: %s. Change it.', 'quickpostr' ),
+									__(
+										'Post title: %s. Change it.',
+										'quickpostr'
+									),
 									label
 							  )
 							: __( 'Add a post title (optional)', 'quickpostr' )

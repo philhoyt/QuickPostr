@@ -33,10 +33,13 @@ function serializeLinkCard( attrs ) {
  * Props:
  *   onSuccess (wpPost) => void
  *   geoData   {object} — location data from the composer root
- * @param {Object}   root0
- * @param {Function} root0.onSuccess
- * @param {object}   root0.geoData
- * @param {string}   root0.postDate
+ * @param {Object}                                              root0
+ * @param {(post: Object) => void}                              root0.onSuccess
+ * @param {Object}                                              root0.geoData
+ * @param {string}                                              root0.postDate
+ * @param {string}                                              root0.title
+ * @param {(title: string) => void}                             root0.onTitleChange
+ * @param {(state: {autoTitle: string, busy: boolean}) => void} root0.onStateChange
  */
 export default function LinkComposer( {
 	onSuccess,
@@ -89,7 +92,10 @@ export default function LinkComposer( {
 			setPreview( data );
 		} catch {
 			setFetchError(
-				__( 'Could not fetch preview. Check the URL and try again.', 'quickpostr' )
+				__(
+					'Could not fetch preview. Check the URL and try again.',
+					'quickpostr'
+				)
 			);
 		} finally {
 			setFetching( false );
@@ -131,7 +137,9 @@ export default function LinkComposer( {
 				const label = escapeAttr( preview?.title || trimmed );
 				content =
 					'<!-- wp:paragraph -->\n' +
-					`<p><a href="${ escapeAttr( trimmed ) }">${ label }</a></p>\n` +
+					`<p><a href="${ escapeAttr(
+						trimmed
+					) }">${ label }</a></p>\n` +
 					'<!-- /wp:paragraph -->';
 			}
 
@@ -166,7 +174,10 @@ export default function LinkComposer( {
 			setFlash( true );
 			setTimeout( () => setFlash( false ), 2500 );
 		} catch ( err ) {
-			setError( err.message ?? __( 'Failed to publish. Please try again.', 'quickpostr' ) );
+			setError(
+				err.message ??
+					__( 'Failed to publish. Please try again.', 'quickpostr' )
+			);
 		} finally {
 			setSubmitting( false );
 		}
