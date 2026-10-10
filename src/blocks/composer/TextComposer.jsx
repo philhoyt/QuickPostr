@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 import { create, toHTMLString } from '@wordpress/rich-text';
 import { generateTitle } from './useAutoTitle.js';
 import {
@@ -27,11 +27,11 @@ const DRAFT_SAVE_DELAY = 800;
  * The command runs from onClick so it fires for keyboard activation too;
  * onMouseDown only prevents the contenteditable from blurring (and losing its
  * selection) before the click lands.
- * @param {Object}            root0
- * @param {string}            root0.label
- * @param {Function}          root0.onClick
- * @param {boolean|undefined} root0.pressed
- * @param {*}                 root0.children
+ * @param {Object}                      root0
+ * @param {string}                      root0.label
+ * @param {(event: MouseEvent) => void} root0.onClick
+ * @param {boolean|undefined}           root0.pressed
+ * @param {import('react').ReactNode}   root0.children
  */
 function ToolbarButton( { label, onClick, pressed, children } ) {
 	return (
@@ -87,7 +87,7 @@ function readFormatState( root ) {
 
 /**
  * Lightweight contenteditable rich text editor.
- * Uses @wordpress/rich-text for HTML normalization on read.
+ * Uses `@wordpress/rich-text` for HTML normalization on read.
  * Uses document.execCommand for format toggling (broad browser support).
  *
  * Props:
@@ -95,11 +95,11 @@ function readFormatState( root ) {
  *   disabled    {boolean}
  *   editorRef   {React.RefObject} — forwarded ref to the contenteditable div
  *   onChange    (html: string) => void
- * @param {Object}          root0
- * @param {string}          root0.placeholder
- * @param {boolean}         root0.disabled
- * @param {React.RefObject} root0.editorRef
- * @param {Function}        root0.onChange
+ * @param {Object}                 root0
+ * @param {string}                 root0.placeholder
+ * @param {boolean}                root0.disabled
+ * @param {React.RefObject}        root0.editorRef
+ * @param {(html: string) => void} root0.onChange
  */
 function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
 	const [ isEmpty, setIsEmpty ] = useState( true );
@@ -219,10 +219,13 @@ function RichEditor( { placeholder, disabled, editorRef, onChange } ) {
  * Props:
  *   onSuccess (wpPost) => void
  *   geoData   {object} — location data from the composer root
- * @param {Object}   root0
- * @param {Function} root0.onSuccess
- * @param {object}   root0.geoData
- * @param {string}   root0.postDate
+ * @param {Object}                                              root0
+ * @param {(post: Object) => void}                              root0.onSuccess
+ * @param {Object}                                              root0.geoData
+ * @param {string}                                              root0.postDate
+ * @param {string}                                              root0.title
+ * @param {(title: string) => void}                             root0.onTitleChange
+ * @param {(state: {autoTitle: string, busy: boolean}) => void} root0.onStateChange
  */
 export default function TextComposer( {
 	onSuccess,
@@ -278,7 +281,7 @@ export default function TextComposer( {
 				}
 			} )
 			.catch( () => {} );
-	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [] );
 
 	/**
 	 * Schedule a debounced draft save whenever content changes.

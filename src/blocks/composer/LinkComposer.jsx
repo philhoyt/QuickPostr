@@ -33,10 +33,13 @@ function serializeLinkCard( attrs ) {
  * Props:
  *   onSuccess (wpPost) => void
  *   geoData   {object} — location data from the composer root
- * @param {Object}   root0
- * @param {Function} root0.onSuccess
- * @param {object}   root0.geoData
- * @param {string}   root0.postDate
+ * @param {Object}                                              root0
+ * @param {(post: Object) => void}                              root0.onSuccess
+ * @param {Object}                                              root0.geoData
+ * @param {string}                                              root0.postDate
+ * @param {string}                                              root0.title
+ * @param {(title: string) => void}                             root0.onTitleChange
+ * @param {(state: {autoTitle: string, busy: boolean}) => void} root0.onStateChange
  */
 export default function LinkComposer( {
 	onSuccess,

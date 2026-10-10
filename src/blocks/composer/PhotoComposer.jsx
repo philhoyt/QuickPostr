@@ -19,7 +19,7 @@ const MAX_BYTES = config.maxUploadSize ?? 10 * 1024 * 1024; // 10 MB fallback
  * WP 6.7+ (nested-images format) so the block editor validates cleanly.
  * @param {Array<{id: number, source_url: string, alt?: string}>} mediaItems
  * @param {string}                                                captionText
- * @returns {string}
+ * @return {string} Serialized gallery block markup.
  */
 function buildGalleryContent( mediaItems, captionText ) {
 	const innerBlocks = mediaItems
@@ -55,7 +55,7 @@ function buildGalleryContent( mediaItems, captionText ) {
  * Validate a file: must be image/*, under MAX_BYTES.
  * Returns an error string or null.
  * @param {File} f
- * @returns {string|null}
+ * @return {string|null} Error message, or null when the file is valid.
  */
 function validateImageFile( f ) {
 	if ( ! f.type.startsWith( 'image/' ) ) {
@@ -88,11 +88,14 @@ function validateImageFile( f ) {
  *   postDate     {string} — datetime-local value, '' for "now"
  *   initialPhoto {object|null} — a pre-loaded photo (e.g. a PWA-shared image),
  *                in the library-pick shape { file, preview, mediaId, sourceUrl }
- * @param {Object}      root0
- * @param {Function}    root0.onSuccess
- * @param {object}      root0.geoData
- * @param {string}      root0.postDate
- * @param {object|null} root0.initialPhoto
+ * @param {Object}                                              root0
+ * @param {(post: Object, mediaUrl: string) => void}            root0.onSuccess
+ * @param {Object}                                              root0.geoData
+ * @param {string}                                              root0.postDate
+ * @param {Object|null}                                         root0.initialPhoto
+ * @param {string}                                              root0.title
+ * @param {(title: string) => void}                             root0.onTitleChange
+ * @param {(state: {autoTitle: string, busy: boolean}) => void} root0.onStateChange
  */
 export default function PhotoComposer( {
 	onSuccess,

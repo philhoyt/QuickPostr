@@ -9,7 +9,6 @@ import {
 	PanelBody,
 	RadioControl,
 	TextControl,
-	ToggleControl,
 	Notice,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';

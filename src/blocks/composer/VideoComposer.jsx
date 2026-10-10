@@ -27,10 +27,13 @@ const videoMuxr = config.videoMuxr ?? null;
  *
  * Props:
  *   onSuccess (wpPost, mediaUrl) => void
- * @param {Object}   root0
- * @param {Function} root0.onSuccess
- * @param {object}   root0.geoData
- * @param {string}   root0.postDate
+ * @param {Object}                                              root0
+ * @param {(post: Object, mediaUrl: string) => void}            root0.onSuccess
+ * @param {Object}                                              root0.geoData
+ * @param {string}                                              root0.postDate
+ * @param {string}                                              root0.title
+ * @param {(title: string) => void}                             root0.onTitleChange
+ * @param {(state: {autoTitle: string, busy: boolean}) => void} root0.onStateChange
  */
 export default function VideoComposer( {
 	onSuccess,
@@ -429,7 +432,6 @@ export default function VideoComposer( {
 
 			{ hasMedia && (
 				<div className="qp-video-preview">
-					{ /* eslint-disable-next-line jsx-a11y/media-has-caption -- caption is optional user content, not a required accessibility feature for the composer preview */ }
 					<video
 						src={ preview ?? libraryMediaItem?.source_url }
 						className="qp-video-preview__video"

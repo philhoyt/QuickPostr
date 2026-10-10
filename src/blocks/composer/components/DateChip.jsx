@@ -22,12 +22,12 @@ import { siteNowLocalString, formatForDisplay, isFuture } from '../postDate.js';
  *                           draft with a future date is not scheduled.
  *   isOpen   {boolean}  — whether this chip's panel is the open one
  *   onToggle () => void — ask the composer to open/close this chip
- * @param {Object}   root0
- * @param {string}   root0.value
- * @param {Function} root0.onChange
- * @param {boolean}  root0.canSchedule
- * @param {boolean}  root0.isOpen
- * @param {Function} root0.onToggle
+ * @param {Object}                  root0
+ * @param {string}                  root0.value
+ * @param {(value: string) => void} root0.onChange
+ * @param {boolean}                 root0.canSchedule
+ * @param {boolean}                 root0.isOpen
+ * @param {() => void}              root0.onToggle
  */
 export default function DateChip( {
 	value,
@@ -101,6 +101,7 @@ export default function DateChip( {
 			className={ `qp-chip qp-chip--date${
 				isOpen ? ' qp-chip--open' : ''
 			}` }
+			role="presentation"
 			onKeyDown={ handleKeyDown }
 		>
 			<div className="qp-chip__header">

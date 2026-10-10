@@ -28,16 +28,16 @@ import { __, sprintf } from '@wordpress/i18n';
  *   selected  {number[]}          — selected term ids
  *   onChange  (ids: number[]) => void
  *   api       { search, create, get, getPopular } — the taxonomy's REST calls
- *   labels    { label, placeholder, removeLabel } — removeLabel is a printf
- *             format taking the term name, so it stays one literal string per
- *             taxonomy for translators
+ *   labels    { label, placeholder, removeLabel } — removeLabel takes the
+ *             term name and returns the remove button's accessible name, so
+ *             the printf literal stays with its __() call per taxonomy
  *   chipModifier {string}         — extra class for the selected-term chips
- * @param {Object}   root0
- * @param {number[]} root0.selected
- * @param {Function} root0.onChange
- * @param {Object}   root0.api
- * @param {Object}   root0.labels
- * @param {string}   root0.chipModifier
+ * @param {Object}                  root0
+ * @param {number[]}                root0.selected
+ * @param {(ids: number[]) => void} root0.onChange
+ * @param {Object}                  root0.api
+ * @param {Object}                  root0.labels
+ * @param {string}                  root0.chipModifier
  */
 export default function TermPicker( {
 	selected,
@@ -334,8 +334,7 @@ export default function TermPicker( {
 						<button
 							type="button"
 							className="qp-tag-input__tag-remove"
-							aria-label={ sprintf(
-								labels.removeLabel,
+							aria-label={ labels.removeLabel(
 								names[ id ] ?? id
 							) }
 							onClick={ () => removeTerm( id ) }

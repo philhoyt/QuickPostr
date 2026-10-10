@@ -26,12 +26,12 @@ import useNominatimSearch from '../hooks/useNominatimSearch.js';
  *   onDismiss        () => void
  *   isOpen           {boolean} — whether this chip's panel is the open one
  *   onToggle         () => void
- * @param {Object}   root0
- * @param {object}   root0.geoData
- * @param {Function} root0.onLocationSelect
- * @param {Function} root0.onDismiss
- * @param {boolean}  root0.isOpen
- * @param {Function} root0.onToggle
+ * @param {Object}                                                                         root0
+ * @param {Object}                                                                         root0.geoData
+ * @param {(location: {lat: number, lng: number, place: string, address: string}) => void} root0.onLocationSelect
+ * @param {() => void}                                                                     root0.onDismiss
+ * @param {boolean}                                                                        root0.isOpen
+ * @param {() => void}                                                                     root0.onToggle
  */
 export default function GeoChip( {
 	geoData,
@@ -168,6 +168,7 @@ export default function GeoChip( {
 			className={ `qp-chip qp-chip--geo${
 				isOpen ? ' qp-chip--open' : ''
 			}` }
+			role="presentation"
 			onKeyDown={ handleKeyDown }
 		>
 			<div className="qp-chip__header">

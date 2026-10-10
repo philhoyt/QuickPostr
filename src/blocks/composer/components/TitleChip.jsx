@@ -18,13 +18,13 @@ import { __, sprintf } from '@wordpress/i18n';
  *   disabled  {boolean}
  *   isOpen    {boolean}  — whether this chip's panel is the open one
  *   onToggle  () => void
- * @param {Object}   root0
- * @param {string}   root0.value
- * @param {Function} root0.onChange
- * @param {string}   root0.autoTitle
- * @param {boolean}  root0.disabled
- * @param {boolean}  root0.isOpen
- * @param {Function} root0.onToggle
+ * @param {Object}                  root0
+ * @param {string}                  root0.value
+ * @param {(value: string) => void} root0.onChange
+ * @param {string}                  root0.autoTitle
+ * @param {boolean}                 root0.disabled
+ * @param {boolean}                 root0.isOpen
+ * @param {() => void}              root0.onToggle
  */
 export default function TitleChip( {
 	value,
@@ -80,6 +80,7 @@ export default function TitleChip( {
 			className={ `qp-chip qp-chip--title${
 				isOpen ? ' qp-chip--open' : ''
 			}` }
+			role="presentation"
 			onKeyDown={ handleKeyDown }
 		>
 			<div className="qp-chip__header">
