@@ -190,7 +190,7 @@ export default function GeoChip( {
 										'quickpostr'
 									),
 									label
-							  )
+								)
 							: __( 'Add location', 'quickpostr' )
 					}
 				>

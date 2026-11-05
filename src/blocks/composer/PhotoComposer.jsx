@@ -340,16 +340,16 @@ export default function PhotoComposer( {
 									)
 								)
 							)
-					  ).map( ( m, i ) => ( {
+						).map( ( m, i ) => ( {
 							id: m.id,
 							source_url: m.source_url,
 							alt: photos[ i ].alt,
-					  } ) )
+						} ) )
 					: photos.map( ( p ) => ( {
 							id: p.mediaId,
 							source_url: p.sourceUrl,
 							alt: p.alt,
-					  } ) );
+						} ) );
 
 				const baseFields = {
 					title: title.trim(),

@@ -117,7 +117,7 @@ export default function TermPicker( {
 	const source = showPopular
 		? popular.filter( ( term ) =>
 				term.name.toLowerCase().includes( typedLc )
-		  )
+			)
 		: suggestions;
 	const available = source.filter(
 		( term ) => ! selected.includes( term.id )
@@ -132,7 +132,7 @@ export default function TermPicker( {
 			? selected.includes( exactMatch.id )
 			: Object.values( names ).some(
 					( name ) => name.toLowerCase() === typedLc
-			  ) );
+				) );
 	const canCreate =
 		! showPopular && ! searching && ! alreadyAdded && ! exactMatch;
 
@@ -422,7 +422,7 @@ export default function TermPicker( {
 														'quickpostr'
 													),
 													typed
-											  )
+												)
 											: option.term.name }
 									</li>
 								);

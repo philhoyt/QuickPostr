@@ -103,7 +103,7 @@ export default function TitleChip( {
 										'quickpostr'
 									),
 									label
-							  )
+								)
 							: __( 'Add a post title (optional)', 'quickpostr' )
 					}
 				>

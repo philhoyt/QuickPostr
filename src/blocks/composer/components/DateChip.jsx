@@ -123,11 +123,11 @@ export default function DateChip( {
 										'quickpostr'
 									),
 									label
-							  )
+								)
 							: __(
 									'Set a post date. Currently now.',
 									'quickpostr'
-							  )
+								)
 					}
 				>
 					<svg

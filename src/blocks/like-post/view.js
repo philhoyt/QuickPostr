@@ -33,19 +33,19 @@ import { __ } from '@wordpress/i18n';
 
 		const loginSection = config.showLogin
 			? '<div class="qp-like-modal__login-section">' +
-			  '<p class="qp-like-modal__login-desc">' +
-			  __(
+				'<p class="qp-like-modal__login-desc">' +
+				__(
 					'Log in to like and unlike posts on future visits.',
 					'quickpostr'
-			  ) +
-			  '</p>' +
-			  '<a href="" class="qp-like-modal__login-btn">' +
-			  __( 'Log In', 'quickpostr' ) +
-			  '</a>' +
-			  '</div>' +
-			  '<div class="qp-like-modal__divider" aria-hidden="true"><span>' +
-			  __( 'or', 'quickpostr' ) +
-			  '</span></div>'
+				) +
+				'</p>' +
+				'<a href="" class="qp-like-modal__login-btn">' +
+				__( 'Log In', 'quickpostr' ) +
+				'</a>' +
+				'</div>' +
+				'<div class="qp-like-modal__divider" aria-hidden="true"><span>' +
+				__( 'or', 'quickpostr' ) +
+				'</span></div>'
 			: '';
 
 		el.innerHTML =
