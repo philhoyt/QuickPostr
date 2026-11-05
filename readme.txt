@@ -8,72 +8,77 @@ Stable tag: 0.20.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Front-end post composer that lets logged-in users post status updates, photos, videos, and links without visiting wp-admin
+A front-end post composer block for posting status updates, photos, videos and links without opening wp-admin
 
 == Description ==
 
-Place the QuickPostr Composer block on any page. Logged-in users with the appropriate role see a composer with four modes:
+Place the QuickPostr Composer block on a page. Logged-in users in the roles you choose see a composer with four modes; everyone else sees nothing.
 
-* **Status** -- Rich text editor with bold, italic, and inline links. Drafts auto-save every 800 ms.
-* **Photo** -- Drag-and-drop upload or WordPress media library picker. Optional caption. Selecting multiple images posts a gallery, which can be reordered before submitting.
-* **Video** -- Drag-and-drop video upload. Embeds the uploaded video as a WordPress video block in the post content.
-* **Link** -- Paste a URL to fetch Open Graph metadata and post a rich link card. Requires the [Better Bookmarks](https://github.com/philhoyt/BetterBookmarks) plugin for card display; falls back to a plain linked paragraph without it.
+* Status: a rich text editor with bold, italic and inline links. Drafts save 800 ms after you stop typing. A blank line starts a new paragraph.
+* Photo: drag-and-drop upload or the Media Library picker, with an optional caption and alt text. Selecting several images posts a gallery, which can be reordered before posting.
+* Video: drag-and-drop upload or the Media Library picker. The video is embedded as a Video block in the post content.
+* Link: paste a URL to post a link card with Open Graph metadata. The card needs the Better Bookmarks plugin (https://github.com/philhoyt/BetterBookmarks); without it the post is a paragraph with a plain link.
 
-The composer is auth-gated server-side. Logged-out visitors see nothing.
+Every mode can set categories and tags, give the post its own title, and set the date to backdate or schedule it.
 
-Post titles are generated server-side from content. Titles are suppressed on the front end but remain visible in wp-admin and REST responses for ActivityPub and feed readers.
+Posts get a title generated from their content. Generated titles are hidden on the front end but stay in wp-admin and REST responses for ActivityPub and feed readers. A title you type yourself is shown everywhere.
 
-**Additional blocks**
+Three more blocks go inside a Query Loop template:
 
-* **Post Actions** -- a kebab menu with Edit and Delete actions for the current post. Edit opens the post in the WordPress editor. Place inside a Query Loop template.
-* **Like Post** -- a heart button that lets visitors like a post and shows the like count. Place inside a Query Loop template.
-* **Share Post** -- calls `navigator.share()`. Requires HTTPS; hides itself on HTTP or when the API is unavailable.
+* Post Actions: a menu with Edit and Delete for the current post. Edit opens the post in the WordPress editor.
+* Like Post: a heart button with a like count, for logged-in and logged-out visitors.
+* Share Post: calls the browser's share sheet where it exists (HTTPS only). Browsers without it get a popover with X, Facebook and Copy link.
 
-A **QuickPostr Slider** block style is also registered for `core/gallery`, turning a gallery into a scroll-snap slider with dot navigation, arrows, and swipe gestures.
+A QuickPostr Slider block style for the Gallery block turns a gallery into a scroll-snap slider with dots, arrows and swipe. A "Composer with post feed" block pattern, under the QuickPostr category in the inserter, puts the composer above a feed of posts with the author avatar, date, actions menu, featured image, title, content, and like and share buttons.
+
+Installed as a web app on Android, QuickPostr appears in the share sheet. Sharing a photo to it opens the composer with that photo loaded.
+
+Companion plugins add more: GeoTagr (https://github.com/philhoyt/geotagr) adds a Location button to the composer, and VideoMuxr (https://github.com/philhoyt/VideoMuxr) sends video uploads to Mux for transcoding and hosted playback.
 
 **Requirements**
 
-* A theme that declares `add_theme_support( 'post-formats', [...] )`
-* PHP Imagick extension -- only required for EXIF stripping
+* A theme with post-formats support. Posts are saved with the status, image, video, gallery and link formats.
+* The PHP Imagick extension, only if you want photo metadata stripped on upload.
 
 == Installation ==
 
 1. Upload the `quickpostr` directory to `/wp-content/plugins/`.
-2. Activate the plugin via **Plugins → Installed Plugins**.
-3. Place the **QuickPostr Composer** block on any page using the block editor.
-4. Configure access and behaviour at **Settings → QuickPostr**.
+2. Activate the plugin under Plugins > Installed Plugins.
+3. Add the QuickPostr Composer block to a page in the block editor.
+4. Set who sees it and how posts are created under Settings > QuickPostr.
 
 == Configuration ==
 
-All settings are at **Settings → QuickPostr**.
+Settings > QuickPostr has these options:
 
-* **Show Composer To** -- which roles see the Composer block on the front end. Default: administrator, editor, author. This controls visibility only; who may publish is decided by WordPress capabilities, as it is in the block editor.
-* **Default Post Status** -- publish or draft. Set to draft to queue posts for review.
-* **Default Category** -- applied to every new post.
-* **Hide Admin Bar** -- hides the WordPress admin bar for non-administrator roles.
-* **Hide Admin Bar (Administrators)** -- separate toggle for the administrator role.
-* **Front-End Post Management** -- enables the Edit and Delete actions in the Post Actions block.
-* **Strip Photo Metadata** -- strips EXIF/XMP data (GPS, camera info) from JPEG, PNG and WebP uploads. Applies EXIF orientation to pixel data before stripping so images display correctly. Silently skipped if Imagick is unavailable.
+* Show Composer To: which roles see the Composer block. Default: administrator, editor, author. This controls visibility only; whether a user can publish is decided by their WordPress capabilities, as in the block editor.
+* Default Post Status: publish or draft. Draft queues posts for review.
+* Default Category: applied to every new post.
+* Hide Admin Bar: hides the admin bar for roles other than administrator.
+* Hide Admin Bar (Administrators): the same for administrators.
+* Front-End Post Management: turns the Edit and Delete actions in the Post Actions block on or off.
+* Strip Photo Metadata: removes EXIF and XMP data (GPS, camera details) from JPEG, PNG and WebP uploads. EXIF orientation is applied to the pixels first so photos stay the right way up. Skipped without a message when Imagick is not installed.
+* Composer Page: the page that holds the Composer block. It is the web app's start page and where shared photos are sent.
 
-Settings are stored in a single `wp_options` row under `quickpostr_settings`.
+The page also shows whether GeoTagr and Better Bookmarks are active. All settings live in one `wp_options` row, `quickpostr_settings`.
 
 == Frequently Asked Questions ==
 
 = Does the composer work for logged-out users? =
 
-No. The block renders nothing for logged-out visitors. There is no fallback UI or login prompt.
+No. The block renders nothing for logged-out visitors. There is no login prompt.
 
 = How are post titles generated? =
 
-PHP generates the canonical title in `rest_after_insert_post`. The composer sends an empty title and the server overwrites it. Content under 55 characters becomes the title as-is. Longer content is truncated at the last word break before 55 characters and suffixed with an ellipsis. Posts with no text content (photo or link without a caption) get a dated fallback: "Photo — Jan 15, 2026".
+PHP sets the title in `rest_after_insert_post`; the composer sends an empty title and the server fills it in. Content of 55 characters or fewer becomes the title. Longer content is cut at the last word break before 55 characters and given an ellipsis. A post with no text (a photo, video or link without a caption) gets the format name and the date, such as "Photo" followed by "Jan 15, 2026". Type your own title in the field above the composer to override this.
 
 = What authentication method is used? =
 
-Cookie authentication with an `X-WP-Nonce` header. No Application Passwords. The nonce is injected server-side in `render.php` before the view script runs.
+Cookie authentication with an `X-WP-Nonce` header, the same as the block editor. Application Passwords are not used. The nonce is printed into the page by `render.php` before the view script runs.
 
 = How do I query only QuickPostr posts? =
 
-QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives the terms `app` and one of `status`, `photo`, `video`, or `link`. Use `tax_query` to filter:
+QuickPostr registers a private `quickpostr_source` taxonomy. Each post gets the term `app` and one of `status`, `photo`, `video` or `link`. Filter with `tax_query`:
 
     $query = new WP_Query( [
         'tax_query' => [ [
@@ -85,172 +90,172 @@ QuickPostr registers a private `quickpostr_source` taxonomy. Each post receives 
 
 = Does the Share Post block work on desktop? =
 
-`navigator.share()` is not available in most desktop browsers. The block hides itself when the API is absent and requires HTTPS to function.
+Most desktop browsers have no `navigator.share()`. There the button opens a popover with X, Facebook and Copy link instead. Where the API exists it needs HTTPS.
 
-= Does EXIF stripping work for all image types? =
+= Does metadata stripping cover every image type? =
 
-JPEG, PNG and WebP, when the server has the Imagick extension. Other formats (HEIC, GIF, AVIF) and every format on a GD-only server keep their metadata.
+JPEG, PNG and WebP, when the server has the Imagick extension. HEIC, GIF and AVIF keep their metadata, as does every format on a server with only GD.
 
 = What personal data does QuickPostr handle? =
 
-* **Likes** are stored as comments: the liker's user account and email when logged in, or the name and optional email they typed plus a one-way hash of their IP address when logged out. Likes appear in the WordPress personal-data export and are deleted by an erasure request (Tools → Export/Erase Personal Data). The like button also remembers liked posts in the visitor's browser (`localStorage`).
-* **Location** (with the GeoTagr companion plugin) sends the author's coordinates or typed place name to the configured geocoding provider (OpenStreetMap Nominatim, Google or Mapbox), which sees their IP address. The resulting place and coordinates are stored on the post and are public.
-* **Shared photos** arriving through the device share sheet are uploaded before the author publishes. Unpublished ones are deleted after 24 hours.
-* **Photo metadata** (including GPS) is stripped on upload when the setting is on and Imagick is available.
+* Likes are stored as comments: the liker's user account and email when logged in, or the name and optional email they typed plus a one-way hash of their IP address when logged out. Likes appear in the WordPress personal data export and are removed by an erasure request (Tools > Export/Erase Personal Data). The like button also remembers liked posts in the visitor's browser (`localStorage`).
+* Location (with GeoTagr) sends the author's coordinates or typed place name to the configured geocoding provider (OpenStreetMap Nominatim, Google or Mapbox), which sees their IP address. The resulting place and coordinates are stored on the post and are public.
+* Photos shared through the device share sheet are uploaded before the author publishes. Unused ones are deleted after 24 hours.
+* Photo metadata, GPS included, is stripped on upload when the setting is on and Imagick is available.
 
-QuickPostr adds suggested text covering all of this under Settings → Privacy → Policy Guide. Uninstalling removes all like records, pending shared uploads, the plugin's post meta, options and transients.
+QuickPostr adds suggested text covering all of this under Settings > Privacy > Policy Guide. Uninstalling removes all like records, pending shared uploads, the plugin's post meta, options and transients. Posts written through the composer are kept.
 
 == Changelog ==
 
 = 0.20.1 =
-* Change: Tested against WordPress 7.1 and rebuilt with the current block editor toolchain.
+* Tested against WordPress 7.1 and rebuilt with the current block editor toolchain.
 
 = 0.20.0 =
-* Add: Status posts are stored as Paragraph blocks, so they open in the block editor as blocks and render through the Post Content block without a Classic block.
-* Change: A blank line in the status composer starts a new paragraph; a single line break stays inside the paragraph. Bold, italic and links that cross a blank line are closed and reopened in each paragraph.
-* Change: Resuming a saved draft restores its text and formatting from the block markup; drafts saved by earlier versions still resume.
-* Change: A link post made without Better Bookmarks is stored as a Paragraph block with an escaped link.
+* Added storing status posts as Paragraph blocks, so they open in the block editor as blocks and render through the Post Content block without a Classic block.
+* Changed the status composer so a blank line starts a new paragraph and a single line break stays inside the paragraph. Bold, italic and links that cross a blank line are closed and reopened in each paragraph.
+* Changed draft resuming to restore text and formatting from the block markup. Drafts saved by earlier versions still resume.
+* Changed link posts made without Better Bookmarks to be stored as a Paragraph block with an escaped link.
 
 = 0.19.0 =
-* Add: Alt text field for each photo in the composer; the caption is used when it is left empty.
-* Add: The post title now lives in a chip above the editor, next to the date chip.
-* Add: Likes appear in the personal-data export and are deleted by an erasure request (Tools > Export/Erase Personal Data); the suggested privacy-policy text covers geocoding, shared uploads and browser storage, and the readme has a privacy FAQ.
-* Add: Likes from logged-out visitors are rate limited per IP address and the submitted name is capped at 100 characters.
-* Change: The composer, like button, post actions menu, share popover and gallery slider work with a keyboard and a screen reader: visible focus rings, announced status, correct toggle and dialog semantics, focus kept in place when items appear or disappear, reduced-motion support.
-* Change: Location search runs when you press Enter or the Search button instead of on every keystroke, as the OpenStreetMap Nominatim usage policy requires.
-* Change: Category and tag pickers are labelled and keyboard-navigable, categories come first, and the Post button sits on the same row.
-* Change: The "Allowed Roles" setting is now "Show Composer To". It controls who sees the composer; publishing is governed by WordPress capabilities.
-* Change: Like counts are cached per post, so a feed no longer runs a comment query for every post.
-* Change: Photo metadata stripping covers PNG and WebP as well as JPEG.
-* Change: The PWA manifest link is only output for users who can post, and the manifest is cacheable.
-* Change: Uninstalling also removes the plugin's post meta, unused shared uploads, transients and version option.
-* Fix: The service worker and manifest no longer redirect to trailing-slash URLs, so the share target installs on sites with pretty permalinks.
-* Fix: The daily cleanup of unused shared uploads schedules itself on sites updated in place; it previously ran only after reactivating the plugin.
-* Fix: Bold and Italic toolbar buttons report their state correctly, the draft banner and like dialog meet contrast requirements, and the Delete item hides while its confirmation is shown.
-* Fix: Files that are not images are refused by the share target and removed.
-* Security: The like endpoint checks public viewability, so posts of non-public types can be neither enumerated nor liked.
-* Security: The share target refuses requests from other sites, checks the Origin and Referer headers, and only the user who shared an upload can attach it to a post.
+* Added an alt text field for each photo in the composer. The caption is used when it is left empty.
+* Added a title chip above the editor, next to the date chip.
+* Added likes to the personal data export and erasure (Tools > Export/Erase Personal Data). The suggested privacy policy text now covers geocoding, shared uploads and browser storage, and the readme has a privacy FAQ.
+* Added rate limiting per IP address for likes from logged-out visitors, and capped the submitted name at 100 characters.
+* Changed the composer, like button, post actions menu, share popover and gallery slider to work with a keyboard and a screen reader: visible focus rings, announced status, correct toggle and dialog semantics, focus kept in place when items appear or disappear, and reduced-motion support.
+* Changed location search to run on Enter or the Search button instead of on every keystroke, as the OpenStreetMap Nominatim usage policy requires.
+* Changed the category and tag pickers to be labelled and keyboard-navigable, with categories first and the Post button on the same row.
+* Renamed the "Allowed Roles" setting to "Show Composer To". It controls who sees the composer; publishing is governed by WordPress capabilities.
+* Changed like counts to be cached per post, so a feed no longer runs a comment query for every post.
+* Changed photo metadata stripping to cover PNG and WebP as well as JPEG.
+* Changed the PWA manifest link to be output only for users who can post, and made the manifest cacheable.
+* Changed uninstall to also remove the plugin's post meta, unused shared uploads, transients and version option.
+* Fixed the service worker and manifest redirecting to trailing-slash URLs, which stopped the share target installing on sites with pretty permalinks.
+* Fixed the daily cleanup of unused shared uploads not scheduling itself on sites updated in place; it previously ran only after reactivating the plugin.
+* Fixed the Bold and Italic toolbar buttons reporting the wrong state, the draft banner and like dialog failing contrast requirements, and the Delete item staying visible while its confirmation is shown.
+* Fixed the share target accepting files that are not images; they are now refused and removed.
+* Security: the like endpoint checks public viewability, so posts of non-public types can be neither enumerated nor liked.
+* Security: the share target refuses requests from other sites, checks the Origin and Referer headers, and only the user who shared an upload can attach it to a post.
 
 = 0.18.0 =
-* Add: A "Composer with post feed" block pattern. Insert it on any page to get the composer above a feed of your posts, each with the author avatar, date, actions menu, featured image, title, content, and like and share buttons. Find it in the inserter under the QuickPostr category. When GeoTagr is active the pattern also shows the post's location.
+* Added a "Composer with post feed" block pattern. It puts the composer above a feed of posts, each with the author avatar, date, actions menu, featured image, title, content, and like and share buttons. It is in the inserter under the QuickPostr category. When GeoTagr is active the pattern also shows the post's location.
 
 = 0.17.0 =
-* Add: Set the date on a post from the composer. Pick any past date to backdate a post, or a future one to schedule it -- available in all four modes. Times are always the site's, so the date you pick is the date the post carries no matter where you are.
-* Add: Scheduling now tells you what happened. A post dated in the future gets a "Scheduled for..." confirmation instead of reloading into a feed the post has not appeared in yet.
-* Add: Give a post your own title. The field sits above the composer and shows the auto-generated title as its placeholder, so you can see what the post will be called and type over it if you want something else. Titles you write are shown on the front end; auto-generated ones stay hidden as before.
-* Add: Uninstalling QuickPostr now removes the like records it created, along with its settings and terms. Posts you wrote through the composer are left alone.
-* Security: Closed a hole in the like button. An unauthenticated visitor could like the same post without limit by sending a different email address each time, inflating the count and adding a database row on every request.
-* Security: The PWA share endpoint now refuses uploads that the browser reports as coming from another site, and limits how many shares one account can make per hour.
-* Change: Visitor IP addresses are no longer stored. Likes from logged-out visitors are still counted once each, using a one-way hash instead of the address itself. QuickPostr also now suggests privacy-policy text describing what a like records.
-* Change: The date and location controls share one row, and the location button stays put when you click it -- it opens and closes the panel rather than disappearing.
-* Change: Posts are now created through WordPress's own REST route. The /quickpostr/v1/posts endpoints still work but are deprecated and will be removed in 1.0.0.
-* Change: Tested up to WordPress 7.1.
-* Fix: A place name you type is saved even when location detection fails or the search finds no match -- previously there was no way to keep it.
-* Fix: The date field no longer jumps back to "now" while you are editing it.
-* Fix: The composer can no longer submit an empty post that WordPress rejects.
-* Fix: Keyboard focus is visible again on the post editor and the tag field.
-* Remove: The slug preview, replaced by the editable title field above the composer. Its setting and block option are gone.
+* Added a date control to the composer, in all four modes. A past date backdates the post; a future one schedules it. Times are the site's, so the date you pick is the date the post carries wherever you are.
+* Added a "Scheduled for..." confirmation for posts dated in the future, instead of reloading into a feed the post has not appeared in yet.
+* Added a title field above the composer. It shows the generated title as its placeholder, so you can see what the post will be called and type over it. Titles you write are shown on the front end; generated ones stay hidden.
+* Added removal of the plugin's like records, settings and terms on uninstall. Posts written through the composer are left alone.
+* Security: closed a hole in the like button. A logged-out visitor could like the same post without limit by sending a different email address each time, inflating the count and adding a database row on every request.
+* Security: the PWA share endpoint now refuses uploads that the browser reports as coming from another site, and limits how many shares one account can make per hour.
+* Changed likes from logged-out visitors to store a one-way hash instead of the IP address. They are still counted once each. QuickPostr now suggests privacy policy text describing what a like records.
+* Changed the date and location controls to share one row. The location button now stays in place and opens and closes the panel instead of disappearing.
+* Changed post creation to go through WordPress's own REST route. The /quickpostr/v1/posts endpoints still work but are deprecated and will be removed in 1.0.0.
+* Tested up to WordPress 7.1.
+* Fixed a typed place name being lost when location detection fails or the search finds no match.
+* Fixed the date field jumping back to "now" while being edited.
+* Fixed the composer submitting an empty post that WordPress rejects.
+* Fixed keyboard focus being invisible on the post editor and the tag field.
+* Removed the slug preview, replaced by the editable title field above the composer. Its setting and block option are gone.
 
 = 0.16.1 =
-* Fix: Plugin no longer fatals with "Class Parsedown not found" on update checks. The bundled update-checker library's Parsedown files were being excluded from the release zip; they are now included.
+* Fixed a fatal error, "Class Parsedown not found", on update checks. The bundled update checker's Parsedown files were excluded from the release zip and are now included.
 
 = 0.16.0 =
-* Add: Share a photo to QuickPostr from your phone. Install QuickPostr as a web app (PWA) and it shows up in the Android share sheet — share a photo and the composer opens with that image loaded, ready to review and post.
-* Add: Composer Page setting (Settings → QuickPostr). Pick the page that holds the Composer block; it becomes the app's start page and where shared photos are sent.
+* Added sharing a photo to QuickPostr from a phone. Install QuickPostr as a web app (PWA) and it appears in the Android share sheet. Sharing a photo opens the composer with that image loaded.
+* Added the Composer Page setting (Settings > QuickPostr). It names the page that holds the Composer block, which becomes the app's start page and where shared photos are sent.
 
 = 0.15.1 =
-* Fix: Gallery slider swipes now advance one photo at a time. A fast flick no longer skips past the photos in between by overshooting from the first slide to the last.
+* Fixed the gallery slider skipping photos on a fast flick. Swipes now advance one photo at a time.
 
 = 0.15.0 =
-* Change: Editing a post from the front end now opens the WordPress editor instead of an inline composer. The front-end composer is used only for creating posts.
+* Changed front-end editing to open the WordPress editor instead of an inline composer. The front-end composer is now only for creating posts.
 
 = 0.14.0 =
-* Add: VideoMuxr companion plugin support — when VideoMuxr is active, video uploads route directly to Mux for transcoding and CDN-hosted playback, and it appears in the Companion Plugins settings section.
-* Change: Single photos are now saved as an image block in the post content instead of a featured image, consistent with the other post formats. Existing photo posts are unaffected.
-* Security: Anonymous likes are deduplicated by IP address to prevent like-count inflation.
-* Change: Front-end strings in the like, share, and gallery-slider features are now translatable.
-* Change: Minor composer UI polish and tested up to WordPress 7.0.
+* Added VideoMuxr companion plugin support. When VideoMuxr is active, video uploads go to Mux for transcoding and hosted playback, and it is listed under Companion Plugins in the settings.
+* Changed single photos to be saved as an Image block in the post content instead of a featured image, like the other post formats. Existing photo posts are unaffected.
+* Security: logged-out likes are deduplicated by IP address to prevent like-count inflation.
+* Changed the like, share and gallery slider front-end strings to be translatable.
+* Changed minor composer UI details and tested up to WordPress 7.0.
 
 = 0.13.4 =
-* Fix: Gallery slider images are now vertically centered — overrides WordPress block layout styles that were preventing consistent slide heights and image centering.
+* Fixed gallery slider images not being vertically centred, by overriding the WordPress block layout styles that broke slide heights.
 
 = 0.13.3 =
-* Fix: block.json version strings now correctly match the plugin version for proper asset cache busting.
+* Fixed block.json version strings not matching the plugin version, so assets are cache-busted on update.
 
 = 0.13.2 =
-* Fix: Location chip now wraps long place names instead of overflowing the composer.
-* Fix: Gallery photo preview is now vertically centered within the preview area.
+* Fixed the location chip overflowing the composer on long place names; it now wraps.
+* Fixed the gallery photo preview not being vertically centred in the preview area.
 
 = 0.13.1 =
-* Fix: Location search now works correctly on hosted servers — user GPS coordinates are passed as a location bias to the Places API, preventing server IP location from skewing results.
-* Fix: Forward geocode now returns up to 5 results when using the Google provider.
+* Fixed location search on hosted servers. The user's GPS coordinates are passed as a location bias to the Places API, so the server's IP location no longer skews results.
+* Fixed forward geocoding with the Google provider returning a single result; it now returns up to 5.
 
 = 0.13.0 =
-* Add: Geo-tagged posts now retain their location when published from a draft — coordinates and place name are saved correctly on publish.
-* Add: Location chip now supports typing a custom place name directly, without having to pick a search result.
-* Add: Location chip shows an "Add a name…" placeholder when coordinates are attached but no place name has been set.
+* Fixed geo-tagged posts losing their coordinates and place name when published from a draft.
+* Added typing a custom place name in the location chip, without picking a search result.
+* Added an "Add a name" placeholder in the location chip when coordinates are attached but no place name is set.
 
 = 0.12.2 =
-* Fix: Location chip now has a Change button so users can correct a wrong auto-detected address without dismissing and starting over.
+* Added a Change button to the location chip, so a wrong auto-detected address can be corrected without dismissing it and starting over.
 
 = 0.12.1 =
-* Fix: Block stylesheet now cache-busts correctly after updates — location chip and gallery reorder styles now load on first visit after an upgrade.
+* Fixed the block stylesheet not cache-busting after updates, which left the location chip and gallery reorder styles missing on the first visit after an upgrade.
 
 = 0.12.0 =
-* Add: Photos in the gallery composer can now be reordered before submitting using drag-and-drop or ← / → buttons.
-* Add: Settings page now shows a GeoTagr companion plugin notice with an install link when GeoTagr is not active.
+* Added reordering photos in the gallery composer before posting, by drag and drop or with arrow buttons.
+* Added a GeoTagr companion plugin notice with an install link on the settings page when GeoTagr is not active.
 
 = 0.11.0 =
-* Add: Location tagging in the composer. When the GeoTagr companion plugin is active, a Location button appears in the composer toolbar. Tap to auto-detect via the browser Geolocation API, or enter an address manually. The four GeoTagr meta keys are saved on the post on submit.
-* Fix: Address search uses GeoTagr's configured geocoding provider (Google, Nominatim, or Mapbox) rather than always calling Nominatim.
-* Fix: Location chip no longer overflows the composer container.
+* Added location tagging in the composer. When the GeoTagr companion plugin is active, a Location button appears in the composer toolbar. Tap it to detect the location with the browser Geolocation API, or enter an address. The four GeoTagr meta keys are saved on the post on submit.
+* Fixed address search always calling Nominatim; it now uses GeoTagr's configured geocoding provider (Google, Nominatim or Mapbox).
+* Fixed the location chip overflowing the composer container.
 
 = 0.10.2 =
-* Fix: Portrait videos uploaded from mobile now render with the correct aspect-ratio on the front end.
+* Fixed portrait videos uploaded from a phone rendering with the wrong aspect ratio on the front end.
 
 = 0.10.1 =
-* Fix: Editing a photo post with multiple images now updates the existing post instead of creating a duplicate.
+* Fixed editing a photo post with several images creating a duplicate post instead of updating the existing one.
 
 = 0.10.0 =
-* Add: Video composer now includes a "choose from library" option, matching the photo composer.
-* Fix: Photo post editing pre-fills the existing image and caption; the image can be replaced or the caption updated without re-uploading.
-* Fix: Editing video, gallery, or link posts now navigates directly to the WordPress editor instead of attempting to parse block content.
+* Added a "choose from library" option to the video composer, matching the photo composer.
+* Fixed photo post editing to pre-fill the existing image and caption, so the image can be replaced or the caption changed without re-uploading.
+* Fixed editing video, gallery and link posts to open the WordPress editor instead of trying to parse block content.
 
 = 0.9.1 =
-* Fix: Resolve semi-transparent overlay on Chrome Android after uploading a video.
+* Fixed a semi-transparent overlay left on screen in Chrome for Android after uploading a video.
 
 = 0.9.0 =
-* Add: Like Post block with heart toggle and live like count for logged-in and logged-out visitors.
-* Add: Scroll-snap gallery slider for core/gallery blocks via QuickPostr Slider block style.
-* Add: Photo composer supports selecting multiple images from the media library at once.
-* Change: Replace Edit Post and Delete Post blocks with a unified Post Actions kebab menu.
-* Fix: Gallery images now render at their natural aspect ratio.
+* Added the Like Post block with a heart toggle and live like count for logged-in and logged-out visitors.
+* Added the QuickPostr Slider block style, a scroll-snap slider for Gallery blocks.
+* Added selecting several images at once from the Media Library in the photo composer.
+* Replaced the Edit Post and Delete Post blocks with one Post Actions menu.
+* Fixed gallery images not rendering at their natural aspect ratio.
 
 = 0.8.1 =
-* Fix: Scope popover display:flex to :not([hidden]) so the hidden attribute takes effect.
-* Fix: Add social links popover fallback for browsers without Web Share API.
-* Fix: Close autocomplete dropdown on input blur.
+* Fixed the popover's `display: flex` overriding the `hidden` attribute; it is now scoped to `:not([hidden])`.
+* Added a social links popover fallback for browsers without the Web Share API.
+* Fixed the autocomplete dropdown staying open when the input loses focus.
 
 = 0.8.0 =
-* Add: Media Gallery block -- slider with dot navigation, prev/next arrows, drag and swipe gestures, and a (x/y) image counter. Compose multi-photo posts directly in the composer.
-* Add: Popular tags and categories shown as horizontal pill chips in the autocomplete dropdown on focus, so the most-used items are reachable without typing.
+* Added the Media Gallery block: a slider with dot navigation, previous and next arrows, drag and swipe, and an (x/y) counter. Multi-photo posts can be composed in the composer.
+* Added popular tags and categories as pill chips in the autocomplete dropdown on focus, so the most-used ones are reachable without typing.
 
 = 0.7.0 =
-* Add: Video tab in the post composer -- drag-and-drop video upload with optional caption, using the WordPress video post format.
-* Fix: Video posts now embed the uploaded video as a WordPress video block in the post content.
+* Added a Video tab to the composer: drag-and-drop video upload with an optional caption, using the video post format.
+* Fixed video posts to embed the uploaded video as a Video block in the post content.
 
 = 0.6.0 =
-* Link composer mode: paste a URL to post a rich link card via Better Bookmarks, or a plain linked paragraph as fallback.
-* Link post editing: pre-fills the composer with stored URL and Open Graph preview when editing a link-format post.
-* Fix EXIF stripping rotating photos incorrectly: autoOrient() now bakes EXIF orientation into pixel data before stripping the tag.
-* Plugin Update Checker: GitHub release-based automatic updates via plugin-update-checker.
-* Plugin Check compliance: prefixed render.php variables, shortened readme.txt short description, removed deprecated load_plugin_textdomain().
+* Added the Link composer mode: paste a URL to post a link card through Better Bookmarks, or a paragraph with a plain link without it.
+* Added link post editing, pre-filling the composer with the stored URL and Open Graph preview.
+* Fixed EXIF stripping rotating photos: orientation is now applied to the pixel data before the tag is removed.
+* Added automatic updates from GitHub releases through Plugin Update Checker.
+* Fixed Plugin Check findings: prefixed render.php variables, shortened the readme.txt short description, removed the deprecated load_plugin_textdomain() call.
 
 = 0.5.0 =
 * Initial public release.
-* Status, Photo, and Link composer modes.
-* Edit Post, Delete Post, and Share Post blocks.
-* Better Bookmarks integration for rich link cards.
+* Status, Photo and Link composer modes.
+* Edit Post, Delete Post and Share Post blocks.
+* Better Bookmarks integration for link cards.
 * Tag and category typeahead with inline creation.
 * EXIF stripping for JPEG uploads.
-* Admin bar suppression settings.
+* Admin bar settings.
